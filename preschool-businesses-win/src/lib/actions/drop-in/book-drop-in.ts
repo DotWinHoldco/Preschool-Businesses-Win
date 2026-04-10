@@ -6,6 +6,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { assertRole } from '@/lib/auth/session'
 import {
   BookDropInSchema,
   CancelDropInSchema,
@@ -14,6 +15,7 @@ import {
 } from '@/lib/schemas/drop-in'
 
 export async function bookDropIn(input: BookDropInInput) {
+  await assertRole('parent')
   const parsed = BookDropInSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.flatten().fieldErrors }
@@ -100,6 +102,7 @@ export async function bookDropIn(input: BookDropInInput) {
 }
 
 export async function cancelDropIn(input: CancelDropInInput) {
+  await assertRole('parent')
   const parsed = CancelDropInSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.flatten().fieldErrors }

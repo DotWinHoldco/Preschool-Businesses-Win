@@ -4,6 +4,7 @@
 import { UpdateLeadSchema, AddLeadActivitySchema, type UpdateLeadInput, type AddLeadActivityInput } from '@/lib/schemas/lead'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { assertRole } from '@/lib/auth/session'
 
 export type ManageLeadState = {
   ok: boolean
@@ -11,6 +12,8 @@ export type ManageLeadState = {
 }
 
 export async function updateLead(input: UpdateLeadInput): Promise<ManageLeadState> {
+  await assertRole('admin')
+
   const parsed = UpdateLeadSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' }
@@ -65,6 +68,8 @@ export async function updateLead(input: UpdateLeadInput): Promise<ManageLeadStat
 }
 
 export async function addLeadActivity(input: AddLeadActivityInput): Promise<ManageLeadState> {
+  await assertRole('admin')
+
   const parsed = AddLeadActivitySchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' }

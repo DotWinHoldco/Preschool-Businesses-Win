@@ -6,6 +6,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { assertRole } from '@/lib/auth/session'
 import {
   CreateCalendarEventSchema,
   UpdateCalendarEventSchema,
@@ -16,6 +17,8 @@ import {
 } from '@/lib/schemas/calendar-event'
 
 export async function createCalendarEvent(input: CreateCalendarEventInput) {
+  await assertRole('admin')
+
   const parsed = CreateCalendarEventSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.flatten().fieldErrors }
@@ -57,6 +60,8 @@ export async function createCalendarEvent(input: CreateCalendarEventInput) {
 }
 
 export async function updateCalendarEvent(input: UpdateCalendarEventInput) {
+  await assertRole('admin')
+
   const parsed = UpdateCalendarEventSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.flatten().fieldErrors }
@@ -95,6 +100,8 @@ export async function updateCalendarEvent(input: UpdateCalendarEventInput) {
 }
 
 export async function createEventSignUp(input: CreateEventSignUpInput) {
+  await assertRole('admin')
+
   const parsed = CreateEventSignUpSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.flatten().fieldErrors }

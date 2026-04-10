@@ -12,6 +12,7 @@ import {
 } from '@/lib/schemas/family'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { assertRole } from '@/lib/auth/session'
 
 export type PickupResult = {
   ok: boolean
@@ -27,6 +28,8 @@ export type PickupResult = {
 export async function addAuthorizedPickup(
   input: CreateAuthorizedPickupInput,
 ): Promise<PickupResult> {
+  await assertRole('admin')
+
   const parsed = CreateAuthorizedPickupSchema.safeParse(input)
   if (!parsed.success) {
     const fieldErrors: Record<string, string> = {}
@@ -84,6 +87,8 @@ export async function addAuthorizedPickup(
 export async function updateAuthorizedPickup(
   input: { id: string } & Partial<CreateAuthorizedPickupInput>,
 ): Promise<PickupResult> {
+  await assertRole('admin')
+
   const parsed = UpdateAuthorizedPickupSchema.safeParse(input)
   if (!parsed.success) {
     const fieldErrors: Record<string, string> = {}
@@ -141,6 +146,8 @@ export async function updateAuthorizedPickup(
 export async function removeAuthorizedPickup(
   input: { id: string; student_id: string },
 ): Promise<PickupResult> {
+  await assertRole('admin')
+
   const parsed = RemoveAuthorizedPickupSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false, error: 'Invalid input' }

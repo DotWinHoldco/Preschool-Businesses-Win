@@ -7,6 +7,7 @@
 import { CreateStudentSchema, type CreateStudentInput } from '@/lib/schemas/student'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { assertRole } from '@/lib/auth/session'
 
 export type CreateStudentResult = {
   ok: boolean
@@ -16,6 +17,8 @@ export type CreateStudentResult = {
 }
 
 export async function createStudent(input: CreateStudentInput): Promise<CreateStudentResult> {
+  await assertRole('admin')
+
   // 1. Validate
   const parsed = CreateStudentSchema.safeParse(input)
   if (!parsed.success) {

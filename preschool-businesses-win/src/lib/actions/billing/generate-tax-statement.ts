@@ -6,6 +6,7 @@
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { GenerateTaxStatementSchema } from '@/lib/schemas/billing'
 import { getTenantId } from '@/lib/actions/get-tenant-id'
+import { assertRole } from '@/lib/auth/session'
 
 export type TaxStatementState = {
   ok: boolean
@@ -19,6 +20,8 @@ export async function generateTaxStatement(
   formData: FormData,
 ): Promise<TaxStatementState> {
   try {
+    await assertRole('admin')
+
     const raw = Object.fromEntries(formData.entries())
     const parsed = GenerateTaxStatementSchema.safeParse({
       ...raw,

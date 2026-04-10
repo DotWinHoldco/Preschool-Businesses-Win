@@ -1,6 +1,7 @@
 // @anchor: cca.portfolio.progress-report
 'use server'
 
+import { assertRole } from '@/lib/auth/session'
 import { GenerateProgressReportSchema, type GenerateProgressReportInput } from '@/lib/schemas/portfolio'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
@@ -33,6 +34,7 @@ export type GenerateProgressReportState = {
 export async function generateProgressReport(
   input: GenerateProgressReportInput
 ): Promise<GenerateProgressReportState> {
+  await assertRole('lead_teacher')
   const parsed = GenerateProgressReportSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' }

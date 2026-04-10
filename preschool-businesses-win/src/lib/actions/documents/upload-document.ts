@@ -7,8 +7,11 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
 import { UploadDocumentSchema, type UploadDocumentInput } from '@/lib/schemas/document'
+import { assertRole } from '@/lib/auth/session'
 
 export async function uploadDocument(input: UploadDocumentInput) {
+  await assertRole('admin')
+
   const parsed = UploadDocumentSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.flatten().fieldErrors }

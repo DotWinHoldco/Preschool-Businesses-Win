@@ -8,6 +8,7 @@ import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
 import { sendNotification } from '@/lib/notifications/send'
+import { assertRole } from '@/lib/auth/session'
 
 const InitiateEmergencySchema = z.object({
   event_type: z.enum([
@@ -27,6 +28,8 @@ const InitiateEmergencySchema = z.object({
 export type InitiateEmergencyInput = z.infer<typeof InitiateEmergencySchema>
 
 export async function initiateEmergency(input: InitiateEmergencyInput) {
+  await assertRole('admin')
+
   const parsed = InitiateEmergencySchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.flatten().fieldErrors }

@@ -1,6 +1,7 @@
 // @anchor: cca.food-program.record-meals
 'use server'
 
+import { assertRole } from '@/lib/auth/session'
 import {
   RecordMealServiceSchema,
   BulkRecordMealServiceSchema,
@@ -17,6 +18,7 @@ export type RecordMealsState = {
 }
 
 export async function recordMealService(input: RecordMealServiceInput): Promise<RecordMealsState> {
+  await assertRole('aide')
   const parsed = RecordMealServiceSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' }
@@ -49,6 +51,7 @@ export async function recordMealService(input: RecordMealServiceInput): Promise<
 }
 
 export async function bulkRecordMealService(input: BulkRecordMealServiceInput): Promise<RecordMealsState> {
+  await assertRole('aide')
   const parsed = BulkRecordMealServiceSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' }

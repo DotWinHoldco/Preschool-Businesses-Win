@@ -7,6 +7,7 @@
 import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { assertRole } from '@/lib/auth/session'
 
 const GenerateReportSchema = z.object({
   name: z.string().min(1).max(200),
@@ -44,6 +45,8 @@ const GenerateReportSchema = z.object({
 export type GenerateReportInput = z.infer<typeof GenerateReportSchema>
 
 export async function generateReport(input: GenerateReportInput) {
+  await assertRole('admin')
+
   const parsed = GenerateReportSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.flatten().fieldErrors }

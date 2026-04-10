@@ -3,6 +3,7 @@
 // @anchor: cca.attendance.record
 // Record attendance status for a student on a given date.
 
+import { assertRole } from '@/lib/auth/session'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { RecordAttendanceSchema } from '@/lib/schemas/attendance'
 import { getTenantId } from '@/lib/actions/get-tenant-id'
@@ -18,6 +19,7 @@ export async function recordAttendance(
   formData: FormData,
 ): Promise<RecordAttendanceState> {
   try {
+    await assertRole('aide')
     const raw = Object.fromEntries(formData.entries())
     const parsed = RecordAttendanceSchema.safeParse({
       ...raw,

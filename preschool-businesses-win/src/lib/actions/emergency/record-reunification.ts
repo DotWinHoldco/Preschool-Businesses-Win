@@ -7,6 +7,7 @@
 import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { assertRole } from '@/lib/auth/session'
 
 const RecordReunificationSchema = z.object({
   emergency_event_id: z.string().uuid(),
@@ -18,6 +19,8 @@ const RecordReunificationSchema = z.object({
 })
 
 export async function recordReunification(input: z.infer<typeof RecordReunificationSchema>) {
+  await assertRole('admin')
+
   const parsed = RecordReunificationSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.flatten().fieldErrors }

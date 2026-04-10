@@ -4,6 +4,7 @@
 import { SendFollowUpSchema, type SendFollowUpInput } from '@/lib/schemas/lead'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { assertRole } from '@/lib/auth/session'
 
 export type SendFollowUpState = {
   ok: boolean
@@ -11,6 +12,8 @@ export type SendFollowUpState = {
 }
 
 export async function sendFollowUp(input: SendFollowUpInput): Promise<SendFollowUpState> {
+  await assertRole('admin')
+
   const parsed = SendFollowUpSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' }

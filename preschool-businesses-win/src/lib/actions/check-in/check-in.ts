@@ -4,6 +4,7 @@
 // Check-in server action — validates input, checks allergies, creates records.
 // See CCA_BUILD_BRIEF.md §7
 
+import { assertRole } from '@/lib/auth/session'
 import { CheckInSchema, type CheckInInput } from '@/lib/schemas/check-in'
 import { createAdminClient } from '@/lib/supabase/admin'
 import {
@@ -31,6 +32,7 @@ export interface CheckInResult {
 export async function performCheckIn(
   input: CheckInInput,
 ): Promise<CheckInResult> {
+  await assertRole('aide')
   // ── Validate with Zod ──────────────────────────────────────────────────
   const parsed = CheckInSchema.safeParse(input)
   if (!parsed.success) {

@@ -3,6 +3,7 @@
 // @anchor: cca.messaging.broadcast
 // Send a broadcast message to a classroom or the entire school.
 
+import { assertRole } from '@/lib/auth/session'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { BroadcastMessageSchema } from '@/lib/schemas/messaging'
 import { getTenantId } from '@/lib/actions/get-tenant-id'
@@ -19,6 +20,7 @@ export async function broadcastMessage(
   formData: FormData,
 ): Promise<BroadcastState> {
   try {
+    await assertRole('admin')
     const raw = Object.fromEntries(formData.entries())
     const parsed = BroadcastMessageSchema.safeParse({
       ...raw,

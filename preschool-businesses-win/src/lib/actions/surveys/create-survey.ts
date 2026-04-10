@@ -7,8 +7,11 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
 import { CreateSurveySchema, type CreateSurveyInput } from '@/lib/schemas/survey'
+import { assertRole } from '@/lib/auth/session'
 
 export async function createSurvey(input: CreateSurveyInput) {
+  await assertRole('admin')
+
   const parsed = CreateSurveySchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.flatten().fieldErrors }
@@ -63,6 +66,8 @@ export async function createSurvey(input: CreateSurveyInput) {
 }
 
 export async function activateSurvey(surveyId: string) {
+  await assertRole('admin')
+
   const tenantId = await getTenantId()
   const supabase = createAdminClient()
 
@@ -80,6 +85,8 @@ export async function activateSurvey(surveyId: string) {
 }
 
 export async function closeSurvey(surveyId: string) {
+  await assertRole('admin')
+
   const tenantId = await getTenantId()
   const supabase = createAdminClient()
 

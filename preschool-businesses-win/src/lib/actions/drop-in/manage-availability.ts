@@ -7,8 +7,11 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId } from '@/lib/actions/get-tenant-id'
 import { ManageDropInAvailabilitySchema, type ManageDropInAvailabilityInput } from '@/lib/schemas/drop-in'
+import { assertRole } from '@/lib/auth/session'
 
 export async function setDropInAvailability(input: ManageDropInAvailabilityInput) {
+  await assertRole('admin')
+
   const parsed = ManageDropInAvailabilitySchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.flatten().fieldErrors }
@@ -49,6 +52,8 @@ export async function bulkSetAvailability(
   rateCents: number,
   halfDayRateCents?: number,
 ) {
+  await assertRole('admin')
+
   const tenantId = await getTenantId()
   const supabase = createAdminClient()
 

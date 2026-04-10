@@ -9,6 +9,7 @@ import {
 } from '@/lib/schemas/food-program'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { assertRole } from '@/lib/auth/session'
 
 export type ManageMenuState = {
   ok: boolean
@@ -45,6 +46,8 @@ function validateUSDAPattern(
 }
 
 export async function createMealMenu(input: CreateMealMenuInput): Promise<ManageMenuState> {
+  await assertRole('admin')
+
   const parsed = CreateMealMenuSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' }
@@ -92,6 +95,8 @@ export async function createMealMenu(input: CreateMealMenuInput): Promise<Manage
 }
 
 export async function updateMealMenu(input: UpdateMealMenuInput): Promise<ManageMenuState> {
+  await assertRole('admin')
+
   const parsed = UpdateMealMenuSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' }

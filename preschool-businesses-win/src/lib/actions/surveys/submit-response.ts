@@ -6,9 +6,11 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { assertRole } from '@/lib/auth/session'
 import { SubmitSurveyResponseSchema, type SubmitSurveyResponseInput } from '@/lib/schemas/survey'
 
 export async function submitSurveyResponse(input: SubmitSurveyResponseInput) {
+  await assertRole('parent')
   const parsed = SubmitSurveyResponseSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.flatten().fieldErrors }

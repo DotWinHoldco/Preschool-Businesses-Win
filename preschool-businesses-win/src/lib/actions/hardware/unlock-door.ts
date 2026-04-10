@@ -8,6 +8,7 @@ import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
 import { createDoorController } from '@/lib/hardware/door-control'
+import { assertRole } from '@/lib/auth/session'
 
 const UnlockDoorSchema = z.object({
   door_id: z.string().uuid(),
@@ -19,6 +20,8 @@ const LockDoorSchema = z.object({
 })
 
 export async function unlockDoor(input: z.infer<typeof UnlockDoorSchema>) {
+  await assertRole('admin')
+
   const parsed = UnlockDoorSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.flatten().fieldErrors }
@@ -73,6 +76,8 @@ export async function unlockDoor(input: z.infer<typeof UnlockDoorSchema>) {
 }
 
 export async function lockDoor(input: z.infer<typeof LockDoorSchema>) {
+  await assertRole('admin')
+
   const parsed = LockDoorSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.flatten().fieldErrors }

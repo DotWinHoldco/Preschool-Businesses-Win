@@ -1,6 +1,7 @@
 // @anchor: cca.assessment.run
 'use server'
 
+import { assertRole } from '@/lib/auth/session'
 import { RunAssessmentSchema, type RunAssessmentInput } from '@/lib/schemas/portfolio'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
@@ -14,6 +15,7 @@ export type RunAssessmentState = {
 export async function runAssessment(
   input: RunAssessmentInput
 ): Promise<RunAssessmentState> {
+  await assertRole('lead_teacher')
   const parsed = RunAssessmentSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' }

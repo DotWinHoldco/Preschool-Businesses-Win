@@ -6,6 +6,7 @@
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { RunPayrollSchema } from '@/lib/schemas/staff'
 import { getTenantId } from '@/lib/actions/get-tenant-id'
+import { assertRole } from '@/lib/auth/session'
 
 export type PayrollRunState = {
   ok: boolean
@@ -19,6 +20,8 @@ export async function runPayroll(
   formData: FormData,
 ): Promise<PayrollRunState> {
   try {
+    await assertRole('admin')
+
     const raw = Object.fromEntries(formData.entries())
     const parsed = RunPayrollSchema.safeParse(raw)
 

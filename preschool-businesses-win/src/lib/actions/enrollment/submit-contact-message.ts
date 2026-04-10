@@ -32,6 +32,8 @@ export async function submitContactMessage(
   const supabase = createAdminClient()
 
   try {
+    // Public action — no auth required (contact form)
+
     // Auto-create a lead if it's a prospective parent
     if (data.inquiry_type === 'prospective_parent') {
       const nameParts = data.name.split(' ')

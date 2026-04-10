@@ -4,6 +4,7 @@
 // Create an amendment to a finalized attendance record.
 // Amendments are append-only — original records are never overwritten.
 
+import { assertRole } from '@/lib/auth/session'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { AmendAttendanceSchema } from '@/lib/schemas/attendance'
 import { getTenantId } from '@/lib/actions/get-tenant-id'
@@ -19,6 +20,7 @@ export async function amendAttendance(
   formData: FormData,
 ): Promise<AmendAttendanceState> {
   try {
+    await assertRole('admin')
     const raw = Object.fromEntries(formData.entries())
     const parsed = AmendAttendanceSchema.safeParse({
       ...raw,

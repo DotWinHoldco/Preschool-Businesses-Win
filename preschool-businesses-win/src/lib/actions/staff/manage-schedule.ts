@@ -6,6 +6,7 @@
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { ManageScheduleSchema } from '@/lib/schemas/staff'
 import { getTenantId } from '@/lib/actions/get-tenant-id'
+import { assertRole } from '@/lib/auth/session'
 
 export type ScheduleState = {
   ok: boolean
@@ -18,6 +19,8 @@ export async function setWeeklySchedule(
   formData: FormData,
 ): Promise<ScheduleState> {
   try {
+    await assertRole('admin')
+
     const raw = Object.fromEntries(formData.entries())
     const entries = raw.entries ? JSON.parse(raw.entries as string) : []
 

@@ -1,6 +1,7 @@
 // @anchor: cca.portfolio.create-observation
 'use server'
 
+import { assertRole } from '@/lib/auth/session'
 import { CreateObservationSchema, type CreateObservationInput } from '@/lib/schemas/portfolio'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
@@ -14,6 +15,7 @@ export type CreateObservationState = {
 export async function createObservation(
   input: CreateObservationInput
 ): Promise<CreateObservationState> {
+  await assertRole('aide')
   // Validate with Zod
   const parsed = CreateObservationSchema.safeParse(input)
   if (!parsed.success) {

@@ -6,6 +6,7 @@
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { ManageSubscriptionSchema } from '@/lib/schemas/billing'
 import { getTenantId } from '@/lib/actions/get-tenant-id'
+import { assertRole } from '@/lib/auth/session'
 
 export type SubscriptionState = {
   ok: boolean
@@ -18,6 +19,8 @@ export async function createSubscription(
   formData: FormData,
 ): Promise<SubscriptionState> {
   try {
+    await assertRole('admin')
+
     const raw = Object.fromEntries(formData.entries())
     const parsed = ManageSubscriptionSchema.safeParse({
       ...raw,
@@ -56,6 +59,8 @@ export async function pauseSubscription(
   formData: FormData,
 ): Promise<SubscriptionState> {
   try {
+    await assertRole('admin')
+
     const enrollmentId = formData.get('enrollment_id') as string
     if (!enrollmentId) {
       return { ok: false, error: 'Enrollment ID is required' }
@@ -83,6 +88,8 @@ export async function cancelSubscription(
   formData: FormData,
 ): Promise<SubscriptionState> {
   try {
+    await assertRole('admin')
+
     const enrollmentId = formData.get('enrollment_id') as string
     if (!enrollmentId) {
       return { ok: false, error: 'Enrollment ID is required' }
