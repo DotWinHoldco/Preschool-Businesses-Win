@@ -54,6 +54,8 @@ export async function submitEnrollment(
   const supabase = createAdminClient()
 
   try {
+    // Public action — no auth required (enrollment form)
+
     // --- Insert enrollment application ---
     const triageScore = computeTriageScore(data)
 

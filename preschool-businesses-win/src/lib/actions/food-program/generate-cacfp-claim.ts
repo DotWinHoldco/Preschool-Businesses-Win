@@ -4,6 +4,7 @@
 import { GenerateCACFPClaimSchema, type GenerateCACFPClaimInput } from '@/lib/schemas/food-program'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { assertRole } from '@/lib/auth/session'
 
 export type GenerateCACFPClaimState = {
   ok: boolean
@@ -34,6 +35,8 @@ const CACFP_RATES_CENTS: Record<string, { free: number; reduced: number; paid: n
 export async function generateCACFPClaim(
   input: GenerateCACFPClaimInput
 ): Promise<GenerateCACFPClaimState> {
+  await assertRole('admin')
+
   const parsed = GenerateCACFPClaimSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' }

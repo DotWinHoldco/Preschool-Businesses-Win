@@ -7,6 +7,7 @@
 import { UpdateStudentSchema, type UpdateStudentInput } from '@/lib/schemas/student'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { assertRole } from '@/lib/auth/session'
 
 export type UpdateStudentResult = {
   ok: boolean
@@ -15,6 +16,8 @@ export type UpdateStudentResult = {
 }
 
 export async function updateStudent(input: UpdateStudentInput): Promise<UpdateStudentResult> {
+  await assertRole('admin')
+
   // 1. Validate
   const parsed = UpdateStudentSchema.safeParse(input)
   if (!parsed.success) {

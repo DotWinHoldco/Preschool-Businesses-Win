@@ -7,6 +7,7 @@
 import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { assertRole } from '@/lib/auth/session'
 
 const RunStandardsCheckSchema = z.object({
   standard_id: z.string().uuid(),
@@ -16,6 +17,8 @@ const RunStandardsCheckSchema = z.object({
 })
 
 export async function runStandardsCheck(input: z.infer<typeof RunStandardsCheckSchema>) {
+  await assertRole('admin')
+
   const parsed = RunStandardsCheckSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.flatten().fieldErrors }
@@ -52,6 +55,8 @@ export async function runStandardsCheck(input: z.infer<typeof RunStandardsCheckS
  * Uses Texas DFPS Chapter 746 age-specific ratio tables.
  */
 export async function runRatioComplianceCheck() {
+  await assertRole('admin')
+
   const tenantId = await getTenantId()
   const supabase = createAdminClient()
   const now = new Date().toISOString()

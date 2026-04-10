@@ -4,6 +4,7 @@
 import { CreateExpenseSchema, type CreateExpenseInput } from '@/lib/schemas/expense'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { assertRole } from '@/lib/auth/session'
 
 export type CreateExpenseState = {
   ok: boolean
@@ -12,6 +13,8 @@ export type CreateExpenseState = {
 }
 
 export async function createExpense(input: CreateExpenseInput): Promise<CreateExpenseState> {
+  await assertRole('admin')
+
   const parsed = CreateExpenseSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' }

@@ -6,6 +6,7 @@
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { ManageCertificationSchema } from '@/lib/schemas/staff'
 import { getTenantId } from '@/lib/actions/get-tenant-id'
+import { assertRole } from '@/lib/auth/session'
 
 export type CertState = {
   ok: boolean
@@ -18,6 +19,8 @@ export async function addCertification(
   formData: FormData,
 ): Promise<CertState> {
   try {
+    await assertRole('admin')
+
     const raw = Object.fromEntries(formData.entries())
     const parsed = ManageCertificationSchema.safeParse(raw)
 
@@ -52,6 +55,8 @@ export async function updateCertification(
   formData: FormData,
 ): Promise<CertState> {
   try {
+    await assertRole('admin')
+
     const raw = Object.fromEntries(formData.entries())
     const certId = raw.cert_id as string
 

@@ -7,6 +7,7 @@
 import { CreateFamilySchema, type CreateFamilyInput } from '@/lib/schemas/family'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { assertRole } from '@/lib/auth/session'
 
 export type CreateFamilyResult = {
   ok: boolean
@@ -16,6 +17,8 @@ export type CreateFamilyResult = {
 }
 
 export async function createFamily(input: CreateFamilyInput): Promise<CreateFamilyResult> {
+  await assertRole('admin')
+
   // 1. Validate
   const parsed = CreateFamilySchema.safeParse(input)
   if (!parsed.success) {

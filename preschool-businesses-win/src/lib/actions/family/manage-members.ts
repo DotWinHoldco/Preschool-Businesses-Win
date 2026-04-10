@@ -11,6 +11,7 @@ import {
 } from '@/lib/schemas/family'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { assertRole } from '@/lib/auth/session'
 
 export type MemberResult = {
   ok: boolean
@@ -24,6 +25,8 @@ export type MemberResult = {
 // ---------------------------------------------------------------------------
 
 export async function addFamilyMember(input: CreateFamilyMemberInput): Promise<MemberResult> {
+  await assertRole('admin')
+
   const parsed = CreateFamilyMemberSchema.safeParse(input)
   if (!parsed.success) {
     const fieldErrors: Record<string, string> = {}
@@ -83,6 +86,8 @@ export async function addFamilyMember(input: CreateFamilyMemberInput): Promise<M
 export async function removeFamilyMember(
   input: { id: string; family_id: string },
 ): Promise<MemberResult> {
+  await assertRole('admin')
+
   const parsed = RemoveFamilyMemberSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false, error: 'Invalid input' }

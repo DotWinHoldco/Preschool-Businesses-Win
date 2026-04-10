@@ -6,6 +6,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { assertRole } from '@/lib/auth/session'
 import {
   CreateChecklistTemplateSchema,
   UpdateChecklistTemplateSchema,
@@ -16,6 +17,8 @@ import {
 } from '@/lib/schemas/checklist'
 
 export async function createChecklistTemplate(input: CreateChecklistTemplateInput) {
+  await assertRole('admin')
+
   const parsed = CreateChecklistTemplateSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.flatten().fieldErrors }
@@ -46,6 +49,8 @@ export async function createChecklistTemplate(input: CreateChecklistTemplateInpu
 }
 
 export async function updateChecklistTemplate(input: UpdateChecklistTemplateInput) {
+  await assertRole('admin')
+
   const parsed = UpdateChecklistTemplateSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.flatten().fieldErrors }
@@ -75,6 +80,8 @@ export async function updateChecklistTemplate(input: UpdateChecklistTemplateInpu
 }
 
 export async function addChecklistItem(input: CreateChecklistItemInput) {
+  await assertRole('admin')
+
   const parsed = CreateChecklistItemSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.flatten().fieldErrors }

@@ -13,6 +13,7 @@ import {
 } from '@/lib/schemas/student'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { assertRole } from '@/lib/auth/session'
 
 export type AllergyResult = {
   ok: boolean
@@ -26,6 +27,8 @@ export type AllergyResult = {
 // ---------------------------------------------------------------------------
 
 export async function addAllergy(input: CreateAllergyInput): Promise<AllergyResult> {
+  await assertRole('admin')
+
   const parsed = CreateAllergySchema.safeParse(input)
   if (!parsed.success) {
     const fieldErrors: Record<string, string> = {}
@@ -81,6 +84,8 @@ export async function addAllergy(input: CreateAllergyInput): Promise<AllergyResu
 // ---------------------------------------------------------------------------
 
 export async function updateAllergy(input: UpdateAllergyInput): Promise<AllergyResult> {
+  await assertRole('admin')
+
   const parsed = UpdateAllergySchema.safeParse(input)
   if (!parsed.success) {
     const fieldErrors: Record<string, string> = {}
@@ -138,6 +143,8 @@ export async function updateAllergy(input: UpdateAllergyInput): Promise<AllergyR
 export async function removeAllergy(
   input: { id: string; student_id: string },
 ): Promise<AllergyResult> {
+  await assertRole('admin')
+
   const parsed = RemoveAllergySchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false, error: 'Invalid input' }

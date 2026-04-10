@@ -14,6 +14,7 @@ import {
 } from '@/lib/schemas/classroom'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { assertRole } from '@/lib/auth/session'
 
 export type RosterResult = {
   ok: boolean
@@ -27,6 +28,8 @@ export type RosterResult = {
 // ---------------------------------------------------------------------------
 
 export async function assignStudent(input: AssignStudentInput): Promise<RosterResult> {
+  await assertRole('admin')
+
   const parsed = AssignStudentSchema.safeParse(input)
   if (!parsed.success) {
     const fieldErrors: Record<string, string> = {}
@@ -105,6 +108,8 @@ export async function assignStudent(input: AssignStudentInput): Promise<RosterRe
 export async function removeStudent(
   input: { assignment_id: string; classroom_id: string },
 ): Promise<RosterResult> {
+  await assertRole('admin')
+
   const parsed = RemoveStudentSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false, error: 'Invalid input' }
@@ -154,6 +159,8 @@ export async function removeStudent(
 // ---------------------------------------------------------------------------
 
 export async function assignStaff(input: AssignStaffInput): Promise<RosterResult> {
+  await assertRole('admin')
+
   const parsed = AssignStaffSchema.safeParse(input)
   if (!parsed.success) {
     const fieldErrors: Record<string, string> = {}
@@ -206,6 +213,8 @@ export async function assignStaff(input: AssignStaffInput): Promise<RosterResult
 export async function removeStaff(
   input: { assignment_id: string; classroom_id: string },
 ): Promise<RosterResult> {
+  await assertRole('admin')
+
   const parsed = RemoveStaffSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false, error: 'Invalid input' }

@@ -7,6 +7,7 @@
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { GenerateInvoicesSchema } from '@/lib/schemas/billing'
 import { getTenantId } from '@/lib/actions/get-tenant-id'
+import { assertRole } from '@/lib/auth/session'
 
 export type GenerateInvoicesState = {
   ok: boolean
@@ -19,6 +20,8 @@ export async function generateInvoices(
   formData: FormData,
 ): Promise<GenerateInvoicesState> {
   try {
+    await assertRole('admin')
+
     const raw = Object.fromEntries(formData.entries())
     const parsed = GenerateInvoicesSchema.safeParse({
       ...raw,

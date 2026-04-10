@@ -4,6 +4,7 @@
 // Add an entry to a student's daily report.
 // Creates the daily_report row if it does not exist, then inserts an entry.
 
+import { assertRole } from '@/lib/auth/session'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { getTenantId } from '@/lib/actions/get-tenant-id'
 import {
@@ -43,6 +44,7 @@ export async function createDailyReportEntry(
   formData: FormData,
 ): Promise<CreateEntryState> {
   try {
+    await assertRole('aide')
     const raw = Object.fromEntries(formData.entries())
 
     // Parse top-level fields

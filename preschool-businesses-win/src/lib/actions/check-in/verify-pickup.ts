@@ -4,6 +4,7 @@
 // Pickup person verification — checks authorized_pickups table + custody schedule.
 // See CCA_BUILD_BRIEF.md §7
 
+import { assertRole } from '@/lib/auth/session'
 import { VerifyPickupSchema, type VerifyPickupInput } from '@/lib/schemas/check-in'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getCustodyScheduleForToday } from './helpers'
@@ -27,6 +28,7 @@ export interface VerifyPickupResult {
 export async function verifyPickupPerson(
   input: VerifyPickupInput,
 ): Promise<VerifyPickupResult> {
+  await assertRole('aide')
   // ── Validate with Zod ──────────────────────────────────────────────────
   const parsed = VerifyPickupSchema.safeParse(input)
   if (!parsed.success) {

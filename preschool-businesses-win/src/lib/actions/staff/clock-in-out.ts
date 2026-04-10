@@ -3,6 +3,7 @@
 // @anchor: cca.staff.clock
 // Clock in/out with break tracking for staff time entries.
 
+import { assertRole } from '@/lib/auth/session'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { ClockInSchema, ClockOutSchema, StartBreakSchema, EndBreakSchema } from '@/lib/schemas/staff'
 import { getTenantId } from '@/lib/actions/get-tenant-id'
@@ -18,6 +19,7 @@ export async function clockIn(
   formData: FormData,
 ): Promise<ClockState> {
   try {
+    await assertRole('aide')
     const raw = Object.fromEntries(formData.entries())
     const parsed = ClockInSchema.safeParse(raw)
 
@@ -69,6 +71,7 @@ export async function clockOut(
   formData: FormData,
 ): Promise<ClockState> {
   try {
+    await assertRole('aide')
     const raw = Object.fromEntries(formData.entries())
     const parsed = ClockOutSchema.safeParse(raw)
 
@@ -127,6 +130,7 @@ export async function startBreak(
   formData: FormData,
 ): Promise<ClockState> {
   try {
+    await assertRole('aide')
     const raw = Object.fromEntries(formData.entries())
     const parsed = StartBreakSchema.safeParse(raw)
 
@@ -157,6 +161,7 @@ export async function endBreak(
   formData: FormData,
 ): Promise<ClockState> {
   try {
+    await assertRole('aide')
     const raw = Object.fromEntries(formData.entries())
     const parsed = EndBreakSchema.safeParse(raw)
 

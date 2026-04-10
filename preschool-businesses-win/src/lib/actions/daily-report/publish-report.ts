@@ -3,6 +3,7 @@
 // @anchor: cca.daily-report.publish
 // Publish a daily report — makes it visible to parents and triggers notification.
 
+import { assertRole } from '@/lib/auth/session'
 import { headers } from 'next/headers'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { PublishReportSchema } from '@/lib/schemas/daily-report'
@@ -17,6 +18,7 @@ export async function publishReport(
   formData: FormData,
 ): Promise<PublishReportState> {
   try {
+    await assertRole('lead_teacher')
     const raw = Object.fromEntries(formData.entries())
     const parsed = PublishReportSchema.safeParse(raw)
 

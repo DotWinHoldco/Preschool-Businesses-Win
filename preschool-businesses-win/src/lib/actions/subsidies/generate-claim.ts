@@ -4,6 +4,7 @@
 import { GenerateSubsidyClaimSchema, type GenerateSubsidyClaimInput } from '@/lib/schemas/subsidy'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { assertRole } from '@/lib/auth/session'
 
 export type GenerateSubsidyClaimState = {
   ok: boolean
@@ -18,6 +19,8 @@ export type GenerateSubsidyClaimState = {
 export async function generateSubsidyClaim(
   input: GenerateSubsidyClaimInput
 ): Promise<GenerateSubsidyClaimState> {
+  await assertRole('admin')
+
   const parsed = GenerateSubsidyClaimSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' }

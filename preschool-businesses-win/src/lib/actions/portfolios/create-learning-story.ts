@@ -1,6 +1,7 @@
 // @anchor: cca.portfolio.create-learning-story
 'use server'
 
+import { assertRole } from '@/lib/auth/session'
 import { CreateLearningStorySchema, type CreateLearningStoryInput } from '@/lib/schemas/portfolio'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
@@ -14,6 +15,7 @@ export type CreateLearningStoryState = {
 export async function createLearningStory(
   input: CreateLearningStoryInput
 ): Promise<CreateLearningStoryState> {
+  await assertRole('lead_teacher')
   const parsed = CreateLearningStorySchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' }

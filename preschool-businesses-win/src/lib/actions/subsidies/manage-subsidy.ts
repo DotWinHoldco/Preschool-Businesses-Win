@@ -9,6 +9,7 @@ import {
 } from '@/lib/schemas/subsidy'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { assertRole } from '@/lib/auth/session'
 
 export type ManageSubsidyState = {
   ok: boolean
@@ -17,6 +18,8 @@ export type ManageSubsidyState = {
 }
 
 export async function createFamilySubsidy(input: CreateFamilySubsidyInput): Promise<ManageSubsidyState> {
+  await assertRole('admin')
+
   const parsed = CreateFamilySubsidySchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' }
@@ -64,6 +67,8 @@ export async function createFamilySubsidy(input: CreateFamilySubsidyInput): Prom
 }
 
 export async function updateFamilySubsidy(input: UpdateFamilySubsidyInput): Promise<ManageSubsidyState> {
+  await assertRole('admin')
+
   const parsed = UpdateFamilySubsidySchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' }

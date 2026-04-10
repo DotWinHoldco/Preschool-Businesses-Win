@@ -7,9 +7,11 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
 import { CompleteChecklistItemSchema, type CompleteChecklistItemInput } from '@/lib/schemas/checklist'
+import { assertRole } from '@/lib/auth/session'
 import { headers } from 'next/headers'
 
 export async function completeChecklistItem(input: CompleteChecklistItemInput) {
+  await assertRole('parent')
   const parsed = CompleteChecklistItemSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.flatten().fieldErrors }

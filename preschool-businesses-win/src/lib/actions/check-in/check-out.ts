@@ -4,6 +4,7 @@
 // Check-out server action — verifies authorized pickup, creates records.
 // See CCA_BUILD_BRIEF.md §7
 
+import { assertRole } from '@/lib/auth/session'
 import { CheckOutSchema, type CheckOutInput } from '@/lib/schemas/check-in'
 import { createAdminClient } from '@/lib/supabase/admin'
 import {
@@ -27,6 +28,7 @@ export interface CheckOutResult {
 export async function performCheckOut(
   input: CheckOutInput,
 ): Promise<CheckOutResult> {
+  await assertRole('aide')
   // ── Validate with Zod ──────────────────────────────────────────────────
   const parsed = CheckOutSchema.safeParse(input)
   if (!parsed.success) {

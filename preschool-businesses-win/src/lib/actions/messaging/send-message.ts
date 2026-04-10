@@ -3,6 +3,7 @@
 // @anchor: cca.messaging.send
 // Send a message in an existing conversation.
 
+import { assertRole } from '@/lib/auth/session'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { SendMessageSchema } from '@/lib/schemas/messaging'
 import { getTenantId } from '@/lib/actions/get-tenant-id'
@@ -18,6 +19,7 @@ export async function sendMessage(
   formData: FormData,
 ): Promise<SendMessageState> {
   try {
+    await assertRole('aide')
     const raw = Object.fromEntries(formData.entries())
     const parsed = SendMessageSchema.safeParse({
       ...raw,

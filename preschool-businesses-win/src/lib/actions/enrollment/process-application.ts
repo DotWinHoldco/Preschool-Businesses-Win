@@ -4,6 +4,7 @@
 import { ProcessApplicationSchema, type ProcessApplicationInput } from '@/lib/schemas/lead'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { assertRole } from '@/lib/auth/session'
 
 export type ProcessApplicationState = {
   ok: boolean
@@ -15,6 +16,8 @@ export type ProcessApplicationState = {
 export async function processApplication(
   input: ProcessApplicationInput
 ): Promise<ProcessApplicationState> {
+  await assertRole('admin')
+
   const parsed = ProcessApplicationSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' }

@@ -4,6 +4,7 @@
 import { ScheduleTourSchema, CompleteTourSchema, type ScheduleTourInput, type CompleteTourInput } from '@/lib/schemas/lead'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { assertRole } from '@/lib/auth/session'
 
 export type ScheduleTourState = {
   ok: boolean
@@ -12,6 +13,8 @@ export type ScheduleTourState = {
 }
 
 export async function scheduleTour(input: ScheduleTourInput): Promise<ScheduleTourState> {
+  await assertRole('admin')
+
   const parsed = ScheduleTourSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' }
@@ -68,6 +71,8 @@ export async function scheduleTour(input: ScheduleTourInput): Promise<ScheduleTo
 }
 
 export async function completeTour(input: CompleteTourInput): Promise<ScheduleTourState> {
+  await assertRole('admin')
+
   const parsed = CompleteTourSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' }

@@ -4,6 +4,7 @@
 // Finalize (lock) attendance for a classroom on a given date.
 // Once finalized, records can only be changed via amendments.
 
+import { assertRole } from '@/lib/auth/session'
 import { headers } from 'next/headers'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { FinalizeAttendanceSchema } from '@/lib/schemas/attendance'
@@ -19,6 +20,7 @@ export async function finalizeAttendance(
   formData: FormData,
 ): Promise<FinalizeAttendanceState> {
   try {
+    await assertRole('lead_teacher')
     const raw = Object.fromEntries(formData.entries())
     const parsed = FinalizeAttendanceSchema.safeParse(raw)
 

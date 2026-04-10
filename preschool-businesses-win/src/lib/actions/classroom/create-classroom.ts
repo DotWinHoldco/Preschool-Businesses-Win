@@ -7,6 +7,7 @@
 import { CreateClassroomSchema, type CreateClassroomInput } from '@/lib/schemas/classroom'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { assertRole } from '@/lib/auth/session'
 
 export type CreateClassroomResult = {
   ok: boolean
@@ -18,6 +19,8 @@ export type CreateClassroomResult = {
 export async function createClassroom(
   input: CreateClassroomInput,
 ): Promise<CreateClassroomResult> {
+  await assertRole('admin')
+
   // 1. Validate
   const parsed = CreateClassroomSchema.safeParse(input)
   if (!parsed.success) {
