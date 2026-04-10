@@ -1,0 +1,124 @@
+/* @anchor: brand.tokens */
+/* Global styles — Tailwind v4 with design tokens from BRAND.md */
+/* All components reference CSS variables. Never hardcode hex colors in components. */
+
+@import "tailwindcss";
+
+@theme inline {
+  /* Primary brand colors (platform-level defaults from BRAND.md §2) */
+  --color-primary-50: #EFF6FF;
+  --color-primary-500: #2563EB;
+  --color-primary-600: #1D4ED8;
+  --color-gold-50: #FFFBEB;
+  --color-gold-500: #F59E0B;
+  --color-charcoal-700: #2E2E3D;
+  --color-charcoal-900: #1C1C28;
+  --color-cream-50: #FDF8F0;
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+
+  /* Border radius tokens (BRAND.md §4) */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-pill: 9999px;
+
+  /* Elevation tokens (BRAND.md §4) */
+  --shadow-card: 0 1px 2px rgba(28,28,40,.04), 0 8px 24px -8px rgba(28,28,40,.08);
+  --shadow-card-hover: 0 2px 4px rgba(28,28,40,.06), 0 24px 48px -12px rgba(37,99,235,.12);
+  --shadow-cta: 0 8px 24px -8px rgba(37,99,235,.35);
+}
+
+/* ------------------------------------------------------------------ */
+/* Root CSS variables for multi-tenant theming                         */
+/* These are the DEFAULTS. TenantThemeProvider overrides them per       */
+/* tenant from the tenant_branding table.                              */
+/* ------------------------------------------------------------------ */
+:root {
+  /* Identity colors — CCA defaults */
+  --color-primary: #5CB961;
+  --color-primary-foreground: #FFFFFF;
+  --color-secondary: #3B70B0;
+  --color-secondary-foreground: #FFFFFF;
+  --color-accent: #F15A50;
+  --color-accent-foreground: #FFFFFF;
+  --color-warning: #F59E0B;
+  --color-destructive: #EF4444;
+
+  /* Surface colors */
+  --color-background: #FFFFFF;
+  --color-foreground: #1A1A1A;
+  --color-muted: #F5F5F5;
+  --color-muted-foreground: #737373;
+  --color-card: #FFFFFF;
+  --color-border: #E5E5E5;
+
+  /* Typography (loaded via next/font/google, fallbacks here) */
+  --font-heading: 'Nunito', sans-serif;
+  --font-body: 'Open Sans', sans-serif;
+  --font-mono: monospace;
+
+  /* Radius */
+  --radius: 0.75rem;
+
+  /* Gradients (BRAND.md §2) */
+  --gradient-hero: linear-gradient(135deg, #EFF6FF 0%, #FDF8F0 50%, #FFFFFF 100%);
+  --gradient-cta: linear-gradient(180deg, #2563EB 0%, #1D4ED8 100%);
+}
+
+/* ------------------------------------------------------------------ */
+/* Base styles                                                         */
+/* ------------------------------------------------------------------ */
+body {
+  font-family: var(--font-body);
+  color: var(--color-foreground);
+  background: var(--color-background);
+}
+
+/* ------------------------------------------------------------------ */
+/* Typography utilities (BRAND.md §3)                                  */
+/* ------------------------------------------------------------------ */
+.text-balance { text-wrap: balance; }
+.text-pretty  { text-wrap: pretty; }
+
+/* ------------------------------------------------------------------ */
+/* Accessibility (BRAND.md §8)                                         */
+/* ------------------------------------------------------------------ */
+.skip-to-content {
+  position: absolute;
+  left: -10000px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+.skip-to-content:focus {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: auto;
+  height: auto;
+  z-index: 9999;
+  padding: 1rem;
+  background: var(--color-primary);
+  color: var(--color-primary-foreground);
+  font-weight: 600;
+  font-size: 0.875rem;
+  border-bottom-right-radius: var(--radius);
+}
+
+/* ------------------------------------------------------------------ */
+/* Reduced motion — non-negotiable (BRAND.md §5)                       */
+/* ------------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
