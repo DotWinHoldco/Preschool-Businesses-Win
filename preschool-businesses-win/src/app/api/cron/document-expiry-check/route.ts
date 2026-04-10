@@ -2,12 +2,11 @@
 // Cron: Check document expirations (60/30/7 day alerts)
 
 import { NextResponse } from 'next/server'
+import { verifyCronAuth } from '@/lib/cron-auth'
 
 export async function GET(request: Request) {
-  const authHeader = request.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const authError = verifyCronAuth(request)
+  if (authError) return authError
 
   // TODO: Query documents with approaching expiry_date
   // Alert admin + entity owner

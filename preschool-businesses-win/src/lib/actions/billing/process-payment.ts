@@ -3,11 +3,10 @@
 // @anchor: cca.billing.process-payment
 // Process payment for an invoice (Stripe integration placeholder).
 
-import { headers } from 'next/headers'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { ProcessPaymentSchema } from '@/lib/schemas/billing'
-
-const CCA_TENANT_ID = 'a0a0a0a0-cca0-4000-8000-000000000001'
+import { getTenantId } from '@/lib/actions/get-tenant-id'
+import { assertRole } from '@/lib/auth/session'
 
 export type ProcessPaymentState = {
   ok: boolean
@@ -31,8 +30,8 @@ export async function processPayment(
     }
 
     const { invoice_id, amount_cents, method, stripe_payment_intent_id, notes } = parsed.data
-    const headerStore = await headers()
-    const tenantId = headerStore.get('x-tenant-id') ?? CCA_TENANT_ID
+    await assertRole('admin')
+    const tenantId = await getTenantId()
     const supabase = await createTenantServerClient()
 
     // Fetch the invoice

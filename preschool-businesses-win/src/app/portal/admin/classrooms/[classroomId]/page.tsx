@@ -3,6 +3,7 @@
 // Next.js 16: params is a Promise, must await.
 
 import Link from 'next/link'
+import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { createTenantAdminClient } from '@/lib/supabase/admin'
 import { Badge } from '@/components/ui/badge'
@@ -11,8 +12,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CapacityGauge } from '@/components/portal/classrooms/capacity-gauge'
 import { RatioBadge } from '@/components/portal/classrooms/ratio-badge'
 import { AllergyBadge, type AllergySeverity } from '@/components/portal/students/allergy-badge'
-
-const CCA_TENANT_ID = 'a0a0a0a0-cca0-4000-8000-000000000001'
 
 function formatAgeRange(minMonths: number, maxMonths: number): string {
   const formatAge = (months: number): string => {
@@ -37,15 +36,19 @@ export default async function ClassroomDetailPage({
 }: {
   params: Promise<{ classroomId: string }>
 }) {
+  const headerStore = await headers()
+  const tenantId = headerStore.get('x-tenant-id')
+  if (!tenantId) notFound()
+
   const { classroomId } = await params
-  const supabase = await createTenantAdminClient()
+  const supabase = await createTenantAdminClient(tenantId)
 
   // Fetch classroom
   const { data: classroom } = await supabase
     .from('classrooms')
     .select('*')
     .eq('id', classroomId)
-    .eq('tenant_id', CCA_TENANT_ID)
+    .eq('tenant_id', tenantId)
     .single()
 
   if (!classroom) notFound()
@@ -55,7 +58,7 @@ export default async function ClassroomDetailPage({
     .from('student_classroom_assignments')
     .select('*, students(id, first_name, last_name, date_of_birth, photo_path, enrollment_status)')
     .eq('classroom_id', classroomId)
-    .eq('tenant_id', CCA_TENANT_ID)
+    .eq('tenant_id', tenantId)
     .is('assigned_to', null)
 
   // Fetch staff assignments (active)
@@ -63,7 +66,7 @@ export default async function ClassroomDetailPage({
     .from('classroom_staff_assignments')
     .select('*, user_profiles(first_name, last_name)')
     .eq('classroom_id', classroomId)
-    .eq('tenant_id', CCA_TENANT_ID)
+    .eq('tenant_id', tenantId)
     .is('assigned_to', null)
 
   // Fetch allergies for all roster students
@@ -75,7 +78,7 @@ export default async function ClassroomDetailPage({
     ? await supabase
         .from('student_allergies')
         .select('student_id, allergen, severity')
-        .eq('tenant_id', CCA_TENANT_ID)
+        .eq('tenant_id', tenantId)
         .in('student_id', studentIds)
     : { data: [] }
 

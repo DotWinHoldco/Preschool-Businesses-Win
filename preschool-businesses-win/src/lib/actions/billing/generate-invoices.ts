@@ -4,11 +4,9 @@
 // Generate invoices for a billing period — creates invoice rows with line items
 // from active family_billing_enrollments.
 
-import { headers } from 'next/headers'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { GenerateInvoicesSchema } from '@/lib/schemas/billing'
-
-const CCA_TENANT_ID = 'a0a0a0a0-cca0-4000-8000-000000000001'
+import { getTenantId } from '@/lib/actions/get-tenant-id'
 
 export type GenerateInvoicesState = {
   ok: boolean
@@ -32,8 +30,7 @@ export async function generateInvoices(
     }
 
     const { period_start, period_end, family_ids } = parsed.data
-    const headerStore = await headers()
-    const tenantId = headerStore.get('x-tenant-id') ?? CCA_TENANT_ID
+    const tenantId = await getTenantId()
     const supabase = await createTenantServerClient()
 
     // Fetch active billing enrollments

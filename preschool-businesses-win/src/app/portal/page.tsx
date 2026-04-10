@@ -1,7 +1,9 @@
 // @anchor: portal.entry
 // Portal entry — redirects to the appropriate dashboard by user role.
 
+import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { notFound } from 'next/navigation'
 import { getSession, getUserMembership } from '@/lib/auth/session'
 
 export default async function PortalEntryPage() {
@@ -11,10 +13,15 @@ export default async function PortalEntryPage() {
     redirect('/portal/login')
   }
 
-  // Check user's role in CCA tenant
+  // Read tenant from proxy-injected header
+  const headerStore = await headers()
+  const tenantId = headerStore.get('x-tenant-id')
+  if (!tenantId) notFound()
+
+  // Check user's role in tenant
   const membership = await getUserMembership(
     session.user.id,
-    'a0a0a0a0-cca0-4000-8000-000000000001'
+    tenantId
   )
 
   const role = membership?.role ?? 'parent'

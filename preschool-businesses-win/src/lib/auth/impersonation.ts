@@ -32,8 +32,10 @@ export async function startImpersonation(
 
   const headerStore = await headers()
   const tenantId =
-    headerStore.get('x-tenant-id') ??
-    'a0a0a0a0-cca0-4000-8000-000000000001'
+    headerStore.get('x-tenant-id')
+  if (!tenantId) {
+    throw new Error('Missing tenant context')
+  }
 
   const supabase = createAdminClient()
 
@@ -102,8 +104,10 @@ export async function endImpersonation(): Promise<void> {
 
   const headerStore = await headers()
   const tenantId =
-    headerStore.get('x-tenant-id') ??
-    'a0a0a0a0-cca0-4000-8000-000000000001'
+    headerStore.get('x-tenant-id')
+  if (!tenantId) {
+    throw new Error('Missing tenant context')
+  }
 
   const supabase = createAdminClient()
 

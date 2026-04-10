@@ -4,8 +4,8 @@
 // Add an entry to a student's daily report.
 // Creates the daily_report row if it does not exist, then inserts an entry.
 
-import { headers } from 'next/headers'
 import { createTenantServerClient } from '@/lib/supabase/server'
+import { getTenantId } from '@/lib/actions/get-tenant-id'
 import {
   CreateDailyReportEntrySchema,
   MealDataSchema,
@@ -19,8 +19,6 @@ import {
   type DailyReportEntryType,
 } from '@/lib/schemas/daily-report'
 import { z } from 'zod'
-
-const CCA_TENANT_ID = 'a0a0a0a0-cca0-4000-8000-000000000001'
 
 // Map entry_type to its data schema for fine-grained validation
 const dataSchemas: Record<DailyReportEntryType, z.ZodSchema> = {
@@ -66,8 +64,7 @@ export async function createDailyReportEntry(
       return { ok: false, error: dataParsed.error.issues[0]?.message ?? 'Invalid entry data' }
     }
 
-    const headerStore = await headers()
-    const tenantId = headerStore.get('x-tenant-id') ?? CCA_TENANT_ID
+    const tenantId = await getTenantId()
     const supabase = await createTenantServerClient()
 
     // Ensure daily_report exists for this student + date

@@ -3,11 +3,9 @@
 // @anchor: cca.billing.subscriptions
 // Manage family billing enrollments (subscriptions).
 
-import { headers } from 'next/headers'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { ManageSubscriptionSchema } from '@/lib/schemas/billing'
-
-const CCA_TENANT_ID = 'a0a0a0a0-cca0-4000-8000-000000000001'
+import { getTenantId } from '@/lib/actions/get-tenant-id'
 
 export type SubscriptionState = {
   ok: boolean
@@ -31,8 +29,7 @@ export async function createSubscription(
       return { ok: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' }
     }
 
-    const headerStore = await headers()
-    const tenantId = headerStore.get('x-tenant-id') ?? CCA_TENANT_ID
+    const tenantId = await getTenantId()
     const supabase = await createTenantServerClient()
 
     const { data: enrollment, error } = await supabase
@@ -64,8 +61,6 @@ export async function pauseSubscription(
       return { ok: false, error: 'Enrollment ID is required' }
     }
 
-    const headerStore = await headers()
-    void headerStore
     const supabase = await createTenantServerClient()
 
     const { error } = await supabase
@@ -93,8 +88,6 @@ export async function cancelSubscription(
       return { ok: false, error: 'Enrollment ID is required' }
     }
 
-    const headerStore = await headers()
-    void headerStore
     const supabase = await createTenantServerClient()
 
     const { error } = await supabase

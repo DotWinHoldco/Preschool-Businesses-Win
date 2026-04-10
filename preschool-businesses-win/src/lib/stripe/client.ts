@@ -5,21 +5,27 @@
 import Stripe from 'stripe'
 
 // Platform Stripe client (for SaaS billing)
-export function getStripeClient() {
+export function getStripeClient(): Stripe {
   const key = process.env.STRIPE_SECRET_KEY
   if (!key || key === 'PLACEHOLDER_ADD_AFTER_BUILD') {
-    console.warn('[Stripe] No API key configured — using mock mode')
-    return null
+    throw new Error('STRIPE_SECRET_KEY is not configured')
   }
   // @ts-expect-error — Stripe SDK types may lag behind available API versions
-  return new Stripe(key, { apiVersion: '2025-03-31.basil' as string })
+  return new Stripe(key, { apiVersion: '2025-03-31.basil' })
+}
+
+/**
+ * Check if Stripe is configured without throwing.
+ * Use this in UI code that needs to show/hide Stripe features.
+ */
+export function isStripeConfigured(): boolean {
+  const key = process.env.STRIPE_SECRET_KEY
+  return !!key && key !== 'PLACEHOLDER_ADD_AFTER_BUILD'
 }
 
 // Tenant Stripe Connect client (for parent billing)
 export function getTenantStripeClient(connectedAccountId: string) {
   const stripe = getStripeClient()
-  if (!stripe) return null
-  // Use the connected account for all operations
   return {
     stripe,
     connectedAccountId,

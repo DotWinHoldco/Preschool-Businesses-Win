@@ -3,11 +3,9 @@
 // @anchor: cca.messaging.broadcast
 // Send a broadcast message to a classroom or the entire school.
 
-import { headers } from 'next/headers'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { BroadcastMessageSchema } from '@/lib/schemas/messaging'
-
-const CCA_TENANT_ID = 'a0a0a0a0-cca0-4000-8000-000000000001'
+import { getTenantId } from '@/lib/actions/get-tenant-id'
 
 export type BroadcastState = {
   ok: boolean
@@ -32,8 +30,7 @@ export async function broadcastMessage(
     }
 
     const { scope, classroom_id, title, body, urgent } = parsed.data
-    const headerStore = await headers()
-    const tenantId = headerStore.get('x-tenant-id') ?? CCA_TENANT_ID
+    const tenantId = await getTenantId()
     const supabase = await createTenantServerClient()
 
     // TODO: Get real user ID from session

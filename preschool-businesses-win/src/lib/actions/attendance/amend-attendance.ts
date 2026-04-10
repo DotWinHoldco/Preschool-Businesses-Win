@@ -4,11 +4,9 @@
 // Create an amendment to a finalized attendance record.
 // Amendments are append-only — original records are never overwritten.
 
-import { headers } from 'next/headers'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { AmendAttendanceSchema } from '@/lib/schemas/attendance'
-
-const CCA_TENANT_ID = 'a0a0a0a0-cca0-4000-8000-000000000001'
+import { getTenantId } from '@/lib/actions/get-tenant-id'
 
 export type AmendAttendanceState = {
   ok: boolean
@@ -32,8 +30,7 @@ export async function amendAttendance(
     }
 
     const { attendance_record_id, reason, new_status, new_hours_present, new_notes } = parsed.data
-    const headerStore = await headers()
-    const tenantId = headerStore.get('x-tenant-id') ?? CCA_TENANT_ID
+    const tenantId = await getTenantId()
     const supabase = await createTenantServerClient()
 
     // Fetch the current record to store as "before" snapshot

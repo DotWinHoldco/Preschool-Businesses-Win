@@ -9,12 +9,14 @@ const SUPABASE_URL = 'https://oajfxyiqjqymuvevnoui.supabase.co'
  */
 export function createAdminClient() {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-  // Fall back to anon key if service role key is not configured yet
-  const key = serviceKey && serviceKey !== 'PLACEHOLDER_ADD_AFTER_BUILD'
-    ? serviceKey
-    : process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  if (!serviceKey || serviceKey === 'PLACEHOLDER_ADD_AFTER_BUILD') {
+    throw new Error(
+      'SUPABASE_SERVICE_ROLE_KEY is not configured. ' +
+      'Admin client requires the service role key to bypass RLS.'
+    )
+  }
 
-  return createClient(SUPABASE_URL, key, {
+  return createClient(SUPABASE_URL, serviceKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
@@ -24,9 +26,9 @@ export function createAdminClient() {
 
 /**
  * Admin client with tenant context set for RLS.
- * Use this when querying tenant-scoped tables with the anon key fallback.
+ * tenantId is required — no default fallback.
  */
-export async function createTenantAdminClient(tenantId: string = 'a0a0a0a0-cca0-4000-8000-000000000001') {
+export async function createTenantAdminClient(tenantId: string) {
   const client = createAdminClient()
   await client.rpc('set_tenant_context', { p_tenant_id: tenantId })
   return client

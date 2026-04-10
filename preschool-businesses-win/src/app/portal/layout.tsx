@@ -4,6 +4,7 @@
 // See PLATFORM_ARCHITECTURE.md §5 and CCA_BUILD_BRIEF.md §6 for structure.
 
 import { headers } from 'next/headers'
+import { notFound } from 'next/navigation'
 import { getTenantBranding } from '@/lib/tenant/branding'
 import { getSession, getUserMembership } from '@/lib/auth/session'
 import { getImpersonationState } from '@/lib/auth/impersonation'
@@ -24,7 +25,8 @@ export default async function PortalLayout({
 
   // Fetch real user session and role
   const session = await getSession()
-  const effectiveTenantId = tenantId ?? 'a0a0a0a0-cca0-4000-8000-000000000001'
+  if (!tenantId) notFound()
+  const effectiveTenantId = tenantId
 
   // Default to admin for dev when no session exists
   type PortalRole = 'cca_owner' | 'cca_admin' | 'lead_teacher' | 'teacher' | 'aide' | 'parent' | 'guardian' | 'applicant_parent'

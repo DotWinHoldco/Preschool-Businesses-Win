@@ -3,6 +3,7 @@
 // Next.js 16: params is a Promise, must await.
 
 import Link from 'next/link'
+import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { createTenantAdminClient } from '@/lib/supabase/admin'
 import { Badge } from '@/components/ui/badge'
@@ -12,8 +13,6 @@ import { MedicalProfile } from '@/components/portal/students/medical-profile'
 import { AllergyBadge } from '@/components/portal/students/allergy-badge'
 import type { AllergySeverity } from '@/components/portal/students/allergy-badge'
 import type { AllergyData, MedicalProfileData } from '@/components/portal/students/medical-profile'
-
-const CCA_TENANT_ID = 'a0a0a0a0-cca0-4000-8000-000000000001'
 
 function calculateAge(dob: string): string {
   const birth = new Date(dob)
@@ -41,15 +40,19 @@ export default async function StudentDetailPage({
 }: {
   params: Promise<{ studentId: string }>
 }) {
+  const headerStore = await headers()
+  const tenantId = headerStore.get('x-tenant-id')
+  if (!tenantId) notFound()
+
   const { studentId } = await params
-  const supabase = await createTenantAdminClient()
+  const supabase = await createTenantAdminClient(tenantId)
 
   // Fetch student
   const { data: student } = await supabase
     .from('students')
     .select('*')
     .eq('id', studentId)
-    .eq('tenant_id', CCA_TENANT_ID)
+    .eq('tenant_id', tenantId)
     .single()
 
   if (!student) notFound()
@@ -59,7 +62,7 @@ export default async function StudentDetailPage({
     .from('student_medical_profiles')
     .select('*')
     .eq('student_id', studentId)
-    .eq('tenant_id', CCA_TENANT_ID)
+    .eq('tenant_id', tenantId)
     .single()
 
   // Fetch allergies
@@ -67,7 +70,7 @@ export default async function StudentDetailPage({
     .from('student_allergies')
     .select('*')
     .eq('student_id', studentId)
-    .eq('tenant_id', CCA_TENANT_ID)
+    .eq('tenant_id', tenantId)
     .order('severity', { ascending: false })
 
   // Fetch immunizations
@@ -75,7 +78,7 @@ export default async function StudentDetailPage({
     .from('student_immunizations')
     .select('*')
     .eq('student_id', studentId)
-    .eq('tenant_id', CCA_TENANT_ID)
+    .eq('tenant_id', tenantId)
     .order('administered_date', { ascending: false })
 
   // Fetch emergency contacts
@@ -83,7 +86,7 @@ export default async function StudentDetailPage({
     .from('student_emergency_contacts')
     .select('*')
     .eq('student_id', studentId)
-    .eq('tenant_id', CCA_TENANT_ID)
+    .eq('tenant_id', tenantId)
     .order('priority_order', { ascending: true })
 
   // Fetch classroom assignment
@@ -91,7 +94,7 @@ export default async function StudentDetailPage({
     .from('student_classroom_assignments')
     .select('*, classrooms(name)')
     .eq('student_id', studentId)
-    .eq('tenant_id', CCA_TENANT_ID)
+    .eq('tenant_id', tenantId)
     .is('assigned_to', null)
     .single()
 
@@ -100,7 +103,7 @@ export default async function StudentDetailPage({
     .from('student_family_links')
     .select('*, families(id, family_name)')
     .eq('student_id', studentId)
-    .eq('tenant_id', CCA_TENANT_ID)
+    .eq('tenant_id', tenantId)
 
   // Fetch entity notes
   const { data: notes } = await supabase
@@ -108,7 +111,7 @@ export default async function StudentDetailPage({
     .select('*')
     .eq('entity_type', 'student')
     .eq('entity_id', studentId)
-    .eq('tenant_id', CCA_TENANT_ID)
+    .eq('tenant_id', tenantId)
     .order('created_at', { ascending: false })
     .limit(20)
 
