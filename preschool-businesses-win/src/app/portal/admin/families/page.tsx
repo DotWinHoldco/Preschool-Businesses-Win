@@ -2,7 +2,7 @@
 // Family list with search. Server Component.
 
 import Link from 'next/link'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { createTenantAdminClient } from '@/lib/supabase/admin'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -22,7 +22,7 @@ export default async function FamiliesPage({
   searchParams: Promise<{ q?: string }>
 }) {
   const { q } = await searchParams
-  const supabase = createAdminClient()
+  const supabase = await createTenantAdminClient()
 
   let query = supabase
     .from('families')

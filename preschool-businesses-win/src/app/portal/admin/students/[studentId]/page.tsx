@@ -4,7 +4,7 @@
 
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { createTenantAdminClient } from '@/lib/supabase/admin'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -42,7 +42,7 @@ export default async function StudentDetailPage({
   params: Promise<{ studentId: string }>
 }) {
   const { studentId } = await params
-  const supabase = createAdminClient()
+  const supabase = await createTenantAdminClient()
 
   // Fetch student
   const { data: student } = await supabase

@@ -4,7 +4,7 @@
 
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { createTenantAdminClient } from '@/lib/supabase/admin'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -19,7 +19,7 @@ export default async function FamilyDetailPage({
   params: Promise<{ familyId: string }>
 }) {
   const { familyId } = await params
-  const supabase = createAdminClient()
+  const supabase = await createTenantAdminClient()
 
   // Fetch family
   const { data: family } = await supabase
