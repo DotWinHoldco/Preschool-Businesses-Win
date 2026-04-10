@@ -3,6 +3,8 @@
 // See CCA_BUILD_BRIEF.md §12 for billing architecture
 
 import { NextRequest, NextResponse } from 'next/server'
+import { verifyStripeWebhook } from '@/lib/stripe/webhooks'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function POST(request: NextRequest) {
   const body = await request.text()
@@ -12,64 +14,99 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Missing stripe-signature' }, { status: 400 })
   }
 
-  // TODO: Verify webhook signature with Stripe
-  // const event = stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET!)
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+  if (!webhookSecret) {
+    return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 })
+  }
+
+  let event
+  try {
+    event = verifyStripeWebhook(body, signature, webhookSecret)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Signature verification failed'
+    return NextResponse.json({ error: message }, { status: 400 })
+  }
+
+  const supabase = createAdminClient()
 
   try {
-    // Parse the event (skip verification for now until API key is set)
-    const event = JSON.parse(body)
-
     switch (event.type) {
       case 'payment_intent.succeeded': {
-        // Mark payment as succeeded
-        // Update invoice status to 'paid'
-        // Generate receipt
-        // Send notification to parent
-        console.log('[Stripe] Payment succeeded:', event.data.object.id)
+        const pi = event.data.object as { id: string; metadata?: Record<string, string> }
+        await supabase
+          .from('payments')
+          .update({ status: 'succeeded', paid_at: new Date().toISOString() })
+          .eq('stripe_payment_intent_id', pi.id)
+
+        // Mark linked invoice as paid
+        const { data: payment } = await supabase
+          .from('payments')
+          .select('invoice_id, amount_cents')
+          .eq('stripe_payment_intent_id', pi.id)
+          .single()
+
+        if (payment?.invoice_id) {
+          await supabase
+            .from('invoices')
+            .update({ status: 'paid', paid_at: new Date().toISOString() })
+            .eq('id', payment.invoice_id)
+        }
         break
       }
 
       case 'payment_intent.payment_failed': {
-        // Mark payment as failed
-        // Send failure notification to parent + admin
-        // Initiate retry sequence
-        console.log('[Stripe] Payment failed:', event.data.object.id)
+        const pi = event.data.object as { id: string }
+        await supabase
+          .from('payments')
+          .update({ status: 'failed' })
+          .eq('stripe_payment_intent_id', pi.id)
         break
       }
 
       case 'invoice.paid': {
-        // Update internal invoice status
-        // Generate PDF receipt
-        console.log('[Stripe] Invoice paid:', event.data.object.id)
+        const inv = event.data.object as { id: string }
+        await supabase
+          .from('invoices')
+          .update({ status: 'paid', paid_at: new Date().toISOString() })
+          .eq('stripe_invoice_id', inv.id)
         break
       }
 
       case 'invoice.payment_failed': {
-        // Flag family account as past_due
-        // Start escalation sequence
-        console.log('[Stripe] Invoice payment failed:', event.data.object.id)
+        const inv = event.data.object as { id: string }
+        await supabase
+          .from('invoices')
+          .update({ status: 'overdue' })
+          .eq('stripe_invoice_id', inv.id)
         break
       }
 
       case 'customer.subscription.updated': {
-        // Sync subscription status
-        console.log('[Stripe] Subscription updated:', event.data.object.id)
+        const sub = event.data.object as { id: string; status: string }
+        await supabase
+          .from('family_billing_enrollments')
+          .update({ status: sub.status === 'active' ? 'active' : 'paused' })
+          .eq('stripe_subscription_id', sub.id)
         break
       }
 
       case 'customer.subscription.deleted': {
-        // Mark billing enrollment as cancelled
-        console.log('[Stripe] Subscription deleted:', event.data.object.id)
+        const sub = event.data.object as { id: string }
+        await supabase
+          .from('family_billing_enrollments')
+          .update({ status: 'cancelled' })
+          .eq('stripe_subscription_id', sub.id)
         break
       }
 
       default:
-        console.log('[Stripe] Unhandled event type:', event.type)
+        // Unhandled event types are OK — just acknowledge receipt
+        break
     }
 
     return NextResponse.json({ received: true })
   } catch (err) {
-    console.error('[Stripe Webhook Error]', err)
-    return NextResponse.json({ error: 'Webhook handler failed' }, { status: 500 })
+    const message = err instanceof Error ? err.message : 'Webhook handler failed'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

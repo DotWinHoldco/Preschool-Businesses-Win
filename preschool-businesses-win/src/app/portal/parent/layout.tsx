@@ -3,6 +3,7 @@
 
 import { getSession, getUserMembership } from '@/lib/auth/session'
 import { headers } from 'next/headers'
+import { notFound } from 'next/navigation'
 import { redirect } from 'next/navigation'
 
 export default async function ParentLayout({
@@ -18,9 +19,8 @@ export default async function ParentLayout({
   }
 
   const headerStore = await headers()
-  const tenantId =
-    headerStore.get('x-tenant-id') ??
-    'a0a0a0a0-cca0-4000-8000-000000000001'
+  const tenantId = headerStore.get('x-tenant-id')
+  if (!tenantId) notFound()
 
   const membership = await getUserMembership(session.user.id, tenantId)
 

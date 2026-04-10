@@ -2,20 +2,24 @@
 // Classroom list with capacity and ratio indicators. Server Component.
 
 import Link from 'next/link'
+import { headers } from 'next/headers'
+import { notFound } from 'next/navigation'
 import { createTenantAdminClient } from '@/lib/supabase/admin'
 import { Button } from '@/components/ui/button'
 import { ClassroomCard, type ClassroomCardData } from '@/components/portal/classrooms/classroom-card'
 
-const CCA_TENANT_ID = 'a0a0a0a0-cca0-4000-8000-000000000001'
-
 export default async function ClassroomsPage() {
-  const supabase = await createTenantAdminClient()
+  const headerStore = await headers()
+  const tenantId = headerStore.get('x-tenant-id')
+  if (!tenantId) notFound()
+
+  const supabase = await createTenantAdminClient(tenantId)
 
   // Fetch classrooms
   const { data: classrooms } = await supabase
     .from('classrooms')
     .select('*')
-    .eq('tenant_id', CCA_TENANT_ID)
+    .eq('tenant_id', tenantId)
     .order('name', { ascending: true })
 
   if (!classrooms) {
@@ -34,7 +38,7 @@ export default async function ClassroomsPage() {
     ? await supabase
         .from('student_classroom_assignments')
         .select('classroom_id')
-        .eq('tenant_id', CCA_TENANT_ID)
+        .eq('tenant_id', tenantId)
         .in('classroom_id', classroomIds)
         .is('assigned_to', null)
     : { data: [] }
@@ -49,7 +53,7 @@ export default async function ClassroomsPage() {
     ? await supabase
         .from('classroom_staff_assignments')
         .select('classroom_id, is_primary, user_id')
-        .eq('tenant_id', CCA_TENANT_ID)
+        .eq('tenant_id', tenantId)
         .in('classroom_id', classroomIds)
         .is('assigned_to', null)
     : { data: [] }

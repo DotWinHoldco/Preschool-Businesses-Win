@@ -2,18 +2,18 @@
 // Stripe webhook verification + event handling helpers
 
 import type Stripe from 'stripe'
+import { getStripeClient } from './client'
 
 export function verifyStripeWebhook(
   body: string,
   signature: string,
   secret: string
-): Stripe.Event | null {
-  // TODO: Use stripe.webhooks.constructEvent when API key is configured
-  try {
-    return JSON.parse(body) as Stripe.Event
-  } catch {
-    return null
+): Stripe.Event {
+  const stripe = getStripeClient()
+  if (!stripe) {
+    throw new Error('Stripe is not configured — cannot verify webhook')
   }
+  return stripe.webhooks.constructEvent(body, signature, secret)
 }
 
 export type StripeEventHandler = {

@@ -123,9 +123,10 @@ export async function requireMinimumRole(minimumRole: Role): Promise<{
   const session = await requireAuth()
 
   const headerStore = await headers()
-  const tenantId =
-    headerStore.get('x-tenant-id') ??
-    'a0a0a0a0-cca0-4000-8000-000000000001' // CCA fallback for dev
+  const tenantId = headerStore.get('x-tenant-id')
+  if (!tenantId) {
+    throw new Error('Missing tenant context (x-tenant-id header not set)')
+  }
 
   const membership = await getUserMembership(session.user.id, tenantId)
 
@@ -135,6 +136,38 @@ export async function requireMinimumRole(minimumRole: Role): Promise<{
 
   if (!checkRole(membership.role, minimumRole)) {
     redirect('/portal')
+  }
+
+  return { session, membership }
+}
+
+/**
+ * Assert that the current user holds at least `minimumRole` in the current tenant.
+ * For use in Server Actions — throws instead of redirecting.
+ * Returns the session and membership on success.
+ */
+export async function assertRole(minimumRole: Role): Promise<{
+  session: Session
+  membership: UserMembership
+}> {
+  const session = await getSession()
+  if (!session) {
+    throw new Error('Authentication required')
+  }
+
+  const headerStore = await headers()
+  const tenantId = headerStore.get('x-tenant-id')
+  if (!tenantId) {
+    throw new Error('Missing tenant context')
+  }
+
+  const membership = await getUserMembership(session.user.id, tenantId)
+  if (!membership) {
+    throw new Error('No membership in this tenant')
+  }
+
+  if (!checkRole(membership.role, minimumRole)) {
+    throw new Error(`Insufficient permissions: requires ${minimumRole}, has ${membership.role}`)
   }
 
   return { session, membership }

@@ -3,6 +3,7 @@
 // Next.js 16: params is a Promise, must await.
 
 import Link from 'next/link'
+import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { createTenantAdminClient } from '@/lib/supabase/admin'
 import { Badge } from '@/components/ui/badge'
@@ -11,22 +12,24 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { FamilyTreeView } from '@/components/portal/families/family-tree-view'
 import { AuthorizedPickupList } from '@/components/portal/families/authorized-pickup-list'
 
-const CCA_TENANT_ID = 'a0a0a0a0-cca0-4000-8000-000000000001'
-
 export default async function FamilyDetailPage({
   params,
 }: {
   params: Promise<{ familyId: string }>
 }) {
+  const headerStore = await headers()
+  const tenantId = headerStore.get('x-tenant-id')
+  if (!tenantId) notFound()
+
   const { familyId } = await params
-  const supabase = await createTenantAdminClient()
+  const supabase = await createTenantAdminClient(tenantId)
 
   // Fetch family
   const { data: family } = await supabase
     .from('families')
     .select('*')
     .eq('id', familyId)
-    .eq('tenant_id', CCA_TENANT_ID)
+    .eq('tenant_id', tenantId)
     .single()
 
   if (!family) notFound()
@@ -36,7 +39,7 @@ export default async function FamilyDetailPage({
     .from('family_members')
     .select('*')
     .eq('family_id', familyId)
-    .eq('tenant_id', CCA_TENANT_ID)
+    .eq('tenant_id', tenantId)
     .order('is_primary_contact', { ascending: false })
 
   // Fetch linked students
@@ -44,7 +47,7 @@ export default async function FamilyDetailPage({
     .from('student_family_links')
     .select('*, students(id, first_name, last_name, date_of_birth, enrollment_status)')
     .eq('family_id', familyId)
-    .eq('tenant_id', CCA_TENANT_ID)
+    .eq('tenant_id', tenantId)
 
   // Fetch authorized pickups for all linked students
   const studentIds = studentLinks?.map(
@@ -56,7 +59,7 @@ export default async function FamilyDetailPage({
         .from('authorized_pickups')
         .select('*')
         .eq('family_id', familyId)
-        .eq('tenant_id', CCA_TENANT_ID)
+        .eq('tenant_id', tenantId)
     : { data: [] }
 
   // Fetch entity notes
@@ -65,7 +68,7 @@ export default async function FamilyDetailPage({
     .select('*')
     .eq('entity_type', 'family')
     .eq('entity_id', familyId)
-    .eq('tenant_id', CCA_TENANT_ID)
+    .eq('tenant_id', tenantId)
     .order('created_at', { ascending: false })
     .limit(20)
 

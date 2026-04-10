@@ -3,11 +3,9 @@
 // @anchor: cca.messaging.send
 // Send a message in an existing conversation.
 
-import { headers } from 'next/headers'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { SendMessageSchema } from '@/lib/schemas/messaging'
-
-const CCA_TENANT_ID = 'a0a0a0a0-cca0-4000-8000-000000000001'
+import { getTenantId } from '@/lib/actions/get-tenant-id'
 
 export type SendMessageState = {
   ok: boolean
@@ -30,8 +28,7 @@ export async function sendMessage(
       return { ok: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' }
     }
 
-    const headerStore = await headers()
-    const tenantId = headerStore.get('x-tenant-id') ?? CCA_TENANT_ID
+    const tenantId = await getTenantId()
     const supabase = await createTenantServerClient()
 
     // Verify user is a member of the conversation

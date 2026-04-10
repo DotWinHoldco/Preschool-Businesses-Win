@@ -2,20 +2,8 @@
 // Helper functions for check-in/check-out server actions
 // See CCA_BUILD_BRIEF.md §7
 
-import { headers } from 'next/headers'
 import { createAdminClient } from '@/lib/supabase/admin'
-
-// CCA tenant ID fallback
-const CCA_TENANT_ID = 'a0a0a0a0-cca0-4000-8000-000000000001'
-
-/**
- * Get the current tenant ID from request headers.
- * Falls back to CCA tenant ID during development.
- */
-export async function getTenantId(): Promise<string> {
-  const headerStore = await headers()
-  return headerStore.get('x-tenant-id') ?? CCA_TENANT_ID
-}
+export { getTenantId } from '@/lib/actions/get-tenant-id'
 
 /**
  * Check if a family has custody of the student today.

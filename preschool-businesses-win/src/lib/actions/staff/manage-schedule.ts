@@ -3,11 +3,9 @@
 // @anchor: cca.staff.schedule
 // Set weekly schedule for staff members.
 
-import { headers } from 'next/headers'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { ManageScheduleSchema } from '@/lib/schemas/staff'
-
-const CCA_TENANT_ID = 'a0a0a0a0-cca0-4000-8000-000000000001'
+import { getTenantId } from '@/lib/actions/get-tenant-id'
 
 export type ScheduleState = {
   ok: boolean
@@ -34,8 +32,7 @@ export async function setWeeklySchedule(
       return { ok: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' }
     }
 
-    const headerStore = await headers()
-    const tenantId = headerStore.get('x-tenant-id') ?? CCA_TENANT_ID
+    const tenantId = await getTenantId()
     const supabase = await createTenantServerClient()
 
     // Deactivate existing schedule entries for this user from the effective date

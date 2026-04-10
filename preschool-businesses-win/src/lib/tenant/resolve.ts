@@ -82,7 +82,7 @@ export async function resolveTenant(hostname: string): Promise<ResolvedTenant | 
   const supabase = createAdminClient()
 
   const { data, error } = await supabase
-    .from('tenant_custom_domains')
+    .from('tenant_domains')
     .select('tenant_id, tenants!inner(id, slug)')
     .eq('domain', lookupDomain)
     .eq('verified', true)

@@ -2,6 +2,8 @@
 // Family list with search. Server Component.
 
 import Link from 'next/link'
+import { headers } from 'next/headers'
+import { notFound } from 'next/navigation'
 import { createTenantAdminClient } from '@/lib/supabase/admin'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -14,20 +16,22 @@ import {
   TableCell,
 } from '@/components/ui/table'
 
-const CCA_TENANT_ID = 'a0a0a0a0-cca0-4000-8000-000000000001'
-
 export default async function FamiliesPage({
   searchParams,
 }: {
   searchParams: Promise<{ q?: string }>
 }) {
+  const headerStore = await headers()
+  const tenantId = headerStore.get('x-tenant-id')
+  if (!tenantId) notFound()
+
   const { q } = await searchParams
-  const supabase = await createTenantAdminClient()
+  const supabase = await createTenantAdminClient(tenantId)
 
   let query = supabase
     .from('families')
     .select('id, family_name, billing_email, billing_phone, mailing_city, mailing_state, created_at')
-    .eq('tenant_id', CCA_TENANT_ID)
+    .eq('tenant_id', tenantId)
     .order('family_name', { ascending: true })
     .limit(100)
 
@@ -44,7 +48,7 @@ export default async function FamiliesPage({
     ? await supabase
         .from('family_members')
         .select('family_id')
-        .eq('tenant_id', CCA_TENANT_ID)
+        .eq('tenant_id', tenantId)
         .in('family_id', familyIds)
     : { data: [] }
 
@@ -52,7 +56,7 @@ export default async function FamiliesPage({
     ? await supabase
         .from('student_family_links')
         .select('family_id')
-        .eq('tenant_id', CCA_TENANT_ID)
+        .eq('tenant_id', tenantId)
         .in('family_id', familyIds)
     : { data: [] }
 

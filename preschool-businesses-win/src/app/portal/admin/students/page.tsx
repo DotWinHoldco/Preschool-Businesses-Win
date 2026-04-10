@@ -3,6 +3,8 @@
 // Server Component — data fetched server-side.
 
 import Link from 'next/link'
+import { headers } from 'next/headers'
+import { notFound } from 'next/navigation'
 import { createTenantAdminClient } from '@/lib/supabase/admin'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -16,8 +18,6 @@ import {
 } from '@/components/ui/table'
 import { AllergyBadge } from '@/components/portal/students/allergy-badge'
 import type { AllergySeverity } from '@/components/portal/students/allergy-badge'
-
-const CCA_TENANT_ID = 'a0a0a0a0-cca0-4000-8000-000000000001'
 
 const statusVariant: Record<string, 'success' | 'warning' | 'default' | 'danger' | 'outline'> = {
   active: 'success',
@@ -45,13 +45,17 @@ export default async function StudentsPage({
 }: {
   searchParams: Promise<{ status?: string; q?: string }>
 }) {
+  const headerStore = await headers()
+  const tenantId = headerStore.get('x-tenant-id')
+  if (!tenantId) notFound()
+
   const { status, q } = await searchParams
-  const supabase = await createTenantAdminClient(CCA_TENANT_ID)
+  const supabase = await createTenantAdminClient(tenantId)
 
   let query = supabase
     .from('students')
     .select('id, first_name, last_name, preferred_name, date_of_birth, enrollment_status, photo_path, created_at')
-    .eq('tenant_id', CCA_TENANT_ID)
+    .eq('tenant_id', tenantId)
     .order('last_name', { ascending: true })
     .limit(100)
 
@@ -71,7 +75,7 @@ export default async function StudentsPage({
     ? await supabase
         .from('student_allergies')
         .select('student_id, allergen, severity')
-        .eq('tenant_id', CCA_TENANT_ID)
+        .eq('tenant_id', tenantId)
         .in('student_id', studentIds)
     : { data: [] }
 
@@ -88,7 +92,7 @@ export default async function StudentsPage({
     ? await supabase
         .from('student_classroom_assignments')
         .select('student_id, classroom_id, classrooms(name)')
-        .eq('tenant_id', CCA_TENANT_ID)
+        .eq('tenant_id', tenantId)
         .in('student_id', studentIds)
         .is('assigned_to', null)
     : { data: [] }

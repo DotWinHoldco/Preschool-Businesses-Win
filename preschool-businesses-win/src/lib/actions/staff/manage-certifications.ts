@@ -3,11 +3,9 @@
 // @anchor: cca.staff.certifications
 // Add/update staff certifications with expiry tracking.
 
-import { headers } from 'next/headers'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { ManageCertificationSchema } from '@/lib/schemas/staff'
-
-const CCA_TENANT_ID = 'a0a0a0a0-cca0-4000-8000-000000000001'
+import { getTenantId } from '@/lib/actions/get-tenant-id'
 
 export type CertState = {
   ok: boolean
@@ -27,8 +25,7 @@ export async function addCertification(
       return { ok: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' }
     }
 
-    const headerStore = await headers()
-    const tenantId = headerStore.get('x-tenant-id') ?? CCA_TENANT_ID
+    const tenantId = await getTenantId()
     const supabase = await createTenantServerClient()
 
     const { data: cert, error } = await supabase
@@ -68,8 +65,6 @@ export async function updateCertification(
       return { ok: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' }
     }
 
-    const headerStore = await headers()
-    void headerStore
     const supabase = await createTenantServerClient()
 
     const { error } = await supabase

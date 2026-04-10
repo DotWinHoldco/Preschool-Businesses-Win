@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { resolveTenant } from '@/lib/tenant/resolve'
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const hostname = request.headers.get('host') || ''
 
   // Platform domain — no tenant injection
@@ -8,24 +9,19 @@ export function proxy(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Determine tenant from hostname
-  const isPortal = hostname.startsWith('portal.')
-  const surface = isPortal ? 'portal' : 'marketing'
+  // Resolve tenant from hostname (DB lookup with 60s cache)
+  const resolved = await resolveTenant(hostname)
 
-  // Extract slug from subdomain pattern or use full domain
-  let tenantSlug = ''
-  const subdomainMatch = hostname.match(
-    /^(?:portal\.)?([^.]+)\.preschool\.businesses\.win$/
-  )
-  if (subdomainMatch) {
-    tenantSlug = subdomainMatch[1]
+  if (!resolved) {
+    // Unknown domain — rewrite to 404
+    return NextResponse.rewrite(new URL('/not-found', request.url))
   }
 
   // Set headers for downstream consumption
   const headers = new Headers(request.headers)
-  headers.set('x-tenant-slug', tenantSlug || hostname.replace('portal.', ''))
-  headers.set('x-tenant-surface', surface)
-  // Tenant ID resolution happens in server components via resolve.ts
+  headers.set('x-tenant-id', resolved.tenantId)
+  headers.set('x-tenant-slug', resolved.tenantSlug)
+  headers.set('x-tenant-surface', resolved.surface)
 
   return NextResponse.next({ request: { headers } })
 }

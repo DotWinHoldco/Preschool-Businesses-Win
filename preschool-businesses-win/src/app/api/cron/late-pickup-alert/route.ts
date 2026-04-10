@@ -2,12 +2,11 @@
 // Cron: Alert for late pickups (15 min after closing)
 
 import { NextResponse } from 'next/server'
+import { verifyCronAuth } from '@/lib/cron-auth'
 
 export async function GET(request: Request) {
-  const authHeader = request.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const authError = verifyCronAuth(request)
+  if (authError) return authError
 
   // TODO: Check for students still checked in after closing time
   // Send SMS + push to parent and admin
