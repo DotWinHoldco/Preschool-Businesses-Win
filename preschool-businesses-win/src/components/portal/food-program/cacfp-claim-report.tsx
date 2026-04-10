@@ -1,3 +1,5 @@
+'use client'
+
 // @anchor: cca.cacfp.claim-report
 import { cn } from '@/lib/cn'
 import { FileText, Download, CheckCircle, Clock, XCircle } from 'lucide-react'

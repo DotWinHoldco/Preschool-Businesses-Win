@@ -1,3 +1,5 @@
+'use client'
+
 // @anchor: cca.enrollment.application-queue
 import { cn } from '@/lib/cn'
 import { Clock, CheckCircle, XCircle, AlertCircle, ChevronRight, Star } from 'lucide-react'

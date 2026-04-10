@@ -1,3 +1,5 @@
+'use client'
+
 // @anchor: cca.curriculum.activity-card
 import { cn } from '@/lib/cn'
 import { Clock, BookOpen, CheckCircle } from 'lucide-react'

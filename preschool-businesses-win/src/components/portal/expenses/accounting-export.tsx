@@ -1,3 +1,5 @@
+'use client'
+
 // @anchor: cca.accounting.export-dialog
 import { cn } from '@/lib/cn'
 import { Download, FileSpreadsheet } from 'lucide-react'
