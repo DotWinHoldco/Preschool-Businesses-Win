@@ -5,7 +5,8 @@
 
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { ManageScheduleSchema } from '@/lib/schemas/staff'
-import { getTenantId } from '@/lib/actions/get-tenant-id'
+import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { writeAudit } from '@/lib/audit'
 import { assertRole } from '@/lib/auth/session'
 
 export type ScheduleState = {
@@ -64,6 +65,16 @@ export async function setWeeklySchedule(
     if (error) {
       return { ok: false, error: error.message }
     }
+
+    const actorId = await getActorId()
+    await writeAudit(supabase, {
+      tenantId,
+      actorId,
+      action: 'staff.set_schedule',
+      entityType: 'staff_schedule',
+      entityId: parsed.data.user_id,
+      after: { user_id: parsed.data.user_id, effective_from: parsed.data.effective_from, entries_count: rows.length },
+    })
 
     return { ok: true, count: rows.length }
   } catch (err) {

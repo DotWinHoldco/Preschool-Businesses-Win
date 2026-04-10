@@ -8,6 +8,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
 import { CreateSurveySchema, type CreateSurveyInput } from '@/lib/schemas/survey'
 import { assertRole } from '@/lib/auth/session'
+import { writeAudit } from '@/lib/audit'
 
 export async function createSurvey(input: CreateSurveyInput) {
   await assertRole('admin')
@@ -62,6 +63,15 @@ export async function createSurvey(input: CreateSurveyInput) {
     return { ok: false as const, error: { _form: [questionsError.message] } }
   }
 
+  await writeAudit(supabase, {
+    tenantId: tenantId,
+    actorId: actorId,
+    action: 'survey.create',
+    entityType: 'survey',
+    entityId: survey.id as string,
+    after: { title: parsed.data.title, target_audience: parsed.data.target_audience, question_count: parsed.data.questions.length },
+  })
+
   return { ok: true as const, surveyId: survey.id as string }
 }
 
@@ -69,6 +79,7 @@ export async function activateSurvey(surveyId: string) {
   await assertRole('admin')
 
   const tenantId = await getTenantId()
+  const actorId = await getActorId()
   const supabase = createAdminClient()
 
   const { error } = await supabase
@@ -81,6 +92,16 @@ export async function activateSurvey(surveyId: string) {
     return { ok: false as const, error: { _form: [error.message] } }
   }
 
+  await writeAudit(supabase, {
+    tenantId: tenantId,
+    actorId: actorId,
+    action: 'survey.activate',
+    entityType: 'survey',
+    entityId: surveyId,
+    before: { status: 'draft' },
+    after: { status: 'active' },
+  })
+
   return { ok: true as const }
 }
 
@@ -88,6 +109,7 @@ export async function closeSurvey(surveyId: string) {
   await assertRole('admin')
 
   const tenantId = await getTenantId()
+  const actorId = await getActorId()
   const supabase = createAdminClient()
 
   const { error } = await supabase
@@ -99,6 +121,16 @@ export async function closeSurvey(surveyId: string) {
   if (error) {
     return { ok: false as const, error: { _form: [error.message] } }
   }
+
+  await writeAudit(supabase, {
+    tenantId: tenantId,
+    actorId: actorId,
+    action: 'survey.close',
+    entityType: 'survey',
+    entityId: surveyId,
+    before: { status: 'active' },
+    after: { status: 'closed' },
+  })
 
   return { ok: true as const }
 }

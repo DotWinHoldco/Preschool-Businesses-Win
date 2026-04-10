@@ -5,7 +5,8 @@
 
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { ProcessPaymentSchema } from '@/lib/schemas/billing'
-import { getTenantId } from '@/lib/actions/get-tenant-id'
+import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { writeAudit } from '@/lib/audit'
 import { assertRole } from '@/lib/auth/session'
 
 export type ProcessPaymentState = {
@@ -86,6 +87,16 @@ export async function processPayment(
         })
         .eq('id', invoice_id)
     }
+
+    const actorId = await getActorId()
+    await writeAudit(supabase, {
+      tenantId,
+      actorId,
+      action: 'billing.process_payment',
+      entityType: 'payment',
+      entityId: payment.id,
+      after: { invoice_id, amount_cents, method, family_id: invoice.family_id },
+    })
 
     return { ok: true, payment_id: payment.id }
   } catch (err) {

@@ -6,7 +6,8 @@
 import { assertRole } from '@/lib/auth/session'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { ClockInSchema, ClockOutSchema, StartBreakSchema, EndBreakSchema } from '@/lib/schemas/staff'
-import { getTenantId } from '@/lib/actions/get-tenant-id'
+import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { writeAudit } from '@/lib/audit'
 
 export type ClockState = {
   ok: boolean
@@ -59,6 +60,16 @@ export async function clockIn(
     if (error || !entry) {
       return { ok: false, error: error?.message ?? 'Failed to clock in' }
     }
+
+    const actorId = await getActorId()
+    await writeAudit(supabase, {
+      tenantId,
+      actorId,
+      action: 'staff.clock_in',
+      entityType: 'time_entry',
+      entityId: entry.id,
+      after: { user_id: parsed.data.user_id, method: parsed.data.method },
+    })
 
     return { ok: true, time_entry_id: entry.id }
   } catch (err) {
@@ -119,6 +130,17 @@ export async function clockOut(
       return { ok: false, error: error.message }
     }
 
+    const tenantId = await getTenantId()
+    const actorId = await getActorId()
+    await writeAudit(supabase, {
+      tenantId,
+      actorId,
+      action: 'staff.clock_out',
+      entityType: 'time_entry',
+      entityId: parsed.data.time_entry_id,
+      after: { total_hours: Math.round(totalHours * 100) / 100, overtime_hours: Math.round(overtimeHours * 100) / 100, status: 'completed' },
+    })
+
     return { ok: true, time_entry_id: parsed.data.time_entry_id }
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : 'Unexpected error' }
@@ -150,6 +172,17 @@ export async function startBreak(
       return { ok: false, error: error.message }
     }
 
+    const tenantId = await getTenantId()
+    const actorId = await getActorId()
+    await writeAudit(supabase, {
+      tenantId,
+      actorId,
+      action: 'staff.start_break',
+      entityType: 'time_entry',
+      entityId: parsed.data.time_entry_id,
+      after: { break_start_at: new Date().toISOString() },
+    })
+
     return { ok: true, time_entry_id: parsed.data.time_entry_id }
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : 'Unexpected error' }
@@ -180,6 +213,17 @@ export async function endBreak(
     if (error) {
       return { ok: false, error: error.message }
     }
+
+    const tenantId = await getTenantId()
+    const actorId = await getActorId()
+    await writeAudit(supabase, {
+      tenantId,
+      actorId,
+      action: 'staff.end_break',
+      entityType: 'time_entry',
+      entityId: parsed.data.time_entry_id,
+      after: { break_end_at: new Date().toISOString() },
+    })
 
     return { ok: true, time_entry_id: parsed.data.time_entry_id }
   } catch (err) {

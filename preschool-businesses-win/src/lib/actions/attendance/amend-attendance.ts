@@ -7,7 +7,8 @@
 import { assertRole } from '@/lib/auth/session'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { AmendAttendanceSchema } from '@/lib/schemas/attendance'
-import { getTenantId } from '@/lib/actions/get-tenant-id'
+import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { writeAudit } from '@/lib/audit'
 
 export type AmendAttendanceState = {
   ok: boolean
@@ -82,6 +83,17 @@ export async function amendAttendance(
         .update(after)
         .eq('id', attendance_record_id)
     }
+
+    const actorId = await getActorId()
+    await writeAudit(supabase, {
+      tenantId,
+      actorId,
+      action: 'attendance.amend',
+      entityType: 'attendance_amendment',
+      entityId: amendment.id,
+      before: { status: record.status, hours_present: record.hours_present, notes: record.notes },
+      after,
+    })
 
     return { ok: true, amendment_id: amendment.id }
   } catch (err) {

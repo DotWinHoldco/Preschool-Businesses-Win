@@ -7,6 +7,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
 import { assertRole } from '@/lib/auth/session'
+import { writeAudit } from '@/lib/audit'
 import {
   CreateCalendarEventSchema,
   UpdateCalendarEventSchema,
@@ -56,6 +57,15 @@ export async function createCalendarEvent(input: CreateCalendarEventInput) {
     return { ok: false as const, error: { _form: [error.message] } }
   }
 
+  await writeAudit(supabase, {
+    tenantId: tenantId,
+    actorId: actorId,
+    action: 'calendar.create_event',
+    entityType: 'calendar_event',
+    entityId: data.id as string,
+    after: { title: parsed.data.title, event_type: parsed.data.event_type },
+  })
+
   return { ok: true as const, eventId: data.id as string }
 }
 
@@ -68,6 +78,7 @@ export async function updateCalendarEvent(input: UpdateCalendarEventInput) {
   }
 
   const tenantId = await getTenantId()
+  const actorId = await getActorId()
   const supabase = createAdminClient()
 
   const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() }
@@ -96,6 +107,15 @@ export async function updateCalendarEvent(input: UpdateCalendarEventInput) {
     return { ok: false as const, error: { _form: [error.message] } }
   }
 
+  await writeAudit(supabase, {
+    tenantId: tenantId,
+    actorId: actorId,
+    action: 'calendar.update_event',
+    entityType: 'calendar_event',
+    entityId: d.event_id,
+    after: updateData,
+  })
+
   return { ok: true as const }
 }
 
@@ -108,6 +128,7 @@ export async function createEventSignUp(input: CreateEventSignUpInput) {
   }
 
   const tenantId = await getTenantId()
+  const actorId = await getActorId()
   const supabase = createAdminClient()
 
   const { data, error } = await supabase
@@ -125,6 +146,15 @@ export async function createEventSignUp(input: CreateEventSignUpInput) {
   if (error) {
     return { ok: false as const, error: { _form: [error.message] } }
   }
+
+  await writeAudit(supabase, {
+    tenantId: tenantId,
+    actorId: actorId,
+    action: 'calendar.create_event',
+    entityType: 'calendar_event',
+    entityId: data.id as string,
+    after: { title: parsed.data.title, event_id: parsed.data.event_id },
+  })
 
   return { ok: true as const, signUpId: data.id as string }
 }

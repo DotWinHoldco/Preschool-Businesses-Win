@@ -7,6 +7,8 @@ import { assertRole } from '@/lib/auth/session'
 import { headers } from 'next/headers'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { PublishReportSchema } from '@/lib/schemas/daily-report'
+import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { writeAudit } from '@/lib/audit'
 
 export type PublishReportState = {
   ok: boolean
@@ -59,6 +61,17 @@ export async function publishReport(
     if (updateErr) {
       return { ok: false, error: updateErr.message }
     }
+
+    const tenantId = await getTenantId()
+    const actorId = await getActorId()
+    await writeAudit(supabase, {
+      tenantId,
+      actorId,
+      action: 'daily_report.publish',
+      entityType: 'daily_report',
+      entityId: report_id,
+      after: { status: 'published', published_at: new Date().toISOString(), student_id: report.student_id },
+    })
 
     // TODO: Trigger push notification to parents
     // await sendNotification({

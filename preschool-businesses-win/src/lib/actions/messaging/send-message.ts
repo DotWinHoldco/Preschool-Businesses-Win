@@ -6,7 +6,8 @@
 import { assertRole } from '@/lib/auth/session'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { SendMessageSchema } from '@/lib/schemas/messaging'
-import { getTenantId } from '@/lib/actions/get-tenant-id'
+import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { writeAudit } from '@/lib/audit'
 
 export type SendMessageState = {
   ok: boolean
@@ -69,6 +70,16 @@ export async function sendMessage(
     if (error || !message) {
       return { ok: false, error: error?.message ?? 'Failed to send message' }
     }
+
+    const actorId = await getActorId()
+    await writeAudit(supabase, {
+      tenantId,
+      actorId,
+      action: 'messaging.send',
+      entityType: 'message',
+      entityId: message.id,
+      after: { conversation_id: parsed.data.conversation_id, message_type: parsed.data.message_type, urgent: parsed.data.urgent },
+    })
 
     // TODO: Trigger push notification for urgent messages
     // if (parsed.data.urgent) {

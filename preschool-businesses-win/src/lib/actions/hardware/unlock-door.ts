@@ -9,6 +9,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
 import { createDoorController } from '@/lib/hardware/door-control'
 import { assertRole } from '@/lib/auth/session'
+import { writeAudit } from '@/lib/audit'
 
 const UnlockDoorSchema = z.object({
   door_id: z.string().uuid(),
@@ -72,6 +73,15 @@ export async function unlockDoor(input: z.infer<typeof UnlockDoorSchema>) {
     return { ok: false as const, error: { _form: [result.error ?? 'Unlock failed'] } }
   }
 
+  await writeAudit(supabase, {
+    tenantId: tenantId,
+    actorId: actorId,
+    action: 'hardware.unlock_door',
+    entityType: 'door_lock',
+    entityId: parsed.data.door_id,
+    after: { reason: parsed.data.reason },
+  })
+
   return { ok: true as const }
 }
 
@@ -103,6 +113,14 @@ export async function lockDoor(input: z.infer<typeof LockDoorSchema>) {
   if (!result.success) {
     return { ok: false as const, error: { _form: [result.error ?? 'Lock failed'] } }
   }
+
+  await writeAudit(supabase, {
+    tenantId: tenantId,
+    actorId: actorId,
+    action: 'hardware.lock_door',
+    entityType: 'door_lock',
+    entityId: parsed.data.door_id,
+  })
 
   return { ok: true as const }
 }

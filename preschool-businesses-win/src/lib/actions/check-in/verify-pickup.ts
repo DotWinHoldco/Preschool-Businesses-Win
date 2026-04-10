@@ -8,6 +8,8 @@ import { assertRole } from '@/lib/auth/session'
 import { VerifyPickupSchema, type VerifyPickupInput } from '@/lib/schemas/check-in'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getCustodyScheduleForToday } from './helpers'
+import { getActorId } from '@/lib/actions/get-tenant-id'
+import { writeAudit } from '@/lib/audit'
 
 export interface VerifyPickupResult {
   authorized: boolean
@@ -129,6 +131,16 @@ export async function verifyPickupPerson(
   }
 
   // ── All checks passed ──────────────────────────────────────────────────
+  const actorId = await getActorId()
+  await writeAudit(supabase, {
+    tenantId,
+    actorId,
+    action: 'checkin.verify_pickup',
+    entityType: 'check_out',
+    entityId: data.student_id,
+    after: { student_id: data.student_id, pickup_person_name: matchingPickup.person_name, family_id: familyId, authorized: true },
+  })
+
   return {
     authorized: true,
     pickup_person: {

@@ -7,6 +7,7 @@
 import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { writeAudit } from '@/lib/audit'
 import { sendNotification } from '@/lib/notifications/send'
 import { assertRole } from '@/lib/auth/session'
 
@@ -137,6 +138,15 @@ export async function initiateEmergency(input: InitiateEmergencyInput) {
     .eq('emergency_event_id', eventId)
     .in('action_type', ['broadcast_parent', 'broadcast_staff'])
     .eq('tenant_id', tenantId)
+
+  await writeAudit(supabase, {
+    tenantId,
+    actorId,
+    action: 'emergency.initiate',
+    entityType: 'emergency_event',
+    entityId: eventId,
+    after: { event_type: parsed.data.event_type, severity: parsed.data.severity, title: parsed.data.title, status: 'active' },
+  })
 
   return { ok: true as const, eventId }
 }

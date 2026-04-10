@@ -5,7 +5,8 @@
 
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { ManageCertificationSchema } from '@/lib/schemas/staff'
-import { getTenantId } from '@/lib/actions/get-tenant-id'
+import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { writeAudit } from '@/lib/audit'
 import { assertRole } from '@/lib/auth/session'
 
 export type CertState = {
@@ -44,6 +45,16 @@ export async function addCertification(
       return { ok: false, error: error?.message ?? 'Failed to add certification' }
     }
 
+    const actorId = await getActorId()
+    await writeAudit(supabase, {
+      tenantId,
+      actorId,
+      action: 'staff.add_certification',
+      entityType: 'certification',
+      entityId: cert.id,
+      after: { ...parsed.data },
+    })
+
     return { ok: true, cert_id: cert.id }
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : 'Unexpected error' }
@@ -80,6 +91,17 @@ export async function updateCertification(
     if (error) {
       return { ok: false, error: error.message }
     }
+
+    const tenantId = await getTenantId()
+    const actorId = await getActorId()
+    await writeAudit(supabase, {
+      tenantId,
+      actorId,
+      action: 'staff.update_certification',
+      entityType: 'certification',
+      entityId: certId,
+      after: { ...parsed.data },
+    })
 
     return { ok: true, cert_id: certId }
   } catch (err) {

@@ -7,6 +7,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
 import { assertRole } from '@/lib/auth/session'
+import { writeAudit } from '@/lib/audit'
 import { SubmitSurveyResponseSchema, type SubmitSurveyResponseInput } from '@/lib/schemas/survey'
 
 export async function submitSurveyResponse(input: SubmitSurveyResponseInput) {
@@ -87,6 +88,15 @@ export async function submitSurveyResponse(input: SubmitSurveyResponseInput) {
   if (answersError) {
     return { ok: false as const, error: { _form: [answersError.message] } }
   }
+
+  await writeAudit(supabase, {
+    tenantId: tenantId,
+    actorId: actorId,
+    action: 'survey.submit_response',
+    entityType: 'survey_response',
+    entityId: response.id as string,
+    after: { survey_id: parsed.data.survey_id, answer_count: parsed.data.answers.length },
+  })
 
   return { ok: true as const, responseId: response.id as string }
 }

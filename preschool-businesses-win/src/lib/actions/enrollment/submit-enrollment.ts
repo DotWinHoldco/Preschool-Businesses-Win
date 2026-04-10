@@ -7,6 +7,7 @@
 import { EnrollmentSubmitSchema, type EnrollmentSubmitData } from '@/lib/schemas/enrollment'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId } from '@/lib/actions/get-tenant-id'
+import { writeAudit } from '@/lib/audit'
 
 interface SubmitResult {
   ok: boolean
@@ -110,6 +111,15 @@ export async function submitEnrollment(
       status: 'application_received',
       priority: triageScore >= 70 ? 'hot' : triageScore >= 50 ? 'warm' : 'cold',
       notes: `Auto-created from enrollment application ${app.id}`,
+    })
+
+    await writeAudit(supabase, {
+      tenantId: tenantId,
+      actorId: 'anonymous',
+      action: 'enrollment.submit',
+      entityType: 'enrollment_application',
+      entityId: app.id as string,
+      after: { program_type: data.program_type, triage_score: triageScore },
     })
 
     // TODO: Send Resend notification email to director

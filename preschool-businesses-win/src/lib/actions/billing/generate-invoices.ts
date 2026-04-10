@@ -6,7 +6,8 @@
 
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { GenerateInvoicesSchema } from '@/lib/schemas/billing'
-import { getTenantId } from '@/lib/actions/get-tenant-id'
+import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { writeAudit } from '@/lib/audit'
 import { assertRole } from '@/lib/auth/session'
 
 export type GenerateInvoicesState = {
@@ -152,6 +153,16 @@ export async function generateInvoices(
       if (lines.length > 0) {
         await supabase.from('invoice_lines').insert(lines)
       }
+
+      const actorId = await getActorId()
+      await writeAudit(supabase, {
+        tenantId,
+        actorId,
+        action: 'billing.generate_invoice',
+        entityType: 'invoice',
+        entityId: invoice.id,
+        after: { family_id: familyId, period_start, period_end, total_cents: totalCents, invoice_number: invoiceNumber },
+      })
 
       invoiceCount++
     }

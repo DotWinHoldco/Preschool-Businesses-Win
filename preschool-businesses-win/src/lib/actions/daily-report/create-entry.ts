@@ -6,7 +6,8 @@
 
 import { assertRole } from '@/lib/auth/session'
 import { createTenantServerClient } from '@/lib/supabase/server'
-import { getTenantId } from '@/lib/actions/get-tenant-id'
+import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { writeAudit } from '@/lib/audit'
 import {
   CreateDailyReportEntrySchema,
   MealDataSchema,
@@ -120,6 +121,16 @@ export async function createDailyReportEntry(
     if (error || !entry) {
       return { ok: false, error: error?.message ?? 'Failed to create entry' }
     }
+
+    const actorId = await getActorId()
+    await writeAudit(supabase, {
+      tenantId,
+      actorId,
+      action: 'daily_report.create_entry',
+      entityType: 'daily_report_entry',
+      entityId: entry.id,
+      after: { report_id: reportId, entry_type, timestamp: timestamp ?? new Date().toISOString() },
+    })
 
     return { ok: true, entry_id: entry.id }
   } catch (err) {
