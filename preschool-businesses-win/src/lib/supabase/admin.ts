@@ -21,3 +21,13 @@ export function createAdminClient() {
     },
   })
 }
+
+/**
+ * Admin client with tenant context set for RLS.
+ * Use this when querying tenant-scoped tables with the anon key fallback.
+ */
+export async function createTenantAdminClient(tenantId: string = 'a0a0a0a0-cca0-4000-8000-000000000001') {
+  const client = createAdminClient()
+  await client.rpc('set_tenant_context', { p_tenant_id: tenantId })
+  return client
+}

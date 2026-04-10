@@ -3,7 +3,7 @@
 // Server Component — data fetched server-side.
 
 import Link from 'next/link'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { createTenantAdminClient } from '@/lib/supabase/admin'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -46,7 +46,7 @@ export default async function StudentsPage({
   searchParams: Promise<{ status?: string; q?: string }>
 }) {
   const { status, q } = await searchParams
-  const supabase = createAdminClient()
+  const supabase = await createTenantAdminClient(CCA_TENANT_ID)
 
   let query = supabase
     .from('students')
