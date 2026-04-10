@@ -1,3 +1,5 @@
+'use client'
+
 // @anchor: cca.messaging.conversation-list
 // Conversation sidebar listing all conversations.
 

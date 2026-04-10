@@ -1,3 +1,5 @@
+'use client'
+
 // @anchor: cca.subsidy.enrollment-form
 import { cn } from '@/lib/cn'
 import { Shield, Calendar, DollarSign, AlertTriangle } from 'lucide-react'

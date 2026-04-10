@@ -1,3 +1,5 @@
+'use client'
+
 // @anchor: cca.calendar.event-detail
 // Event detail with RSVP and sign-up options
 // See CCA_BUILD_BRIEF.md §36

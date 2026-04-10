@@ -1,3 +1,5 @@
+'use client'
+
 // @anchor: cca.billing.plan-selector
 // Billing plan selection component.
 

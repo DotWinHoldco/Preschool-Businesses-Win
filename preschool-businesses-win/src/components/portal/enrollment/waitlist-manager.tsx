@@ -1,3 +1,5 @@
+'use client'
+
 // @anchor: cca.enrollment.waitlist
 import { cn } from '@/lib/cn'
 import { GripVertical, ChevronUp, ChevronDown, CheckCircle, XCircle } from 'lucide-react'

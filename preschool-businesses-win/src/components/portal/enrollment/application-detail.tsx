@@ -1,3 +1,5 @@
+'use client'
+
 // @anchor: cca.enrollment.application-detail
 import { cn } from '@/lib/cn'
 import { CheckCircle, XCircle, Clock, AlertTriangle, User, Baby, Calendar, MapPin, MessageSquare } from 'lucide-react'
