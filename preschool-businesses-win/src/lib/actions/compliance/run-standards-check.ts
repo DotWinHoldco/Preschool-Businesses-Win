@@ -8,6 +8,7 @@ import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
 import { assertRole } from '@/lib/auth/session'
+import { writeAudit } from '@/lib/audit'
 
 const RunStandardsCheckSchema = z.object({
   standard_id: z.string().uuid(),
@@ -46,6 +47,15 @@ export async function runStandardsCheck(input: z.infer<typeof RunStandardsCheckS
   if (error) {
     return { ok: false as const, error: { _form: [error.message] } }
   }
+
+  await writeAudit(supabase, {
+    tenantId: tenantId,
+    actorId: actorId,
+    action: 'compliance.standards_check',
+    entityType: 'compliance_check',
+    entityId: data.id as string,
+    after: { standard_id: parsed.data.standard_id, status: parsed.data.status },
+  })
 
   return { ok: true as const, checkId: data.id as string }
 }

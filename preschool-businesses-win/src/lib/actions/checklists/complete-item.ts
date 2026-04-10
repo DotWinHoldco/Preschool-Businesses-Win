@@ -8,6 +8,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
 import { CompleteChecklistItemSchema, type CompleteChecklistItemInput } from '@/lib/schemas/checklist'
 import { assertRole } from '@/lib/auth/session'
+import { writeAudit } from '@/lib/audit'
 import { headers } from 'next/headers'
 
 export async function completeChecklistItem(input: CompleteChecklistItemInput) {
@@ -100,6 +101,16 @@ export async function completeChecklistItem(input: CompleteChecklistItemInput) {
       .eq('status', 'pending')
       .eq('tenant_id', tenantId)
   }
+
+  await writeAudit(supabase, {
+    tenantId: tenantId,
+    actorId: actorId,
+    action: 'checklist.complete_item',
+    entityType: 'checklist_response',
+    entityId: response.id as string,
+    before: { status: 'pending' },
+    after: { status: 'completed', item_id: parsed.data.item_id },
+  })
 
   return { ok: true as const, allCompleted: allCompleted ?? false }
 }

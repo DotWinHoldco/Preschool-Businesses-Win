@@ -7,6 +7,7 @@
 import { ContactMessageSchema, type ContactMessageData } from '@/lib/schemas/contact-message'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId } from '@/lib/actions/get-tenant-id'
+import { writeAudit } from '@/lib/audit'
 
 interface SubmitResult {
   ok: boolean
@@ -53,6 +54,15 @@ export async function submitContactMessage(
         notes: `Contact form inquiry: ${data.message}`,
       })
     }
+
+    await writeAudit(supabase, {
+      tenantId: tenantId,
+      actorId: 'anonymous',
+      action: 'contact.submit',
+      entityType: 'contact_message',
+      entityId: crypto.randomUUID(),
+      after: { name: data.name, email: data.email, inquiry_type: data.inquiry_type },
+    })
 
     // TODO: Send email via Resend to director
     // await resend.emails.send({

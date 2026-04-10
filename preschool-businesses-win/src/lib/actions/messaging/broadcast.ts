@@ -6,7 +6,8 @@
 import { assertRole } from '@/lib/auth/session'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { BroadcastMessageSchema } from '@/lib/schemas/messaging'
-import { getTenantId } from '@/lib/actions/get-tenant-id'
+import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { writeAudit } from '@/lib/audit'
 
 export type BroadcastState = {
   ok: boolean
@@ -131,6 +132,16 @@ export async function broadcastMessage(
     if (msgErr) {
       return { ok: false, error: msgErr.message }
     }
+
+    const actorId = await getActorId()
+    await writeAudit(supabase, {
+      tenantId,
+      actorId,
+      action: 'messaging.broadcast',
+      entityType: 'conversation',
+      entityId: conversation.id,
+      after: { scope, classroom_id: classroom_id ?? null, title, urgent, recipients_count: recipientIds.length },
+    })
 
     // TODO: Trigger notifications for all recipients
     // For urgent broadcasts, bypass quiet hours

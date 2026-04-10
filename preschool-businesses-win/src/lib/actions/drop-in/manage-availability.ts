@@ -5,9 +5,10 @@
 // See CCA_BUILD_BRIEF.md §31
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getTenantId } from '@/lib/actions/get-tenant-id'
+import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
 import { ManageDropInAvailabilitySchema, type ManageDropInAvailabilityInput } from '@/lib/schemas/drop-in'
 import { assertRole } from '@/lib/auth/session'
+import { writeAudit } from '@/lib/audit'
 
 export async function setDropInAvailability(input: ManageDropInAvailabilityInput) {
   await assertRole('admin')
@@ -18,6 +19,7 @@ export async function setDropInAvailability(input: ManageDropInAvailabilityInput
   }
 
   const tenantId = await getTenantId()
+  const actorId = await getActorId()
   const supabase = createAdminClient()
 
   // Upsert availability for this classroom + date
@@ -42,6 +44,15 @@ export async function setDropInAvailability(input: ManageDropInAvailabilityInput
     return { ok: false as const, error: { _form: [error.message] } }
   }
 
+  await writeAudit(supabase, {
+    tenantId: tenantId,
+    actorId: actorId,
+    action: 'drop_in.manage_availability',
+    entityType: 'drop_in_availability',
+    entityId: data.id as string,
+    after: { classroom_id: parsed.data.classroom_id, date: parsed.data.date, slots_total: parsed.data.slots_total, status: parsed.data.status },
+  })
+
   return { ok: true as const, availabilityId: data.id as string }
 }
 
@@ -55,6 +66,7 @@ export async function bulkSetAvailability(
   await assertRole('admin')
 
   const tenantId = await getTenantId()
+  const actorId = await getActorId()
   const supabase = createAdminClient()
 
   const start = new Date(dateRange.start)
@@ -87,6 +99,15 @@ export async function bulkSetAvailability(
   if (error) {
     return { ok: false as const, error: { _form: [error.message] } }
   }
+
+  await writeAudit(supabase, {
+    tenantId: tenantId,
+    actorId: actorId,
+    action: 'drop_in.manage_availability',
+    entityType: 'drop_in_availability',
+    entityId: classroomId,
+    after: { date_range: dateRange, slots: slotCount, count: rows.length },
+  })
 
   return { ok: true as const, count: rows.length }
 }

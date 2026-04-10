@@ -5,7 +5,8 @@
 
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { RunPayrollSchema } from '@/lib/schemas/staff'
-import { getTenantId } from '@/lib/actions/get-tenant-id'
+import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { writeAudit } from '@/lib/audit'
 import { assertRole } from '@/lib/auth/session'
 
 export type PayrollRunState = {
@@ -124,6 +125,16 @@ export async function runPayroll(
       .from('payroll_runs')
       .update({ total_gross: totalGross, total_net: totalGross })
       .eq('id', run.id)
+
+    const actorId = await getActorId()
+    await writeAudit(supabase, {
+      tenantId,
+      actorId,
+      action: 'staff.run_payroll',
+      entityType: 'payroll_run',
+      entityId: run.id,
+      after: { period_start, period_end, total_gross: totalGross, line_items_count: lineItems.length },
+    })
 
     return { ok: true, payroll_run_id: run.id, line_items_count: lineItems.length }
   } catch (err) {

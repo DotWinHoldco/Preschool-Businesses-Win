@@ -7,6 +7,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
 import { assertRole } from '@/lib/auth/session'
+import { writeAudit } from '@/lib/audit'
 import {
   ProcessRSVPSchema,
   JoinEventSignUpSchema,
@@ -72,6 +73,15 @@ export async function processRSVP(input: ProcessRSVPInput) {
     return { ok: false as const, error: { _form: [error.message] } }
   }
 
+  await writeAudit(supabase, {
+    tenantId: tenantId,
+    actorId: actorId,
+    action: 'calendar.rsvp',
+    entityType: 'event_rsvp',
+    entityId: parsed.data.event_id,
+    after: { response: parsed.data.response, family_id: parsed.data.family_id },
+  })
+
   return { ok: true as const }
 }
 
@@ -120,6 +130,15 @@ export async function joinEventSignUp(input: JoinEventSignUpInput) {
   if (error) {
     return { ok: false as const, error: { _form: [error.message] } }
   }
+
+  await writeAudit(supabase, {
+    tenantId: tenantId,
+    actorId: actorId,
+    action: 'calendar.rsvp',
+    entityType: 'event_rsvp',
+    entityId: parsed.data.sign_up_id,
+    after: { family_id: parsed.data.family_id },
+  })
 
   return { ok: true as const }
 }

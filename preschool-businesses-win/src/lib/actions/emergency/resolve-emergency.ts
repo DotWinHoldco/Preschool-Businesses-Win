@@ -9,6 +9,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
 import { sendNotification } from '@/lib/notifications/send'
 import { assertRole } from '@/lib/auth/session'
+import { writeAudit } from '@/lib/audit'
 
 const ResolveEmergencySchema = z.object({
   event_id: z.string().uuid(),
@@ -61,6 +62,16 @@ export async function resolveEmergency(input: z.infer<typeof ResolveEmergencySch
   if (updateError) {
     return { ok: false as const, error: { _form: [updateError.message] } }
   }
+
+  await writeAudit(supabase, {
+    tenantId: tenantId,
+    actorId: actorId,
+    action: 'emergency.resolve',
+    entityType: 'emergency_event',
+    entityId: parsed.data.event_id,
+    before: { status: 'active' },
+    after: { status: 'resolved' },
+  })
 
   // Send all-clear notification
   await sendNotification({

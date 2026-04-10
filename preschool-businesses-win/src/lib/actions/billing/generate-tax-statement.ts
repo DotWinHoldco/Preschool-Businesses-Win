@@ -5,7 +5,8 @@
 
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { GenerateTaxStatementSchema } from '@/lib/schemas/billing'
-import { getTenantId } from '@/lib/actions/get-tenant-id'
+import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { writeAudit } from '@/lib/audit'
 import { assertRole } from '@/lib/auth/session'
 
 export type TaxStatementState = {
@@ -81,6 +82,16 @@ export async function generateTaxStatement(
     if (stmtErr || !statement) {
       return { ok: false, error: stmtErr?.message ?? 'Failed to generate statement' }
     }
+
+    const actorId = await getActorId()
+    await writeAudit(supabase, {
+      tenantId,
+      actorId,
+      action: 'billing.generate_tax_statement',
+      entityType: 'tax_statement',
+      entityId: statement.id,
+      after: { family_id, tax_year, total_paid_cents: totalPaidCents },
+    })
 
     return { ok: true, statement_id: statement.id, total_paid_cents: totalPaidCents }
   } catch (err) {

@@ -8,6 +8,7 @@ import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
 import { assertRole } from '@/lib/auth/session'
+import { writeAudit } from '@/lib/audit'
 
 const RecordReunificationSchema = z.object({
   emergency_event_id: z.string().uuid(),
@@ -74,6 +75,15 @@ export async function recordReunification(input: z.infer<typeof RecordReunificat
   if (error) {
     return { ok: false as const, error: { _form: [error.message] } }
   }
+
+  await writeAudit(supabase, {
+    tenantId: tenantId,
+    actorId: actorId,
+    action: 'emergency.reunification',
+    entityType: 'reunification_record',
+    entityId: data.id as string,
+    after: { student_id: parsed.data.student_id, released_to_name: parsed.data.released_to_name, verified_method: parsed.data.verified_method },
+  })
 
   return { ok: true as const, recordId: data.id as string }
 }

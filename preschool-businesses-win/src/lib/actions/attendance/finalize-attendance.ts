@@ -8,6 +8,8 @@ import { assertRole } from '@/lib/auth/session'
 import { headers } from 'next/headers'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { FinalizeAttendanceSchema } from '@/lib/schemas/attendance'
+import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { writeAudit } from '@/lib/audit'
 
 export type FinalizeAttendanceState = {
   ok: boolean
@@ -47,6 +49,19 @@ export async function finalizeAttendance(
 
     if (error) {
       return { ok: false, error: error.message }
+    }
+
+    const tenantId = await getTenantId()
+    const actorId = await getActorId()
+    for (const rec of records ?? []) {
+      await writeAudit(supabase, {
+        tenantId,
+        actorId,
+        action: 'attendance.finalize',
+        entityType: 'attendance_record',
+        entityId: rec.id,
+        after: { classroom_id, date, finalized_at: new Date().toISOString() },
+      })
     }
 
     return { ok: true, count: records?.length ?? 0 }

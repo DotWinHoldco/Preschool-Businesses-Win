@@ -6,7 +6,8 @@
 import { assertRole } from '@/lib/auth/session'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { RecordAttendanceSchema } from '@/lib/schemas/attendance'
-import { getTenantId } from '@/lib/actions/get-tenant-id'
+import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { writeAudit } from '@/lib/audit'
 
 export type RecordAttendanceState = {
   ok: boolean
@@ -45,6 +46,16 @@ export async function recordAttendance(
     if (error || !record) {
       return { ok: false, error: error?.message ?? 'Failed to record attendance' }
     }
+
+    const actorId = await getActorId()
+    await writeAudit(supabase, {
+      tenantId,
+      actorId,
+      action: 'attendance.record',
+      entityType: 'attendance_record',
+      entityId: record.id,
+      after: { ...parsed.data },
+    })
 
     return { ok: true, record_id: record.id }
   } catch (err) {

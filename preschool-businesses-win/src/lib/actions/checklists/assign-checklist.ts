@@ -8,6 +8,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
 import { AssignChecklistSchema, type AssignChecklistInput } from '@/lib/schemas/checklist'
 import { assertRole } from '@/lib/auth/session'
+import { writeAudit } from '@/lib/audit'
 
 export async function assignChecklist(input: AssignChecklistInput) {
   await assertRole('admin')
@@ -75,6 +76,15 @@ export async function assignChecklist(input: AssignChecklistInput) {
 
     await supabase.from('checklist_responses').insert(responses)
   }
+
+  await writeAudit(supabase, {
+    tenantId: tenantId,
+    actorId: actorId,
+    action: 'checklist.assign',
+    entityType: 'checklist_assignment',
+    entityId: assignment.id as string,
+    after: { template_id: parsed.data.template_id, assigned_to_user_id: parsed.data.assigned_to_user_id },
+  })
 
   return { ok: true as const, assignmentId: assignment.id as string }
 }

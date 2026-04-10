@@ -8,6 +8,7 @@ import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
 import { assertRole } from '@/lib/auth/session'
+import { writeAudit } from '@/lib/audit'
 
 const GenerateReportSchema = z.object({
   name: z.string().min(1).max(200),
@@ -90,6 +91,15 @@ export async function generateReport(input: GenerateReportInput) {
     parsed.data.sort,
     parsed.data.date_range,
   )
+
+  await writeAudit(supabase, {
+    tenantId: tenantId,
+    actorId: actorId,
+    action: 'analytics.generate_report',
+    entityType: 'saved_report',
+    entityId: report.id as string,
+    after: { name: parsed.data.name, entity_type: parsed.data.entity_type, row_count: results.length },
+  })
 
   return {
     ok: true as const,

@@ -7,6 +7,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
 import { assertRole } from '@/lib/auth/session'
+import { writeAudit } from '@/lib/audit'
 import {
   BookDropInSchema,
   CancelDropInSchema,
@@ -98,6 +99,15 @@ export async function bookDropIn(input: BookDropInInput) {
     return { ok: false as const, error: { _form: [bookError.message] } }
   }
 
+  await writeAudit(supabase, {
+    tenantId: tenantId,
+    actorId: actorId,
+    action: 'drop_in.book',
+    entityType: 'drop_in_booking',
+    entityId: booking.id as string,
+    after: { student_id: parsed.data.student_id, date: parsed.data.date, booking_type: parsed.data.booking_type },
+  })
+
   return { ok: true as const, bookingId: booking.id as string, rateCents }
 }
 
@@ -109,6 +119,7 @@ export async function cancelDropIn(input: CancelDropInInput) {
   }
 
   const tenantId = await getTenantId()
+  const actorId = await getActorId()
   const supabase = createAdminClient()
 
   const { error } = await supabase
@@ -125,6 +136,16 @@ export async function cancelDropIn(input: CancelDropInInput) {
   if (error) {
     return { ok: false as const, error: { _form: [error.message] } }
   }
+
+  await writeAudit(supabase, {
+    tenantId: tenantId,
+    actorId: actorId,
+    action: 'drop_in.cancel',
+    entityType: 'drop_in_booking',
+    entityId: parsed.data.booking_id,
+    before: { status: 'confirmed' },
+    after: { status: 'cancelled', cancel_reason: parsed.data.cancel_reason },
+  })
 
   return { ok: true as const }
 }

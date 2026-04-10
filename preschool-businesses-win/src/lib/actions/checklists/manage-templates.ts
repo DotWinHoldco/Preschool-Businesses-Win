@@ -7,6 +7,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
 import { assertRole } from '@/lib/auth/session'
+import { writeAudit } from '@/lib/audit'
 import {
   CreateChecklistTemplateSchema,
   UpdateChecklistTemplateSchema,
@@ -45,6 +46,15 @@ export async function createChecklistTemplate(input: CreateChecklistTemplateInpu
     return { ok: false as const, error: { _form: [error.message] } }
   }
 
+  await writeAudit(supabase, {
+    tenantId: tenantId,
+    actorId: actorId,
+    action: 'checklist.create_template',
+    entityType: 'checklist_template',
+    entityId: data.id as string,
+    after: { name: parsed.data.name, target_type: parsed.data.target_type },
+  })
+
   return { ok: true as const, templateId: data.id as string }
 }
 
@@ -57,6 +67,7 @@ export async function updateChecklistTemplate(input: UpdateChecklistTemplateInpu
   }
 
   const tenantId = await getTenantId()
+  const actorId = await getActorId()
   const supabase = createAdminClient()
 
   const updateData: Record<string, unknown> = {}
@@ -76,6 +87,15 @@ export async function updateChecklistTemplate(input: UpdateChecklistTemplateInpu
     return { ok: false as const, error: { _form: [error.message] } }
   }
 
+  await writeAudit(supabase, {
+    tenantId: tenantId,
+    actorId: actorId,
+    action: 'checklist.update_template',
+    entityType: 'checklist_template',
+    entityId: parsed.data.template_id,
+    after: updateData,
+  })
+
   return { ok: true as const }
 }
 
@@ -88,6 +108,7 @@ export async function addChecklistItem(input: CreateChecklistItemInput) {
   }
 
   const tenantId = await getTenantId()
+  const actorId = await getActorId()
   const supabase = createAdminClient()
 
   const { data, error } = await supabase
@@ -108,6 +129,15 @@ export async function addChecklistItem(input: CreateChecklistItemInput) {
   if (error) {
     return { ok: false as const, error: { _form: [error.message] } }
   }
+
+  await writeAudit(supabase, {
+    tenantId: tenantId,
+    actorId: actorId,
+    action: 'checklist.add_item',
+    entityType: 'checklist_template',
+    entityId: parsed.data.template_id,
+    after: { item_id: data.id, title: parsed.data.title },
+  })
 
   return { ok: true as const, itemId: data.id as string }
 }

@@ -8,6 +8,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
 import { UploadDocumentSchema, type UploadDocumentInput } from '@/lib/schemas/document'
 import { assertRole } from '@/lib/auth/session'
+import { writeAudit } from '@/lib/audit'
 
 export async function uploadDocument(input: UploadDocumentInput) {
   await assertRole('admin')
@@ -74,6 +75,15 @@ export async function uploadDocument(input: UploadDocumentInput) {
   if (error) {
     return { ok: false as const, error: { _form: [error.message] } }
   }
+
+  await writeAudit(supabase, {
+    tenantId: tenantId,
+    actorId: actorId,
+    action: 'document.upload',
+    entityType: 'document',
+    entityId: data.id as string,
+    after: { title: parsed.data.title, document_type: parsed.data.document_type, version: newVersion },
+  })
 
   return { ok: true as const, documentId: data.id as string, version: newVersion }
 }
