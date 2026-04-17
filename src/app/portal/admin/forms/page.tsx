@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation'
 import { createTenantAdminClient } from '@/lib/supabase/admin'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Sparkles } from 'lucide-react'
 
 const statusVariant: Record<string, 'success' | 'warning' | 'outline'> = {
   published: 'success',
@@ -22,7 +23,7 @@ export default async function FormsListPage() {
 
   const { data: forms } = await supabase
     .from('forms')
-    .select('id, title, slug, status, mode, access_control, created_at, published_at')
+    .select('id, title, slug, status, mode, access_control, created_at, published_at, is_system_form, system_form_key, fee_enabled, fee_amount_cents, parent_form_id, instance_label')
     .order('created_at', { ascending: false })
 
   const { data: responseCounts } = await supabase
@@ -62,10 +63,24 @@ export default async function FormsListPage() {
               className="flex items-center justify-between p-4 rounded-lg border transition-colors hover:shadow-sm"
               style={{ borderColor: 'var(--color-border)' }}>
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <p className="text-sm font-semibold">{form.title}</p>
                   <Badge variant={statusVariant[form.status] || 'outline'}>{form.status}</Badge>
                   <Badge variant="outline" className="text-xs">{form.mode}</Badge>
+                  {form.is_system_form && (
+                    <Badge variant="success" className="text-xs inline-flex items-center gap-1">
+                      <Sparkles className="h-3 w-3" />
+                      System
+                    </Badge>
+                  )}
+                  {form.parent_form_id && form.instance_label && (
+                    <Badge variant="outline" className="text-xs">{form.instance_label}</Badge>
+                  )}
+                  {form.fee_enabled && form.fee_amount_cents !== null && (
+                    <Badge variant="success" className="text-xs">
+                      ${((form.fee_amount_cents ?? 0) / 100).toFixed(2)} fee
+                    </Badge>
+                  )}
                 </div>
                 <p className="text-xs mt-1" style={{ color: 'var(--color-muted-foreground)' }}>
                   {countMap.get(form.id) || 0} responses · {form.access_control} · /{form.slug}

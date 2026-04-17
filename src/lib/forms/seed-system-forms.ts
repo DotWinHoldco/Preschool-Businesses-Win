@@ -1,7 +1,6 @@
 // @anchor: platform.system-forms.seeding
 // Idempotent seeding of platform-provided system forms into a tenant.
-
-'use server'
+// Server-only utility (not a Server Action — callers already run on the server).
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { SYSTEM_FORM_TEMPLATES, type SystemFormTemplate } from './system-forms'

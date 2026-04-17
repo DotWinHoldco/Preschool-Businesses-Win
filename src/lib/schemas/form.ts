@@ -48,8 +48,22 @@ export const UpdateFormSchema = z.object({
   thank_you_redirect_url: z.string().url().optional().or(z.literal('')),
   allow_response_edit: z.boolean().optional(),
   response_edit_deadline_hours: z.number().int().positive().optional(),
+  // System form + fee toggle (§46)
+  fee_enabled: z.boolean().optional(),
+  fee_amount_cents: z.number().int().min(0).max(10000000).optional().nullable(),
+  fee_description: z.string().max(200).optional(),
+  instance_label: z.string().max(200).optional(),
 })
 export type UpdateFormInput = z.infer<typeof UpdateFormSchema>
+
+export const SpawnFormInstanceSchema = z.object({
+  source_form_id: z.string().uuid(),
+  instance_label: z.string().min(1).max(200),
+  fee_enabled: z.boolean().default(false),
+  fee_amount_cents: z.number().int().min(0).max(10000000).optional().nullable(),
+  fee_description: z.string().max(200).optional(),
+})
+export type SpawnFormInstanceInput = z.infer<typeof SpawnFormInstanceSchema>
 
 export const CreateFormFieldSchema = z.object({
   form_id: z.string().uuid(),
