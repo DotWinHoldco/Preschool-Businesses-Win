@@ -4,13 +4,12 @@
 
 A **multi-tenant white-label preschool management SaaS platform** at `preschool.businesses.win`. First tenant: Crandall Christian Academy (CCA). One Next.js 16 repo, four surfaces (platform site, tenant marketing, staff portal, parent portal).
 
-**Current focus:** CCA marketing site reconstruction at `crandallchristianacademy.com`.
+**Current focus:** CCA marketing site is live at `crandallchristian.cc` — visual parity with original achieved.
 
 ## Active build docs (read before writing code)
 
-1. `docs/CCA_MARKETING_BRIEF.md` — the marketing site spec. Sections, pages, wizard, acceptance criteria.
-2. `docs/COPY.md` — all marketing copy (PASTOR framework, page-by-page).
-3. `docs/BRAND.md` — design tokens, typography, color system, motion, component primitives.
+1. `docs/BRAND.md` — design tokens, typography, color system, motion, component primitives.
+3. `docs/COPY.md` — all marketing copy (PASTOR framework, page-by-page).
 4. `AGENTS.md` — Next.js 16 breaking changes. Read the upgrade guide before touching routes.
 5. `BUILD_LOG.md` — **read the top 20 lines before every task.** This is how you orient.
 
@@ -81,6 +80,7 @@ Archived docs are never deleted — they're reference material for future sessio
 - `ENROLLMENT_SYSTEM_PROMPT.md` — system enrollment form + pipeline + appointments
 - `FORM_BUILDER_PROMPT.md` — custom fields + form builder
 - `CCA_MARKETING_REPLICA.md` — marketing site replica build (16 components, 7 pages, 2 API routes, 3 migrations)
+- `CCA_MARKETING_PUNCHLIST.md` — visual parity punchlist (8 gaps: sticky programs, spinning CTA, marquee, color/energy, animations, section reorder, ingredients, hero)
 
 ## When uncertain
 

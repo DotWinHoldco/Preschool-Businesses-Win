@@ -26,7 +26,7 @@ export function SectionHeader({
         {heading}
       </h2>
       {subheading && (
-        <p className="font-questrial text-lg text-cca-ink/70 mt-4 max-w-2xl mx-auto">
+        <p className={`font-questrial text-lg mt-4 max-w-2xl mx-auto ${headingColor === 'text-white' ? 'text-white/80' : 'text-cca-ink/70'}`}>
           {subheading}
         </p>
       )}

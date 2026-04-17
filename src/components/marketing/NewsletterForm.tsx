@@ -64,7 +64,7 @@ export function NewsletterForm() {
         <button
           type="submit"
           disabled={status === 'loading'}
-          className="bg-cca-green text-white font-kollektif px-6 py-3 rounded-full hover:bg-cca-green/90 transition-colors disabled:opacity-50"
+          className="bg-white text-cca-green font-kollektif px-6 py-3 rounded-full hover:bg-white/90 transition-colors disabled:opacity-50"
         >
           {status === 'loading' ? 'Sending...' : 'Submit'}
         </button>
