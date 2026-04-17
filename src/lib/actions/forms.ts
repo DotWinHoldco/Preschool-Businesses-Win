@@ -120,6 +120,21 @@ export async function deleteForm(id: string): Promise<ActionResult> {
   const actorId = await getActorId()
   const supabase = createAdminClient()
 
+  // System forms (primary instances) cannot be deleted — only revert or spawn instances.
+  const { data: form } = await supabase
+    .from('forms')
+    .select('is_system_form, parent_form_id, system_form_key')
+    .eq('id', id)
+    .eq('tenant_id', tenantId)
+    .single()
+
+  if (form?.is_system_form && !form.parent_form_id) {
+    return {
+      ok: false,
+      error: `This is a core system form (${form.system_form_key}) and cannot be deleted. Use "Revert to original" to reset it or spawn an instance to create a variant.`,
+    }
+  }
+
   const { error } = await supabase.from('forms')
     .update({ status: 'archived', updated_at: new Date().toISOString() })
     .eq('id', id).eq('tenant_id', tenantId)
@@ -132,6 +147,109 @@ export async function deleteForm(id: string): Promise<ActionResult> {
   })
 
   return { ok: true }
+}
+
+/**
+ * Reverts a system form to its platform template — wipes custom fields/sections and re-seeds
+ * the canonical structure. Requires a typed confirmation string to prevent accidents.
+ */
+export async function revertSystemForm(
+  formId: string,
+  confirmationText: string,
+): Promise<ActionResult> {
+  await assertRole('admin')
+  const tenantId = await getTenantId()
+  const actorId = await getActorId()
+  const supabase = createAdminClient()
+
+  if (confirmationText.trim().toUpperCase() !== 'REVERT') {
+    return { ok: false, error: 'Type REVERT to confirm.' }
+  }
+
+  const { data: form } = await supabase
+    .from('forms')
+    .select('*')
+    .eq('id', formId)
+    .eq('tenant_id', tenantId)
+    .single()
+
+  if (!form || !form.is_system_form || !form.system_form_key) {
+    return { ok: false, error: 'Not a system form.' }
+  }
+
+  // Wipe existing fields / sections / actions for this form
+  await supabase.from('form_fields').delete().eq('form_id', formId)
+  await supabase.from('form_sections').delete().eq('form_id', formId)
+  await supabase.from('form_submission_actions').delete().eq('form_id', formId)
+
+  // Re-seed from the platform template
+  const { SYSTEM_FORM_TEMPLATES } = await import('@/lib/forms/system-forms')
+  const template = SYSTEM_FORM_TEMPLATES.find((t) => t.key === form.system_form_key)
+  if (!template) {
+    return { ok: false, error: `No template registered for system_form_key=${form.system_form_key}` }
+  }
+
+  const sectionIds: Record<number, string> = {}
+  for (let i = 0; i < template.sections.length; i += 1) {
+    const s = template.sections[i]
+    const { data } = await supabase
+      .from('form_sections')
+      .insert({
+        form_id: formId,
+        title: s.title,
+        description: s.description ?? null,
+        sort_order: i,
+        page_number: s.page_number,
+      })
+      .select('id')
+      .single()
+    if (data) sectionIds[i] = data.id as string
+  }
+
+  if (template.fields.length > 0) {
+    await supabase.from('form_fields').insert(
+      template.fields.map((f) => ({
+        form_id: formId,
+        section_id: sectionIds[f.section_index] ?? null,
+        field_key: f.field_key,
+        field_type: f.field_type,
+        label: f.label ?? null,
+        description: f.description ?? null,
+        placeholder: f.placeholder ?? null,
+        config: f.config ?? {},
+        validation_rules: f.validation_rules ?? {},
+        logic_rules: f.logic_rules ?? [],
+        sort_order: f.sort_order,
+        page_number: f.page_number,
+        is_required: f.is_required ?? false,
+        is_locked: f.is_locked ?? false,
+        is_system_field: f.is_system_field ?? false,
+      })),
+    )
+  }
+
+  if (template.actions.length > 0) {
+    await supabase.from('form_submission_actions').insert(
+      template.actions.map((a) => ({
+        form_id: formId,
+        action_type: a.action_type,
+        config: a.config,
+        sort_order: a.sort_order,
+        is_active: true,
+      })),
+    )
+  }
+
+  await supabase.from('audit_log').insert({
+    tenant_id: tenantId,
+    actor_id: actorId,
+    action: 'form.revert',
+    entity_type: 'form',
+    entity_id: formId,
+    after: { system_form_key: form.system_form_key, reverted_at: new Date().toISOString() },
+  })
+
+  return { ok: true, id: formId }
 }
 
 export async function createFormField(input: CreateFormFieldInput): Promise<ActionResult> {

@@ -3,14 +3,14 @@
 // @anchor: platform.form-builder.builder-ui
 
 import { useState, useCallback, useTransition } from 'react'
-import { createFormField, updateFormField, deleteFormField, updateForm, createFormInstance } from '@/lib/actions/forms'
+import { createFormField, updateFormField, deleteFormField, updateForm, createFormInstance, revertSystemForm } from '@/lib/actions/forms'
 import type { CreateFormFieldInput } from '@/lib/schemas/form'
-import { FormField } from '@/components/forms/fields'
+import { WizardFormRenderer, type WizardField, type WizardSection } from '@/components/forms/wizard/wizard-form-renderer'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import type { FormFieldType } from '@/lib/schemas/form'
-import { Settings, Sparkles, Lock, Copy } from 'lucide-react'
+import { Settings, Sparkles, Copy, RotateCcw, Code2 } from 'lucide-react'
 
 interface FormDef {
   id: string; title: string; slug: string; status: string; mode: string
@@ -72,6 +72,19 @@ export function FormBuilderClient({ form, initialFields, initialSections, initia
   const [showSettings, setShowSettings] = useState(false)
   const [showSpawn, setShowSpawn] = useState(false)
   const [, startTransition] = useTransition()
+
+  const [sections] = useState<WizardSection[]>(
+    (initialSections ?? []).map((s) => ({
+      id: s.id,
+      title: s.title,
+      description: s.description,
+      sort_order: s.sort_order,
+      page_number: (s as unknown as { page_number?: number }).page_number ?? 1,
+    })),
+  )
+  const [showRevert, setShowRevert] = useState(false)
+  const [revertText, setRevertText] = useState('')
+  const [showEmbed, setShowEmbed] = useState(false)
 
   const [settings, setSettings] = useState({
     title: form.title,
@@ -236,6 +249,10 @@ export function FormBuilderClient({ form, initialFields, initialSections, initia
               </div>
             </div>
             <div className="flex gap-2">
+              <Button variant="secondary" onClick={() => setShowEmbed(true)} className="inline-flex items-center gap-1">
+                <Code2 className="h-4 w-4" />
+                Embed
+              </Button>
               <Button variant="secondary" onClick={() => setShowSettings(true)} className="inline-flex items-center gap-1">
                 <Settings className="h-4 w-4" />
                 Settings
@@ -244,6 +261,12 @@ export function FormBuilderClient({ form, initialFields, initialSections, initia
                 <Button variant="secondary" onClick={() => setShowSpawn(true)} className="inline-flex items-center gap-1">
                   <Copy className="h-4 w-4" />
                   Create instance
+                </Button>
+              )}
+              {form.is_system_form && !form.parent_form_id && (
+                <Button variant="secondary" onClick={() => setShowRevert(true)} className="inline-flex items-center gap-1">
+                  <RotateCcw className="h-4 w-4" />
+                  Revert
                 </Button>
               )}
               {formStatus === 'draft' ? (
@@ -256,49 +279,29 @@ export function FormBuilderClient({ form, initialFields, initialSections, initia
             </div>
           </div>
 
-          {fields.length === 0 && (
+          {fields.length === 0 ? (
             <div className="text-center py-20 rounded-lg border-2 border-dashed" style={{ borderColor: 'var(--color-border)' }}>
               <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
                 Click a field type from the left panel to add your first field.
               </p>
             </div>
+          ) : (
+            <WizardFormRenderer
+              formId={form.id}
+              title={settings.title}
+              mode={(form.mode as 'conversational' | 'document') ?? 'conversational'}
+              feeEnabled={settings.fee_enabled}
+              feeAmountCents={settings.fee_amount_cents}
+              feeDescription={settings.fee_description}
+              thankYouTitle={settings.thank_you_title}
+              thankYouMessage={settings.thank_you_message}
+              sections={sections}
+              fields={fields as unknown as WizardField[]}
+              preview
+              onFieldSelect={setSelectedFieldId}
+              selectedFieldId={selectedFieldId}
+            />
           )}
-
-          {fields.map((field, idx) => (
-            <div key={field.id}
-              onClick={() => setSelectedFieldId(field.id)}
-              className="p-4 rounded-lg border-2 cursor-pointer transition-all"
-              style={{
-                borderColor: selectedFieldId === field.id ? 'var(--color-primary)' : 'var(--color-border)',
-                backgroundColor: 'var(--color-card)',
-              }}>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-medium inline-flex items-center gap-1.5" style={{ color: 'var(--color-muted-foreground)' }}>
-                  {idx + 1}. {field.field_type.replace(/_/g, ' ')}
-                  {field.is_locked && (
-                    <span title="System field — locked, cannot be deleted" className="inline-flex items-center">
-                      <Lock className="h-3 w-3" />
-                    </span>
-                  )}
-                </span>
-                <button
-                  onClick={e => { e.stopPropagation(); removeField(field.id) }}
-                  disabled={field.is_locked}
-                  className="text-xs px-1.5 py-0.5 rounded hover:bg-red-50 disabled:opacity-30 disabled:cursor-not-allowed"
-                  style={{ color: 'var(--color-destructive)' }}
-                  title={field.is_locked ? 'Locked system field' : 'Delete field'}
-                >
-                  ✕
-                </button>
-              </div>
-              <FormField
-                field={{ ...field, label: field.label, description: field.description, placeholder: field.placeholder }}
-                value={undefined}
-                onChange={() => {}}
-                disabled
-              />
-            </div>
-          ))}
         </div>
       </div>
 
@@ -306,7 +309,17 @@ export function FormBuilderClient({ form, initialFields, initialSections, initia
       <div className="w-72 border-l overflow-y-auto p-4 shrink-0" style={{ borderColor: 'var(--color-border)' }}>
         {selectedField ? (
           <div className="space-y-4">
-            <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--color-muted-foreground)' }}>Field Settings</p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--color-muted-foreground)' }}>Field Settings</p>
+              {selectedField.is_system_field && (
+                <Badge variant="success" className="text-[10px]">System</Badge>
+              )}
+            </div>
+            {selectedField.is_system_field && (
+              <p className="text-[11px] text-[var(--color-muted-foreground)] rounded-md bg-[var(--color-muted)]/40 p-2">
+                This is a locked system field. You can edit its visible label, description, and placeholder, but its type, key, and behavior are managed by the platform to keep downstream pipelines (applications, notifications, billing) working correctly.
+              </p>
+            )}
             <div className="space-y-1.5">
               <label className="text-xs font-medium">Label</label>
               <Input value={selectedField.label || ''} onChange={e => updateFieldLocal(selectedField.id, { label: e.target.value })} />
@@ -319,8 +332,9 @@ export function FormBuilderClient({ form, initialFields, initialSections, initia
               <label className="text-xs font-medium">Placeholder</label>
               <Input value={selectedField.placeholder || ''} onChange={e => updateFieldLocal(selectedField.id, { placeholder: e.target.value })} />
             </div>
-            <label className="flex items-center gap-2">
+            <label className={`flex items-center gap-2 ${selectedField.is_system_field ? 'opacity-50 pointer-events-none' : ''}`}>
               <input type="checkbox" checked={selectedField.is_required}
+                disabled={selectedField.is_system_field}
                 onChange={e => updateFieldLocal(selectedField.id, { is_required: e.target.checked })}
                 className="rounded accent-[var(--color-primary)]" />
               <span className="text-xs font-medium">Required</span>
@@ -503,6 +517,157 @@ export function FormBuilderClient({ form, initialFields, initialSections, initia
           </div>
         </div>
       )}
+
+      {showRevert && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => { setShowRevert(false); setRevertText('') }}
+        >
+          <div
+            className="w-full max-w-md rounded-[var(--radius)] bg-[var(--color-card)] p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-bold mb-2 inline-flex items-center gap-2">
+              <RotateCcw className="h-5 w-5 text-[var(--color-destructive)]" />
+              Revert to original
+            </h3>
+            <p className="text-sm text-[var(--color-muted-foreground)] mb-4">
+              This will delete every custom field, section, and submission action you&apos;ve added to this form
+              and restore the platform template. Labels and fee settings will reset. <strong>This cannot be
+              undone.</strong>
+            </p>
+            <label className="block mb-4">
+              <span className="text-xs font-medium block mb-1">Type <code className="font-mono bg-[var(--color-muted)] px-1 rounded">REVERT</code> to confirm</span>
+              <Input value={revertText} onChange={(e) => setRevertText(e.target.value)} placeholder="REVERT" />
+            </label>
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={() => { setShowRevert(false); setRevertText('') }}>Cancel</Button>
+              <Button
+                variant="danger"
+                disabled={revertText.trim().toUpperCase() !== 'REVERT' || isSaving}
+                onClick={() => {
+                  setIsSaving(true)
+                  startTransition(async () => {
+                    const r = await revertSystemForm(form.id, revertText)
+                    setIsSaving(false)
+                    if (r.ok) {
+                      window.location.reload()
+                    } else {
+                      alert(r.error ?? 'Revert failed')
+                    }
+                  })
+                }}
+              >
+                {isSaving ? 'Reverting...' : 'Revert now'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEmbed && (
+        <EmbedModal form={form} onClose={() => setShowEmbed(false)} />
+      )}
+    </div>
+  )
+}
+
+function EmbedModal({ form, onClose }: { form: FormDef; onClose: () => void }) {
+  const [copied, setCopied] = useState<string | null>(null)
+
+  const publicUrl = typeof window !== 'undefined'
+    ? `${window.location.protocol}//${window.location.host}/forms/${form.slug}`.replace('/portal/admin/forms/', '/forms/').replace('/portal/admin/', '/')
+    : `/forms/${form.slug}`
+
+  // Assume (forms) route: /{tenantSlug}/{formSlug}. On tenant domains, use the slug path directly.
+  const directUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/forms/${form.slug}`
+    : `/forms/${form.slug}`
+
+  const iframeSnippet = `<iframe src="${directUrl}/embed" width="100%" height="720" frameborder="0" style="border:0;border-radius:14px" title="${form.title}"></iframe>`
+  const linkSnippet = directUrl
+  const scriptSnippet = `<script src="${typeof window !== 'undefined' ? window.location.origin : ''}/embed.js" data-form-slug="${form.slug}"></script>
+<div id="form-${form.slug}"></div>`
+
+  const copy = (text: string, key: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(key)
+      setTimeout(() => setCopied(null), 1200)
+    })
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+      <div className="w-full max-w-2xl rounded-[var(--radius)] bg-[var(--color-card)] p-6 shadow-xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <h3 className="text-lg font-bold mb-1 inline-flex items-center gap-2">
+          <Code2 className="h-5 w-5" />
+          Embed this form
+        </h3>
+        <p className="text-sm text-[var(--color-muted-foreground)] mb-5">
+          Use any of these snippets to drop this form into another website, email, or funnel. Submissions flow
+          back into this form&apos;s response pipeline automatically.
+        </p>
+
+        <div className="space-y-5">
+          <section>
+            <div className="flex items-center justify-between mb-1.5">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-[var(--color-muted-foreground)]">
+                Direct link
+              </h4>
+              <button
+                onClick={() => copy(linkSnippet, 'link')}
+                className="text-xs font-medium text-[var(--color-primary)] hover:underline"
+              >
+                {copied === 'link' ? 'Copied!' : 'Copy'}
+              </button>
+            </div>
+            <pre className="rounded-md bg-[var(--color-muted)] p-3 text-xs overflow-x-auto">{linkSnippet}</pre>
+            <p className="mt-1 text-[11px] text-[var(--color-muted-foreground)]">
+              Best for email links, social posts, and QR codes.
+            </p>
+          </section>
+
+          <section>
+            <div className="flex items-center justify-between mb-1.5">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-[var(--color-muted-foreground)]">
+                Iframe (any website)
+              </h4>
+              <button
+                onClick={() => copy(iframeSnippet, 'iframe')}
+                className="text-xs font-medium text-[var(--color-primary)] hover:underline"
+              >
+                {copied === 'iframe' ? 'Copied!' : 'Copy'}
+              </button>
+            </div>
+            <pre className="rounded-md bg-[var(--color-muted)] p-3 text-xs overflow-x-auto whitespace-pre-wrap break-all">{iframeSnippet}</pre>
+            <p className="mt-1 text-[11px] text-[var(--color-muted-foreground)]">
+              Best for Squarespace, Wix, WordPress, and existing marketing sites. Auto-resizes to content.
+            </p>
+          </section>
+
+          <section>
+            <div className="flex items-center justify-between mb-1.5">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-[var(--color-muted-foreground)]">
+                Script tag (coming soon)
+              </h4>
+              <button
+                onClick={() => copy(scriptSnippet, 'script')}
+                className="text-xs font-medium text-[var(--color-primary)] hover:underline"
+              >
+                {copied === 'script' ? 'Copied!' : 'Copy'}
+              </button>
+            </div>
+            <pre className="rounded-md bg-[var(--color-muted)] p-3 text-xs overflow-x-auto whitespace-pre-wrap break-all">{scriptSnippet}</pre>
+            <p className="mt-1 text-[11px] text-[var(--color-muted-foreground)]">
+              Best for custom funnels that need client-side control — requires /embed.js (not yet shipped).
+            </p>
+          </section>
+        </div>
+
+        <div className="mt-6 flex justify-end">
+          <Button variant="secondary" onClick={onClose}>Close</Button>
+        </div>
+      </div>
     </div>
   )
 }
