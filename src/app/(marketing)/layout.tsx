@@ -1,51 +1,68 @@
-// @anchor: marketing.layout
-// Marketing surface layout — wraps tenant marketing pages with header and footer.
-// Reads tenant branding from headers (injected by proxy.ts).
-// See PLATFORM_ARCHITECTURE.md §5 and CCA_MARKETING_BRIEF.md §3.
+import type { Metadata } from 'next';
+import { Header } from '@/components/marketing/Header';
+import { Footer } from '@/components/marketing/Footer';
+import '@/app/marketing/fonts.css';
 
-import { headers } from 'next/headers'
-import { getTenantBranding } from '@/lib/tenant/branding'
-import { SiteHeader } from '@/components/layout/site-header'
-import { SiteFooter } from '@/components/layout/site-footer'
+export const metadata: Metadata = {
+  title: {
+    template: '%s | Crandall Christian Academy',
+    default: 'Crandall Christian Academy — Premier Pre-School in Crandall, Texas',
+  },
+  description: 'A premier, faith-based preschool in Crandall, Texas offering programs for infants through private kindergarten. Nurturing young minds through hands-on learning and character-building activities.',
+  metadataBase: new URL('https://crandallchristianacademy.com'),
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    siteName: 'Crandall Christian Academy',
+    images: [{ url: '/marketing/home/facility-hero-poster.jpg', width: 1920, height: 1080 }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+  },
+  icons: {
+    icon: '/marketing/shared/favicon.png',
+    apple: '/marketing/shared/favicon.png',
+  },
+};
 
-export default async function MarketingLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  // Read tenant context from proxy-injected headers (Next.js 16: async headers)
-  const headerStore = await headers()
-  const tenantId = headerStore.get('x-tenant-id')
-
-  // Fetch branding for header/footer — falls back to defaults if unavailable
-  const branding = tenantId ? await getTenantBranding(tenantId) : null
-
-  // Derive portal URL from the tenant's domain
-  const host = headerStore.get('host') ?? ''
-  const portalUrl = host ? `https://portal.${host.replace(/^www\./, '')}` : '/portal'
-
-  // Determine plan to control "Powered by .win" badge visibility
-  // Premium/enterprise tenants can hide it. Defaults to showing.
-  const showPoweredBy = true // TODO: read from tenants.plan via tenant config
-
+export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <SiteHeader
-        logoUrl={branding?.logo_url ?? null}
-        schoolName={branding?.tagline ? branding.tagline.split(' — ')[0] : 'Preschool'}
-        portalUrl={portalUrl}
-      />
-      {/* Spacer for sticky header */}
-      <div className="h-16 md:h-20" />
-      <main id="main-content" className="flex-1">
-        {children}
-      </main>
-      <SiteFooter
-        logoUrl={branding?.logo_url ?? null}
-        schoolName={branding?.tagline ? branding.tagline.split(' — ')[0] : 'Preschool'}
-        tagline={branding?.tagline ?? null}
-        showPoweredBy={showPoweredBy}
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-0 focus:left-0 focus:z-[100] focus:bg-white focus:px-4 focus:py-2 font-questrial">
+        Skip to main content
+      </a>
+      <Header />
+      <main id="main-content">{children}</main>
+      <Footer />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': ['LocalBusiness', 'Preschool'],
+            name: 'Crandall Christian Academy',
+            description: 'A premier, faith-based preschool in Crandall, Texas offering programs for infants through private kindergarten.',
+            url: 'https://crandallchristianacademy.com',
+            telephone: '+19452266584',
+            email: 'admin@crandallchristianacademy.com',
+            address: {
+              '@type': 'PostalAddress',
+              addressLocality: 'Crandall',
+              addressRegion: 'TX',
+              addressCountry: 'US',
+            },
+            openingHoursSpecification: {
+              '@type': 'OpeningHoursSpecification',
+              dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+              opens: '07:00',
+              closes: '18:00',
+            },
+            logo: 'https://crandallchristianacademy.com/marketing/shared/cca-logo-full.png',
+            image: 'https://crandallchristianacademy.com/marketing/home/facility-hero-poster.jpg',
+            priceRange: '$$',
+          }),
+        }}
       />
     </>
-  )
+  );
 }

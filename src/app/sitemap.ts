@@ -1,49 +1,34 @@
-// @anchor: marketing.sitemap
-// Dynamic sitemap for the CCA marketing site.
+import type { MetadataRoute } from 'next';
+import { createClient } from '@supabase/supabase-js';
 
-import type { MetadataRoute } from 'next'
+const BASE_URL = 'https://crandallchristianacademy.com';
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const TENANT_ID = 'a0a0a0a0-cca0-4000-8000-000000000001';
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://crandallchristianacademy.com'
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const staticPages: MetadataRoute.Sitemap = [
+    { url: BASE_URL, lastModified: new Date(), changeFrequency: 'weekly', priority: 1.0 },
+    { url: `${BASE_URL}/about`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${BASE_URL}/contact`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${BASE_URL}/faq`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${BASE_URL}/our-team`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.6 },
+    { url: `${BASE_URL}/blog`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.8 },
+  ];
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const now = new Date()
+  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+  const { data: posts } = await supabase
+    .from('blog_posts')
+    .select('slug, published_at, updated_at')
+    .eq('tenant_id', TENANT_ID)
+    .eq('is_published', true);
 
-  return [
-    {
-      url: BASE_URL,
-      lastModified: now,
-      changeFrequency: 'weekly',
-      priority: 1,
-    },
-    {
-      url: `${BASE_URL}/programs`,
-      lastModified: now,
-      changeFrequency: 'monthly',
-      priority: 0.9,
-    },
-    {
-      url: `${BASE_URL}/enroll`,
-      lastModified: now,
-      changeFrequency: 'weekly',
-      priority: 0.95,
-    },
-    {
-      url: `${BASE_URL}/about`,
-      lastModified: now,
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${BASE_URL}/faith`,
-      lastModified: now,
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${BASE_URL}/contact`,
-      lastModified: now,
-      changeFrequency: 'monthly',
-      priority: 0.8,
-    },
-  ]
+  const blogPages: MetadataRoute.Sitemap = (posts ?? []).map((post) => ({
+    url: `${BASE_URL}/blog/${post.slug}`,
+    lastModified: new Date(post.updated_at ?? post.published_at),
+    changeFrequency: 'monthly' as const,
+    priority: 0.5,
+  }));
+
+  return [...staticPages, ...blogPages];
 }

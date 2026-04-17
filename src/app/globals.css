@@ -18,6 +18,22 @@
   --color-warning: #F59E0B;
   --color-danger: #EF4444;
 
+  /* CCA Marketing palette */
+  --color-cca-green: #5CB961;
+  --color-cca-blue: #3B70B0;
+  --color-cca-coral: #F15A50;
+  --color-cca-pink: #F878AF;
+  --color-cca-yellow: #F2B020;
+  --color-cca-teal: #4ABDAC;
+  --color-cca-ink: #141413;
+  --color-cca-cream: #FAF9F5;
+
+  /* CCA Marketing fonts */
+  --font-kollektif: 'Kollektif Bold', system-ui, sans-serif;
+  --font-kollektif-regular: 'Kollektif', system-ui, sans-serif;
+  --font-questrial: 'Questrial', system-ui, sans-serif;
+  --font-coming-soon: 'Coming Soon', cursive;
+
   /* Border radius tokens (BRAND.md §4) */
   --radius-sm: 8px;
   --radius-md: 14px;

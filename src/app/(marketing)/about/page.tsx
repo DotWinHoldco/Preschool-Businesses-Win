@@ -1,306 +1,127 @@
-// @anchor: marketing.about
-// About page — school story, mission, team, facility per COPY.md.
-
-import type { Metadata } from 'next'
-import Link from 'next/link'
-import { cn } from '@/lib/cn'
-import { Heart, Users, Building2, Shield } from 'lucide-react'
+import type { Metadata } from 'next';
+import Image from 'next/image';
+import Link from 'next/link';
+import { ScrollReveal } from '@/components/marketing/ScrollReveal';
+import { SectionHeader } from '@/components/marketing/SectionHeader';
+import { ProgramCard } from '@/components/marketing/ProgramCard';
 
 export const metadata: Metadata = {
-  title: 'About Us — Crandall Christian Academy',
-  description:
-    'Learn about Crandall Christian Academy — our story, mission, team, and facility. A faith-based preschool where every child is known by name.',
-}
+  title: 'About',
+  description: 'Learn about Crandall Christian Academy — our mission, our programs, and what makes us the premier preschool in Crandall, Texas.',
+};
+
+const APPLY_URL = '/enroll';
+
+const PROGRAMS = [
+  {
+    slug: 'infants',
+    title: 'Our Infant Classes',
+    body: "From their very first days, your child is lovingly cared for in a Christ-centered environment designed for comfort, safety, and growth. Our infant program focuses on nurturing each baby with patience, prayer, and individualized care, creating a strong foundation for lifelong learning.",
+    imageSrc: '/marketing/about/program-infants.jpg',
+  },
+  {
+    slug: 'toddlers',
+    title: 'Our Toddlers Classes',
+    body: "Our toddler program provides a nurturing and stimulating environment designed to support your child's early developmental milestones. Through age-appropriate activities, sensory play, and loving care, toddlers explore the world around them while building a foundation for lifelong learning.",
+    imageSrc: '/marketing/about/program-toddlers.jpg',
+  },
+  {
+    slug: 'twos',
+    title: 'Our 2s Classes',
+    body: "In our 2s program, children take their first steps into a structured learning environment, separate from the toddler space. With a focus on fostering independence, socialization, and early academic skills, our 2s classroom encourages curiosity and confidence through guided play and hands-on exploration.",
+    imageSrc: '/marketing/about/program-twos.jpg',
+  },
+  {
+    slug: 'threes',
+    title: 'Our 3s Class',
+    body: "Our 3s program is designed to ignite curiosity and foster a love for learning in a warm, supportive environment. Through engaging activities, creative play, and age-appropriate lessons, children develop essential skills in literacy, math, and problem-solving while building social connections and confidence. This class provides the perfect balance of structure and exploration to help your child thrive.",
+    imageSrc: '/marketing/about/program-threes.jpg',
+  },
+  {
+    slug: 'preschool-kinder',
+    title: 'Preschool & Private Kindergarten',
+    body: "Our Preschool and Private Kindergarten programs provide a strong foundation for lifelong learning in a nurturing, faith-based environment. Preschool focuses on building essential skills in literacy, math, and social-emotional development through engaging, hands-on activities that foster curiosity and independence. Private Kindergarten offers a comprehensive, well-rounded curriculum with personalized attention to ensure your child is prepared for future academic success while growing in confidence and character.",
+    imageSrc: '/marketing/about/program-preschool-kinder.jpg',
+  },
+];
 
 export default function AboutPage() {
   return (
     <>
-      {/* Hero */}
-      <section
-        className="py-16 md:py-24 lg:py-32"
-        style={{ background: 'var(--gradient-hero)' }}
-      >
-        <div className="mx-auto max-w-7xl px-6 md:px-10">
-          <div className="mx-auto max-w-2xl text-center">
-            <span
-              className="text-xs font-semibold uppercase tracking-[0.12em]"
-              style={{ color: 'var(--color-primary)' }}
-            >
-              About CCA
-            </span>
-            <h1
-              className={cn(
-                'mt-4 text-[32px] font-extrabold leading-[0.95] tracking-tight md:text-[48px] lg:text-[56px]',
-                'text-balance',
-              )}
-              style={{
-                fontFamily: 'var(--font-heading)',
-                color: 'var(--color-foreground)',
-              }}
-            >
-              Small school. Big mission.
+      <section className="relative py-24 px-6 bg-cca-cream">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-12">
+          <ScrollReveal className="w-full md:w-1/2">
+            <p className="font-coming-soon text-sm uppercase tracking-wider text-cca-green mb-3">About</p>
+            <h1 className="font-kollektif text-4xl md:text-5xl text-cca-ink mb-6">
+              Where Learning and Fun Come Together
             </h1>
-            <p
-              className="mt-6 text-lg leading-relaxed text-pretty mx-auto max-w-xl"
-              style={{ color: 'var(--color-muted-foreground)' }}
-            >
-              Crandall Christian Academy has been serving families in Crandall,
-              Texas since its founding. We&rsquo;re small on purpose &mdash;
-              because every child deserves to be known.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Our Story */}
-      <section className="py-16 md:py-24">
-        <div className="mx-auto max-w-7xl px-6 md:px-10">
-          <div className="grid gap-12 md:grid-cols-2 md:items-center">
-            <div>
-              <span
-                className="text-xs font-semibold uppercase tracking-[0.12em]"
-                style={{ color: 'var(--color-primary)' }}
-              >
-                Our story
-              </span>
-              <h2
-                className={cn(
-                  'mt-4 text-[26px] font-bold leading-tight tracking-tight md:text-[32px]',
-                  'text-balance',
-                )}
-                style={{
-                  fontFamily: 'var(--font-heading)',
-                  color: 'var(--color-foreground)',
-                }}
-              >
-                Born from a belief that Crandall deserves better.
-              </h2>
-              <div
-                className="mt-6 space-y-4 text-base leading-relaxed text-pretty"
-                style={{ color: 'var(--color-muted-foreground)' }}
-              >
-                <p>
-                  Crandall Christian Academy was founded with a simple vision: every
-                  child in this community should have access to a preschool where
-                  they&rsquo;re known by name, loved without condition, and prepared
-                  for the next chapter of their lives.
-                </p>
-                <p>
-                  What started as a small classroom with a handful of families has
-                  grown into a trusted home for dozens of children &mdash; but
-                  we&rsquo;ve stayed small on purpose. Because when you limit the
-                  size, you multiply the impact.
-                </p>
-              </div>
+          </ScrollReveal>
+          <ScrollReveal className="w-full md:w-1/2" delay={0.15}>
+            <div className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-xl">
+              <Image
+                src="/marketing/about/hero-playing-toddlers.jpg"
+                alt="Children playing and learning at CCA"
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 50vw"
+                priority
+              />
             </div>
-            <div
-              className="aspect-[4/3] rounded-[var(--radius,0.75rem)] overflow-hidden"
-              style={{
-                backgroundColor: `color-mix(in srgb, var(--color-primary) 8%, var(--color-muted))`,
-              }}
-            >
-              <div className="flex h-full items-center justify-center">
-                <Heart size={80} className="opacity-20" style={{ color: 'var(--color-primary)' }} />
-              </div>
+          </ScrollReveal>
+        </div>
+      </section>
+
+      <section className="py-20 px-6 bg-white">
+        <div className="max-w-4xl mx-auto text-center">
+          <ScrollReveal>
+            <SectionHeader
+              heading="Our Mission"
+              subheading="We support the growth and development of every child through personalized care."
+              headingColor="text-cca-blue"
+            />
+            <p className="font-questrial text-lg text-cca-ink/80 leading-relaxed mt-6">
+              At Crandall Christian Academy, our mission is to provide a safe, loving, and educational environment where children can thrive. We believe in nurturing each child&apos;s unique abilities and fostering a lifelong love of learning.
+            </p>
+          </ScrollReveal>
+          <ScrollReveal delay={0.15}>
+            <div className="flex flex-col sm:flex-row justify-center gap-6 mt-8 text-left max-w-lg mx-auto">
+              {[
+                'Encouraging curiosity and creativity.',
+                'Supporting emotional, social, and spiritual development.',
+                'Building strong partnerships with families.',
+              ].map((item, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <span className="mt-1 w-2 h-2 rounded-full bg-cca-blue flex-shrink-0" />
+                  <p className="font-questrial text-cca-ink/80">{item}</p>
+                </div>
+              ))}
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Our Mission */}
-      <section
-        className="py-16 md:py-24"
-        style={{ backgroundColor: 'var(--color-muted)' }}
-      >
-        <div className="mx-auto max-w-7xl px-6 md:px-10">
-          <div className="mx-auto max-w-3xl text-center">
-            <span
-              className="text-xs font-semibold uppercase tracking-[0.12em]"
-              style={{ color: 'var(--color-primary)' }}
-            >
-              Our mission
-            </span>
-            <h2
-              className={cn(
-                'mt-4 text-[26px] font-bold leading-tight tracking-tight md:text-[32px]',
-                'text-balance',
-              )}
-              style={{
-                fontFamily: 'var(--font-heading)',
-                color: 'var(--color-foreground)',
-              }}
-            >
-              Nurturing the whole child.
-            </h2>
-            <p
-              className="mt-6 text-lg leading-relaxed text-pretty mx-auto max-w-2xl"
-              style={{ color: 'var(--color-muted-foreground)' }}
-            >
-              To provide a nurturing, faith-based learning environment where every
-              child is known by name, loved without condition, and prepared for the
-              next step in their journey.
-            </p>
-          </div>
-
-          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              { icon: Heart, title: 'Faith-centered', desc: 'Character and values woven into every day.' },
-              { icon: Users, title: 'Small ratios', desc: '8:1 or better in every classroom.' },
-              { icon: Shield, title: 'Safe & secure', desc: 'Controlled access, certified staff, allergy protocols.' },
-              { icon: Building2, title: 'Community-rooted', desc: 'Serving Crandall families with purpose.' },
-            ].map((item) => (
-              <div
-                key={item.title}
-                className="flex flex-col items-center text-center gap-3 p-6"
-              >
-                <div
-                  className="h-12 w-12 inline-flex items-center justify-center rounded-xl"
-                  style={{
-                    backgroundColor: `color-mix(in srgb, var(--color-primary) 12%, transparent)`,
-                  }}
-                >
-                  <item.icon size={24} style={{ color: 'var(--color-primary)' }} />
-                </div>
-                <h3
-                  className="text-base font-bold"
-                  style={{
-                    fontFamily: 'var(--font-heading)',
-                    color: 'var(--color-foreground)',
-                  }}
-                >
-                  {item.title}
-                </h3>
-                <p
-                  className="text-sm text-pretty"
-                  style={{ color: 'var(--color-muted-foreground)' }}
-                >
-                  {item.desc}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Our Team */}
-      <section className="py-16 md:py-24" id="team">
-        <div className="mx-auto max-w-7xl px-6 md:px-10">
-          <div className="text-center mb-12">
-            <span
-              className="text-xs font-semibold uppercase tracking-[0.12em]"
-              style={{ color: 'var(--color-primary)' }}
-            >
-              Our team
-            </span>
-            <h2
-              className={cn(
-                'mt-4 text-[26px] font-bold leading-tight tracking-tight md:text-[32px]',
-                'text-balance',
-              )}
-              style={{
-                fontFamily: 'var(--font-heading)',
-                color: 'var(--color-foreground)',
-              }}
-            >
-              The people who make it possible.
-            </h2>
-            <p
-              className="mt-4 text-base leading-relaxed text-pretty mx-auto max-w-xl"
-              style={{ color: 'var(--color-muted-foreground)' }}
-            >
-              Every member of our team is background-checked, CPR/First Aid
-              certified, and trained in early childhood development. Not
-              babysitters &mdash; educators.
-            </p>
-          </div>
-
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto">
-            {[
-              { name: 'Director', role: 'School Director', bio: 'Leading CCA with faith, vision, and a heart for every family.' },
-              { name: 'Lead Teacher', role: 'Infant/Toddler Lead', bio: 'Creating gentle, nurturing environments for our youngest learners.' },
-              { name: 'Lead Teacher', role: 'Pre-K Lead', bio: 'Preparing confident, curious children for their next big step.' },
-            ].map((member, i) => (
-              <div
-                key={i}
-                className={cn(
-                  'flex flex-col items-center text-center gap-4 rounded-[var(--radius,0.75rem)] border p-6',
-                  'bg-[var(--color-card)]',
-                )}
-                style={{ borderColor: 'var(--color-border)' }}
-              >
-                <div
-                  className="h-20 w-20 rounded-full"
-                  style={{
-                    backgroundColor: `color-mix(in srgb, var(--color-secondary) 12%, transparent)`,
-                  }}
-                />
-                <div>
-                  <p
-                    className="text-base font-bold"
-                    style={{
-                      fontFamily: 'var(--font-heading)',
-                      color: 'var(--color-foreground)',
-                    }}
-                  >
-                    {member.name}
-                  </p>
-                  <p
-                    className="text-sm"
-                    style={{ color: 'var(--color-primary)' }}
-                  >
-                    {member.role}
-                  </p>
-                  <p
-                    className="mt-2 text-sm text-pretty"
-                    style={{ color: 'var(--color-muted-foreground)' }}
-                  >
-                    {member.bio}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Dual CTAs */}
-      <section
-        className="py-16 md:py-20 border-t"
-        style={{ borderColor: 'var(--color-border)' }}
-      >
-        <div className="mx-auto max-w-7xl px-6 md:px-10 text-center">
-          <div className="flex flex-wrap justify-center gap-4">
+          </ScrollReveal>
+          <ScrollReveal delay={0.25}>
             <Link
-              href="/contact"
-              className={cn(
-                'inline-flex items-center justify-center gap-2 px-7 py-3.5 text-base font-semibold rounded-full',
-                'border transition-all hover:bg-[var(--color-muted)] active:scale-[0.97]',
-              )}
-              style={{
-                borderColor: 'var(--color-border)',
-                color: 'var(--color-foreground)',
-              }}
+              href="/our-team"
+              className="inline-block mt-8 bg-cca-blue text-white font-kollektif px-6 py-3 rounded-full hover:bg-cca-blue/90 transition-colors"
             >
-              Tour the school
-              <span aria-hidden="true">&rarr;</span>
+              Meet Our Educators
             </Link>
-            <Link
-              href="/enroll"
-              className={cn(
-                'inline-flex items-center justify-center gap-2 px-7 py-3.5 text-base font-semibold rounded-full',
-                'transition-all hover:brightness-110 active:scale-[0.97]',
-              )}
-              style={{
-                backgroundColor: 'var(--color-primary)',
-                color: 'var(--color-primary-foreground)',
-              }}
-            >
-              Start enrollment
-              <span aria-hidden="true">&rarr;</span>
-            </Link>
-          </div>
+          </ScrollReveal>
+        </div>
+      </section>
+
+      <section id="programs" className="py-20 px-6 bg-cca-cream">
+        <div className="max-w-6xl mx-auto">
+          <ScrollReveal>
+            <SectionHeader
+              heading="Our Programs"
+              subheading="At Crandall Christian Academy, our programs are thoughtfully designed to nurture children's growth from toddlers to private kindergarten. Each program focuses on age-appropriate learning, fostering curiosity, independence, and a love for God in a safe and supportive environment."
+              headingColor="text-cca-ink"
+            />
+          </ScrollReveal>
+          {PROGRAMS.map((prog, i) => (
+            <ProgramCard key={prog.slug} {...prog} applyUrl={APPLY_URL} index={i} />
+          ))}
         </div>
       </section>
     </>
-  )
+  );
 }
