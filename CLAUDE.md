@@ -4,11 +4,12 @@
 
 A **multi-tenant white-label preschool management SaaS platform** at `preschool.businesses.win`. First tenant: Crandall Christian Academy (CCA). One Next.js 16 repo, four surfaces (platform site, tenant marketing, staff portal, parent portal).
 
-**Current focus:** CCA marketing site is live at `crandallchristian.cc` — visual parity with original achieved.
+**Current focus:** CCA marketing site visual parity V2 — closing remaining gaps between `crandallchristian.cc` (replica) and `crandallchristianacademy.com` (original). The hero section is wrong and section order needs fixing.
 
 ## Active build docs (read before writing code)
 
-1. `docs/BRAND.md` — design tokens, typography, color system, motion, component primitives.
+1. `docs/CCA_MARKETING_PUNCHLIST_V2.md` — **the current task.** 8 fixes to close visual gaps, prioritized.
+2. `docs/BRAND.md` — design tokens, typography, color system, motion, component primitives.
 3. `docs/COPY.md` — all marketing copy (PASTOR framework, page-by-page).
 4. `AGENTS.md` — Next.js 16 breaking changes. Read the upgrade guide before touching routes.
 5. `BUILD_LOG.md` — **read the top 20 lines before every task.** This is how you orient.

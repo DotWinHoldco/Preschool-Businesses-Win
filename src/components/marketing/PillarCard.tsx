@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import Link from 'next/link';
 import { ScrollReveal } from './ScrollReveal';
 
 interface PillarCardProps {
@@ -24,8 +25,11 @@ export function PillarCard({ title, body, imageSrc, accentColor, index }: Pillar
           <div className={`absolute bottom-0 left-0 right-0 h-1 ${accentColor}`} />
         </div>
         <div className="p-6">
-          <h3 className="font-kollektif text-xl mb-3">{title}</h3>
+          <h3 className="font-kollektif text-xl mb-3 text-cca-blue">{title}</h3>
           <p className="font-questrial text-cca-ink/80 text-base leading-relaxed">{body}</p>
+          <Link href="/about" className="text-cca-blue font-kollektif text-sm hover:underline mt-3 inline-block">
+            Read More
+          </Link>
         </div>
       </div>
     </ScrollReveal>
