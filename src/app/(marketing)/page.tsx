@@ -5,10 +5,12 @@ import { VideoBackground } from '@/components/marketing/VideoBackground';
 import { ScrollReveal } from '@/components/marketing/ScrollReveal';
 import { SectionHeader } from '@/components/marketing/SectionHeader';
 import { PillarCard } from '@/components/marketing/PillarCard';
-import { CurriculumCard } from '@/components/marketing/CurriculumCard';
 import { ValuePropCard } from '@/components/marketing/ValuePropCard';
 import { FeatureRow } from '@/components/marketing/FeatureRow';
 import { NewsletterForm } from '@/components/marketing/NewsletterForm';
+import { StickyPrograms } from '@/components/marketing/StickyPrograms';
+import { SpinningCTA } from '@/components/marketing/SpinningCTA';
+import { MarqueeBanner } from '@/components/marketing/MarqueeBanner';
 
 export const metadata: Metadata = {
   title: 'Home | Crandall Christian Academy',
@@ -42,42 +44,6 @@ const PILLARS = [
     body: "Together, we support your child's growth through activities that promote strength, coordination, and overall wellness. From active play and movement exercises to fine and gross motor skill development, our program helps our students build healthy habits and confidence in their abilities. By staying active and engaged, children develop the physical foundation they need to thrive in learning and in life!",
     imageSrc: '/marketing/home/pillar-physical-development.jpg',
     accentColor: 'bg-cca-yellow',
-  },
-];
-
-const CURRICULUM = [
-  {
-    age: 'Infants',
-    slug: 'infants',
-    body: 'Our infant program provides a safe, loving, and faith-filled environment where your baby is nurtured from the very beginning. With attentive caregivers, low ratios, and individualized care, we focus on building trust, comfort, and early developmental milestones while partnering closely with parents every step of the way.',
-    imageSrc: '/marketing/home/curriculum-infants.jpg',
-  },
-  {
-    age: 'Toddlers',
-    slug: 'toddlers',
-    body: 'Our toddler program nurtures curiosity and early exploration in a safe, loving environment, promoting developmental milestones through hands-on activities and play.',
-    imageSrc: '/marketing/home/curriculum-toddlers.jpg',
-  },
-  {
-    age: 'Twos',
-    slug: 'twos',
-    body: 'The 2s program introduces structure and socialization, encouraging early learning through age-appropriate activities that build confidence, independence, and foundational skills.',
-    imageSrc: '/marketing/home/curriculum-twos.jpg',
-  },
-  {
-    age: 'Threes',
-    slug: 'threes',
-    body: 'In our 3s program, children engage in creative learning experiences that develop early literacy, math, and social skills while fostering curiosity and a love for discovery.',
-  },
-  {
-    age: 'Pre-K',
-    slug: 'preschool-kinder',
-    body: 'The Pre-K program prepares children for kindergarten with a focus on academics, social-emotional growth, and faith-based learning in a supportive and engaging environment.',
-  },
-  {
-    age: 'Private Kindergarten',
-    slug: 'preschool-kinder',
-    body: 'Our private kindergarten offers a well-rounded education, blending academic excellence, spiritual growth, and individualized attention to ensure children thrive in their first formal year of school.',
   },
 ];
 
@@ -118,26 +84,26 @@ const CCA_DIFFERENCE = [
 export default function HomePage() {
   return (
     <>
-      {/* === SECTION 1: Hero === */}
+      {/* === 1. Hero — "A Place To Shine Bright" === */}
       <VideoBackground
         src1080={`${VIDEO_BASE}/facility-hero-1080p.mp4`}
         src720={`${VIDEO_BASE}/facility-hero-720p.mp4`}
         poster="/marketing/home/facility-hero-poster.jpg"
-        className="min-h-[80vh] flex items-center"
+        className="min-h-[90vh] flex items-center"
         overlay="bg-black/40"
       >
         <div className="max-w-4xl mx-auto px-6 py-24 text-center">
           <ScrollReveal>
-            <div className="w-10 h-10 mx-auto mb-4">
+            <div className="w-12 h-12 mx-auto mb-5 animate-[float_3s_ease-in-out_infinite] motion-reduce:animate-none">
               <Image
                 src="/marketing/home/mascot-sunshine-face.png"
                 alt=""
-                width={40}
-                height={40}
+                width={48}
+                height={48}
                 aria-hidden="true"
               />
             </div>
-            <h1 className="font-kollektif text-4xl md:text-6xl text-white mb-6">
+            <h1 className="font-kollektif text-4xl md:text-7xl text-white mb-6">
               A Place To Shine Bright
             </h1>
             <p className="font-questrial text-lg md:text-xl text-white/90 max-w-2xl mx-auto mb-8 leading-relaxed">
@@ -145,7 +111,7 @@ export default function HomePage() {
             </p>
             <Link
               href={APPLY_URL}
-              className="inline-block bg-cca-green text-white font-kollektif text-lg px-8 py-4 rounded-full hover:bg-cca-green/90 transition-colors shadow-lg hover:shadow-xl"
+              className="inline-block bg-cca-green text-white font-kollektif text-lg px-10 py-4 rounded-full hover:bg-cca-green/90 transition-all shadow-lg hover:shadow-xl hover:scale-105"
             >
               Apply Now!
             </Link>
@@ -153,7 +119,39 @@ export default function HomePage() {
         </div>
       </VideoBackground>
 
-      {/* === SECTION 2: More Than A Preschool === */}
+      {/* === 2. Marquee — "A Parent's Dream Come True" === */}
+      <MarqueeBanner />
+
+      {/* === 3. "Today's Learners, Tomorrow's Leaders" — blue video section === */}
+      <VideoBackground
+        src1080={`${VIDEO_BASE}/facility-hero-1080p.mp4`}
+        src720={`${VIDEO_BASE}/facility-hero-720p.mp4`}
+        poster="/marketing/home/facility-hero-poster.jpg"
+        className="py-28"
+        overlay="bg-cca-blue/80"
+      >
+        <div className="max-w-4xl mx-auto px-6 text-center">
+          <ScrollReveal>
+            <p className="font-coming-soon text-sm uppercase tracking-widest text-cca-yellow mb-4">
+              Peace of Mind for Parents
+            </p>
+            <h2 className="font-kollektif text-3xl md:text-6xl text-white mb-6">
+              Today&apos;s Learners. Tomorrow&apos;s Leaders. Together!
+            </h2>
+            <p className="font-questrial text-lg text-white/85 leading-relaxed mb-8 max-w-2xl mx-auto">
+              At Crandall Christian Academy, we believe in partnering with parents to create the best environment for their child&apos;s growth and success. Through open communication and collaboration, we ensure every child feels supported, nurtured, and inspired to learn.
+            </p>
+            <Link
+              href="/about"
+              className="inline-block bg-white text-cca-blue font-kollektif px-8 py-4 rounded-full hover:bg-white/90 transition-all shadow-lg hover:shadow-xl hover:scale-105"
+            >
+              Learn More
+            </Link>
+          </ScrollReveal>
+        </div>
+      </VideoBackground>
+
+      {/* === 4. More Than A Preschool === */}
       <section className="py-20 px-6 bg-white">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-12">
           <ScrollReveal className="w-full md:w-1/2">
@@ -168,74 +166,24 @@ export default function HomePage() {
             </div>
           </ScrollReveal>
           <ScrollReveal className="w-full md:w-1/2" delay={0.15}>
+            <p className="font-coming-soon text-sm uppercase tracking-widest text-cca-coral mb-3">Play, Explore, Discover, Grow.</p>
             <h2 className="font-kollektif text-3xl md:text-5xl text-cca-blue mb-6">
               More Than A Preschool
             </h2>
-            <p className="font-questrial text-lg text-cca-ink/80 leading-relaxed">
-              At Crandall Christian Academy, we&apos;re more than a place for learning—we&apos;re a loving, close-knit community where children, teachers, and families build meaningful relationships. We celebrate each child&apos;s unique gifts, encourage their growth, and surround them with warmth, care, and connection. Together, we create a joyful environment where every child feels valued, supported, and inspired to thrive in every way.
-            </p>
-          </ScrollReveal>
-        </div>
-      </section>
-
-      {/* === SECTION 3: Play, Explore, Discover, Grow === */}
-      <section className="py-20 px-6 bg-cca-cream">
-        <div className="max-w-4xl mx-auto text-center">
-          <ScrollReveal>
-            <h2 className="font-kollektif text-3xl md:text-5xl text-cca-coral mb-6">
-              Play, Explore, Discover, Grow.
-            </h2>
-            <p className="font-questrial text-lg text-cca-ink/80 leading-relaxed">
-              At Crandall Christian Academy, we create spaces for students to play freely, explore new ideas, and discover their unique potential. Every day offers opportunities for active learning, fostering growth in mind, body and spirit. We nurture curiosity, creativity, and a sense of wonder as little ones thrive.
-            </p>
-          </ScrollReveal>
-        </div>
-      </section>
-
-      {/* === SECTION 4: A Parent's Dream Come True / Apply CTA === */}
-      <VideoBackground
-        src1080={`${VIDEO_BASE}/facility-hero-1080p.mp4`}
-        src720={`${VIDEO_BASE}/facility-hero-720p.mp4`}
-        poster="/marketing/home/facility-hero-poster.jpg"
-        className="py-24"
-        overlay="bg-black/50"
-      >
-        <div className="max-w-3xl mx-auto px-6 text-center">
-          <ScrollReveal>
-            <p className="font-coming-soon text-sm uppercase tracking-wider text-cca-yellow mb-3">
-              A Parent&apos;s Dream Come True
+            <p className="font-questrial text-lg text-cca-ink/80 leading-relaxed mb-6">
+              At Crandall Christian Academy, we&apos;re more than a place for learning—we&apos;re a loving, close-knit community where children, teachers, and families build meaningful relationships. We celebrate each child&apos;s unique gifts, encourage their growth, and surround them with warmth, care, and connection.
             </p>
             <Link
-              href={APPLY_URL}
-              className="inline-block bg-cca-green text-white font-kollektif text-lg px-8 py-4 rounded-full hover:bg-cca-green/90 transition-colors shadow-lg"
+              href="/about"
+              className="inline-block bg-cca-blue text-white font-kollektif px-8 py-3 rounded-full hover:bg-cca-blue/90 transition-all shadow-lg hover:shadow-xl hover:scale-105"
             >
-              Apply Now!
-            </Link>
-          </ScrollReveal>
-        </div>
-      </VideoBackground>
-
-      {/* === SECTION 5: Peace of Mind for Parents === */}
-      <section className="py-20 px-6 bg-white">
-        <div className="max-w-4xl mx-auto text-center">
-          <ScrollReveal>
-            <p className="font-coming-soon text-sm uppercase tracking-wider text-cca-green mb-3">
-              Peace of Mind for Parents
-            </p>
-            <h2 className="font-kollektif text-3xl md:text-5xl text-cca-ink mb-6">
-              Today&apos;s Learners. Tomorrow&apos;s Leaders. Together!
-            </h2>
-            <p className="font-questrial text-lg text-cca-ink/80 leading-relaxed mb-8">
-              At Crandall Christian Academy, we believe in partnering with parents to create the best environment for their child&apos;s growth and success. Through open communication and collaboration, we ensure every child feels supported, nurtured, and inspired to learn. Together, we build a foundation of trust and shared goals, giving parents peace of mind and children the tools they need to thrive. By working hand-in-hand, we help today&apos;s little learners grow into tomorrow&apos;s confident leaders.
-            </p>
-            <Link href="/about" className="inline-block bg-cca-blue text-white font-kollektif px-8 py-4 rounded-full hover:bg-cca-blue/90 transition-colors">
-              Learn More
+              About Us
             </Link>
           </ScrollReveal>
         </div>
       </section>
 
-      {/* === SECTION 6: Learning Adventures (Four Pillars) === */}
+      {/* === 5. Learning Adventures — Four Pillars === */}
       <section className="py-20 px-6 bg-cca-cream">
         <div className="max-w-7xl mx-auto">
           <ScrollReveal>
@@ -254,42 +202,18 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* === SECTION 7: Our Curriculum — Age Programs === */}
-      <section className="py-20 px-6 bg-white">
-        <div className="max-w-7xl mx-auto">
-          <ScrollReveal>
-            <SectionHeader
-              eyebrow="Our Programs"
-              heading="Programs by Age"
-              eyebrowColor="text-cca-green"
-              headingColor="text-cca-ink"
-            />
-          </ScrollReveal>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mt-12">
-            {CURRICULUM.map((prog, i) => (
-              <CurriculumCard
-                key={prog.age}
-                age={prog.age}
-                body={prog.body}
-                imageSrc={prog.imageSrc}
-                slug={prog.slug}
-                applyUrl={APPLY_URL}
-                index={i}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* === 6. Sticky Programs by Age === */}
+      <StickyPrograms />
 
-      {/* === SECTION 8: Why Choose Us === */}
-      <section className="py-20 px-6 bg-cca-cream">
+      {/* === 7. Why Choose Us — green background === */}
+      <section className="py-24 px-6 bg-cca-green">
         <div className="max-w-5xl mx-auto">
           <ScrollReveal>
             <SectionHeader
               eyebrow="Why Choose Us"
               heading="Every Child with Love & Safety"
-              eyebrowColor="text-cca-pink"
-              headingColor="text-cca-ink"
+              eyebrowColor="text-white/70"
+              headingColor="text-white"
               subheading="Crandall Christian Academy is dedicated to fostering academic excellence and Christian values in a nurturing environment. We strive to develop respectful, compassionate leaders who positively impact the world."
             />
           </ScrollReveal>
@@ -301,7 +225,7 @@ export default function HomePage() {
           <div className="text-center mt-10">
             <Link
               href={APPLY_URL}
-              className="inline-block bg-cca-blue text-white font-kollektif text-lg px-8 py-4 rounded-full hover:bg-cca-blue/90 transition-colors"
+              className="inline-block bg-white text-cca-green font-kollektif text-lg px-10 py-4 rounded-full hover:bg-white/90 transition-all shadow-lg hover:shadow-xl hover:scale-105"
             >
               Apply Now!
             </Link>
@@ -309,21 +233,18 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* === SECTION 9: Newsletter === */}
-      <VideoBackground
-        src1080={`${VIDEO_BASE}/newsletter-bg-1080p.mp4`}
-        src720={`${VIDEO_BASE}/newsletter-bg-720p.mp4`}
-        poster="/marketing/home/facility-hero-poster.jpg"
-        className="py-20"
-        overlay="bg-cca-blue/80"
-      >
-        <div className="max-w-xl mx-auto px-6">
+      {/* === 8. "Where Little Minds Shine" — Spinning CTA === */}
+      <SpinningCTA />
+
+      {/* === 9. Newsletter === */}
+      <section className="py-16 px-6 bg-cca-green">
+        <div className="max-w-xl mx-auto">
           <NewsletterForm />
         </div>
-      </VideoBackground>
+      </section>
 
-      {/* === SECTION 10: The CCA Difference === */}
-      <section className="py-20 px-6 bg-white">
+      {/* === 10. The CCA Difference — Ingredients === */}
+      <section className="py-24 md:py-32 px-6 bg-white">
         <div className="max-w-5xl mx-auto">
           <ScrollReveal>
             <SectionHeader
@@ -333,45 +254,25 @@ export default function HomePage() {
               headingColor="text-cca-ink"
             />
           </ScrollReveal>
-          <div className="mt-12 divide-y divide-gray-100">
+          <div className="mt-16 space-y-2">
             {CCA_DIFFERENCE.map((feature, i) => (
-              <FeatureRow key={feature.title} {...feature} reversed={i % 2 !== 0} index={i} />
+              <FeatureRow key={feature.title} {...feature} index={i} />
             ))}
           </div>
         </div>
       </section>
 
-      {/* === SECTION 11: Where Little Minds Shine — Closing CTA === */}
-      <VideoBackground
-        src1080={`${VIDEO_BASE}/facility-hero-1080p.mp4`}
-        src720={`${VIDEO_BASE}/facility-hero-720p.mp4`}
-        poster="/marketing/home/facility-hero-poster.jpg"
-        className="py-28"
-        overlay="bg-black/50"
-      >
-        <div className="max-w-3xl mx-auto px-6 text-center">
-          <ScrollReveal>
-            <h2 className="font-kollektif text-3xl md:text-5xl text-white mb-4">
-              Where Little Minds Shine
-            </h2>
-            <p className="font-questrial text-lg text-white/80 mb-8">
-              Lighting the Way for Lifelong Learning.
-            </p>
-            <Link
-              href={APPLY_URL}
-              className="inline-block bg-cca-green text-white font-kollektif text-lg px-8 py-4 rounded-full hover:bg-cca-green/90 transition-colors shadow-lg"
-            >
-              APPLY NOW
-            </Link>
-          </ScrollReveal>
-        </div>
-      </VideoBackground>
+      {/* === 11. "Where Little Minds Shine" — Repeated CTA === */}
+      <SpinningCTA />
 
-      {/* === SECTION 13: Now Enrolling — Final CTA === */}
-      <section className="py-20 px-6 bg-cca-cream">
+      {/* === 12. Marquee — repeated === */}
+      <MarqueeBanner />
+
+      {/* === 13. Now Enrolling — Final CTA === */}
+      <section className="py-24 px-6 bg-cca-cream">
         <div className="max-w-4xl mx-auto text-center">
           <ScrollReveal>
-            <p className="font-coming-soon text-sm uppercase tracking-wider text-cca-coral mb-3">
+            <p className="font-coming-soon text-sm uppercase tracking-widest text-cca-coral mb-3">
               Now Enrolling
             </p>
             <h2 className="font-kollektif text-3xl md:text-5xl text-cca-ink mb-6">
@@ -382,7 +283,7 @@ export default function HomePage() {
             </p>
             <Link
               href={APPLY_URL}
-              className="inline-block bg-cca-green text-white font-kollektif text-lg px-8 py-4 rounded-full hover:bg-cca-green/90 transition-colors"
+              className="inline-block bg-cca-green text-white font-kollektif text-lg px-10 py-4 rounded-full hover:bg-cca-green/90 transition-all shadow-lg hover:shadow-xl hover:scale-105"
             >
               Apply Now!
             </Link>

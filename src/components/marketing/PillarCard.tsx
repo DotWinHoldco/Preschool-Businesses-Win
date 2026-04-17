@@ -12,7 +12,7 @@ interface PillarCardProps {
 export function PillarCard({ title, body, imageSrc, accentColor, index }: PillarCardProps) {
   return (
     <ScrollReveal delay={index * 0.1}>
-      <div className="group bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300">
+      <div className="group bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl hover:-translate-y-2 hover:scale-[1.02] transition-all duration-300">
         <div className="relative aspect-[4/3] overflow-hidden">
           <Image
             src={imageSrc}
