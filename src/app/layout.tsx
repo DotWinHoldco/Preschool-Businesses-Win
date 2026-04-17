@@ -4,7 +4,7 @@
 // See PLATFORM_ARCHITECTURE.md §5 for the layout hierarchy.
 
 import type { Metadata } from 'next'
-import { Nunito, Open_Sans } from 'next/font/google'
+import { Nunito, Open_Sans, Dancing_Script } from 'next/font/google'
 import { headers } from 'next/headers'
 import { getTenantBranding } from '@/lib/tenant/branding'
 import { TenantThemeProvider } from '@/lib/theme/inject-tenant-theme'
@@ -27,6 +27,13 @@ const openSans = Open_Sans({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
   variable: '--font-body',
+  display: 'swap',
+})
+
+const dancingScript = Dancing_Script({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+  variable: '--font-signature',
   display: 'swap',
 })
 
@@ -67,7 +74,7 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
-      className={`${nunito.variable} ${openSans.variable} h-full antialiased`}
+      className={`${nunito.variable} ${openSans.variable} ${dancingScript.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <SkipToContent />

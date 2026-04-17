@@ -694,6 +694,44 @@ function WizardInput({
           </span>
         </label>
       )
+    case 'typed_signature': {
+      const sigVal = String(value ?? '')
+      return (
+        <div className="space-y-3">
+          <input
+            type="text"
+            disabled={disabled}
+            value={sigVal}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder="Type your full legal name"
+            className={common}
+          />
+          {sigVal.trim().length > 0 && (
+            <div className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-background)] px-6 py-5">
+              <p className="text-[10px] uppercase tracking-widest text-[var(--color-muted-foreground)] mb-2">
+                Electronic Signature
+              </p>
+              <p
+                className="text-4xl leading-tight text-[var(--color-foreground)]"
+                style={{ fontFamily: 'var(--font-signature, cursive)' }}
+              >
+                {sigVal}
+              </p>
+              <div className="mt-3 border-t border-[var(--color-border)] pt-2 flex items-center justify-between text-[10px] text-[var(--color-muted-foreground)]">
+                <span>
+                  {new Date().toLocaleDateString('en-US', {
+                    month: 'long',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
+                </span>
+                <span>Signed electronically</span>
+              </div>
+            </div>
+          )}
+        </div>
+      )
+    }
     case 'address_autocomplete':
       return (
         <input

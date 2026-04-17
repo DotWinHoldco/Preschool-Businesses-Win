@@ -83,7 +83,10 @@ export const StepParentSchema = z.object({
   parent_email: z.string().email('Please enter a valid email'),
   parent_phone: z.string().min(10, 'Please enter a valid phone').max(30),
   relationship_to_child: relationshipEnum,
-  parent_address: z.string().max(500).optional().default(''),
+  parent_address_street: z.string().max(200).optional().default(''),
+  parent_address_city: z.string().max(100).optional().default(''),
+  parent_address_state: z.string().max(2).optional().default(''),
+  parent_address_zip: z.string().max(10).optional().default(''),
   parent_occupation: z.string().max(200).optional().default(''),
   parent_work_phone: z.string().max(30).optional().default(''),
   parent_drivers_license: z.string().max(100).optional().default(''),
@@ -99,7 +102,10 @@ export const StepFamilySchema = z.object({
   has_other_parent: z.boolean().default(false),
   other_parent_name: z.string().max(200).optional().default(''),
   other_parent_same_address: z.boolean().default(true),
-  other_parent_address: z.string().max(500).optional().default(''),
+  other_parent_address_street: z.string().max(200).optional().default(''),
+  other_parent_address_city: z.string().max(100).optional().default(''),
+  other_parent_address_state: z.string().max(2).optional().default(''),
+  other_parent_address_zip: z.string().max(10).optional().default(''),
   other_parent_occupation: z.string().max(200).optional().default(''),
   other_parent_work_phone: z.string().max(30).optional().default(''),
   other_parent_drivers_license: z.string().max(100).optional().default(''),
@@ -116,6 +122,7 @@ export const StepFamilySchema = z.object({
 export type StepFamilyData = z.infer<typeof StepFamilySchema>
 
 export const StepAgreementSchema = z.object({
+  parent_signature: z.string().min(1, 'Please type your full name as your signature'),
   agree_to_contact: z.boolean().refine((v) => v === true, 'You must agree to be contacted'),
   agree_to_policies: z.boolean().refine((v) => v === true, 'You must agree to school policies'),
   acknowledge_accuracy: z.boolean().refine((v) => v === true, 'You must acknowledge accuracy'),
