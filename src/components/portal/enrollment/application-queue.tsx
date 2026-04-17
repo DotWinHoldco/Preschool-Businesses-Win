@@ -1,6 +1,5 @@
-'use client'
-
 // @anchor: cca.enrollment.application-queue
+import Link from 'next/link'
 import { cn } from '@/lib/cn'
 import { Clock, CheckCircle, XCircle, AlertCircle, ChevronRight, Star } from 'lucide-react'
 import { PipelineStageBadge } from './pipeline-stage-badge'
@@ -22,7 +21,6 @@ interface Application {
 
 interface ApplicationQueueProps {
   applications: Application[]
-  onSelect?: (id: string) => void
 }
 
 const statusConfig: Record<string, { icon: React.ComponentType<{ className?: string }>; label: string; className: string }> = {
@@ -34,7 +32,7 @@ const statusConfig: Record<string, { icon: React.ComponentType<{ className?: str
   enrolled: { icon: CheckCircle, label: 'Enrolled', className: 'bg-[var(--color-primary)]/10 text-[var(--color-primary)]' },
 }
 
-export function ApplicationQueue({ applications, onSelect }: ApplicationQueueProps) {
+export function ApplicationQueue({ applications }: ApplicationQueueProps) {
   return (
     <div className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] overflow-hidden">
       <div className="p-4 border-b border-[var(--color-border)]">
@@ -55,9 +53,9 @@ export function ApplicationQueue({ applications, onSelect }: ApplicationQueuePro
             const StatusIcon = config.icon
 
             return (
-              <button
+              <Link
                 key={app.id}
-                onClick={() => onSelect?.(app.id)}
+                href={`/portal/admin/enrollment/${app.id}`}
                 className="flex w-full items-center gap-4 p-4 text-left hover:bg-[var(--color-muted)]/50 transition-colors"
               >
                 <div className="flex-1 min-w-0">
@@ -71,7 +69,10 @@ export function ApplicationQueue({ applications, onSelect }: ApplicationQueuePro
                     </span>
                     <PipelineStageBadge stage={app.pipeline_stage} />
                     {app.triage_score !== null && (
-                      <span className="inline-flex items-center gap-0.5 text-xs text-[var(--color-warning)]">
+                      <span
+                        title={`Triage priority score: ${app.triage_score}/100 (higher = higher priority). Factors: sibling enrolled +15, referral +10, faith community +10, PreK +10, infant +5. Base: 50.`}
+                        className="inline-flex items-center gap-0.5 text-xs text-[var(--color-warning)]"
+                      >
                         <Star className="h-3 w-3 fill-current" />
                         {app.triage_score}
                       </span>
@@ -93,7 +94,7 @@ export function ApplicationQueue({ applications, onSelect }: ApplicationQueuePro
                   </div>
                 </div>
                 <ChevronRight className="h-4 w-4 flex-shrink-0 text-[var(--color-muted-foreground)]" />
-              </button>
+              </Link>
             )
           })}
         </div>
