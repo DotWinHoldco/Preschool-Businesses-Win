@@ -3,6 +3,7 @@
 // @anchor: cca.enrollment.application-queue
 import { cn } from '@/lib/cn'
 import { Clock, CheckCircle, XCircle, AlertCircle, ChevronRight, Star } from 'lucide-react'
+import { PipelineStageBadge } from './pipeline-stage-badge'
 
 interface Application {
   id: string
@@ -15,6 +16,7 @@ interface Application {
   program_type: string
   triage_status: string
   triage_score: number | null
+  pipeline_stage?: string
   created_at: string
 }
 
@@ -67,6 +69,7 @@ export function ApplicationQueue({ applications, onSelect }: ApplicationQueuePro
                       <StatusIcon className="h-3 w-3" />
                       {config.label}
                     </span>
+                    <PipelineStageBadge stage={app.pipeline_stage} />
                     {app.triage_score !== null && (
                       <span className="inline-flex items-center gap-0.5 text-xs text-[var(--color-warning)]">
                         <Star className="h-3 w-3 fill-current" />

@@ -4,13 +4,28 @@ import { ApplicationQueue } from '@/components/portal/enrollment/application-que
 import { FileText } from 'lucide-react'
 import Link from 'next/link'
 
-export default async function EnrollmentPage() {
+interface SearchParams {
+  stage?: string
+}
+
+export default async function EnrollmentPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>
+}) {
+  const params = await searchParams
   const supabase = await createTenantServerClient()
 
-  const { data: applications } = await supabase
+  let query = supabase
     .from('enrollment_applications')
     .select('*')
     .order('created_at', { ascending: false })
+
+  if (params.stage) {
+    query = query.eq('pipeline_stage', params.stage)
+  }
+
+  const { data: applications } = await query
 
   const mapped = (applications ?? []).map((a: Record<string, unknown>) => ({
     id: a.id as string,
@@ -23,8 +38,21 @@ export default async function EnrollmentPage() {
     program_type: (a.program_type as string) ?? '',
     triage_status: (a.triage_status as string) ?? 'new',
     triage_score: a.triage_score as number | null,
+    pipeline_stage: (a.pipeline_stage as string) ?? 'form_submitted',
     created_at: a.created_at as string,
   }))
+
+  const stageFilters = [
+    { key: '', label: 'All' },
+    { key: 'form_submitted', label: 'New' },
+    { key: 'under_review', label: 'Reviewing' },
+    { key: 'interview_invited', label: 'Invited' },
+    { key: 'interview_scheduled', label: 'Scheduled' },
+    { key: 'interview_completed', label: 'Interviewed' },
+    { key: 'offer_sent', label: 'Offered' },
+    { key: 'enrolled', label: 'Enrolled' },
+    { key: 'waitlisted', label: 'Waitlist' },
+  ]
 
   return (
     <div className="space-y-6">
@@ -35,7 +63,7 @@ export default async function EnrollmentPage() {
             <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Applications</h1>
           </div>
           <p className="text-sm text-[var(--color-muted-foreground)]">
-            Review and process enrollment applications
+            Review and process enrollment applications through the pipeline
           </p>
         </div>
         <Link
@@ -44,6 +72,25 @@ export default async function EnrollmentPage() {
         >
           View Waitlist
         </Link>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {stageFilters.map((f) => {
+          const active = (params.stage ?? '') === f.key
+          return (
+            <Link
+              key={f.key || 'all'}
+              href={f.key ? `/portal/admin/enrollment?stage=${f.key}` : '/portal/admin/enrollment'}
+              className={
+                active
+                  ? 'rounded-full bg-[var(--color-primary)] text-[var(--color-primary-foreground)] px-3 py-1 text-xs font-medium'
+                  : 'rounded-full border border-[var(--color-border)] px-3 py-1 text-xs text-[var(--color-foreground)] hover:bg-[var(--color-muted)]'
+              }
+            >
+              {f.label}
+            </Link>
+          )
+        })}
       </div>
 
       <ApplicationQueue applications={mapped} />
