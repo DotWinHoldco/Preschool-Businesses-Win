@@ -39,6 +39,7 @@ export interface WizardSection {
   description: string | null
   sort_order: number
   page_number: number
+  iterate_over_field_key?: string | null
 }
 
 export interface WizardFormProps {
@@ -57,6 +58,12 @@ export interface WizardFormProps {
   preview?: boolean
   onFieldSelect?: (fieldId: string) => void
   selectedFieldId?: string | null
+  /**
+   * Custom submit handler (overrides the default submitFormResponse). Receives the values
+   * object and returns a result. Used by /enroll to route through submitSystemEnrollment
+   * so the pipeline + lead + per-child applications are created.
+   */
+  onSubmit?: (values: Record<string, unknown>) => Promise<{ ok: boolean; error?: string }>
 }
 
 const LAYOUT_TYPES = new Set([
@@ -82,6 +89,7 @@ export function WizardFormRenderer({
   preview = false,
   onFieldSelect,
   selectedFieldId,
+  onSubmit,
 }: WizardFormProps) {
   // Build steps from sections — fall back to page_numbers if no sections.
   const steps = useMemo(() => {
@@ -95,6 +103,7 @@ export function WizardFormRenderer({
           title: s.title,
           description: s.description,
           page_number: s.page_number,
+          iterate_over_field_key: s.iterate_over_field_key ?? null,
         }))
     }
     const pages = Array.from(new Set(fields.map((f) => f.page_number))).sort((a, b) => a - b)
@@ -104,6 +113,7 @@ export function WizardFormRenderer({
       title: `Step ${i + 1}`,
       description: null,
       page_number: p,
+      iterate_over_field_key: null as string | null,
     }))
   }, [sections, fields])
 
@@ -124,30 +134,49 @@ export function WizardFormRenderer({
       .sort((a, b) => a.sort_order - b.sort_order)
   }, [fields, currentStep])
 
-  const isFieldVisible = (field: WizardField): boolean => {
+  const isFieldVisible = (field: WizardField, scope: Record<string, unknown> = values): boolean => {
     if (!field.logic_rules || field.logic_rules.length === 0) return true
-    const { visible } = evaluateLogicRules(field.logic_rules as unknown as LogicRule[], values)
+    const { visible } = evaluateLogicRules(field.logic_rules as unknown as LogicRule[], scope)
     return visible
+  }
+
+  const fieldSatisfied = (f: WizardField, scope: Record<string, unknown>): boolean => {
+    if (!f.is_required || LAYOUT_TYPES.has(f.field_type)) return true
+    if (!isFieldVisible(f, scope)) return true
+    const v = scope[f.field_key]
+    if (f.field_type === 'yes_no') return typeof v === 'boolean'
+    if (f.field_type === 'legal_acceptance') return v === true
+    if (f.field_type === 'repeater_group') return Array.isArray(v) && v.length > 0
+    return v !== undefined && v !== null && v !== ''
   }
 
   const canAdvance = (): boolean => {
     if (preview) return true
-    return currentFields
-      .filter(isFieldVisible)
-      .filter((f) => f.is_required && !LAYOUT_TYPES.has(f.field_type))
-      .every((f) => {
-        const v = values[f.field_key]
-        if (f.field_type === 'yes_no') return typeof v === 'boolean'
-        if (f.field_type === 'legal_acceptance') return v === true
-        if (f.field_type === 'repeater_group') return Array.isArray(v) && v.length > 0
-        return v !== undefined && v !== null && v !== ''
-      })
+    if (!currentStep) return true
+
+    const iterKey = currentStep.iterate_over_field_key
+    if (iterKey) {
+      const items = (Array.isArray(values[iterKey]) ? (values[iterKey] as Array<Record<string, unknown>>) : []) ?? []
+      if (items.length === 0) return true
+      return items.every((item) => currentFields.every((f) => fieldSatisfied(f, item)))
+    }
+
+    return currentFields.every((f) => fieldSatisfied(f, values))
   }
 
   const handleSubmit = () => {
     if (preview) return
     setError(null)
     startTransition(async () => {
+      if (onSubmit) {
+        const result = await onSubmit(values)
+        if (!result.ok) {
+          setError(result.error ?? 'Submission failed.')
+          return
+        }
+        setSubmitted(true)
+        return
+      }
       const result = await submitFormResponse({ form_id: formId, values })
       if (!result.ok) {
         setError(result.error ?? 'Submission failed.')
@@ -201,18 +230,34 @@ export function WizardFormRenderer({
         </div>
 
         <div className="mt-6 space-y-5">
-          {currentFields.filter(isFieldVisible).map((field) => (
-            <WizardFieldBlock
-              key={field.id}
-              field={field}
-              value={values[field.field_key]}
-              onChange={(v) => setValues({ ...values, [field.field_key]: v })}
+          {currentStep.iterate_over_field_key ? (
+            <IteratedFields
+              iterateKey={currentStep.iterate_over_field_key}
+              values={values}
+              setValues={setValues}
+              fields={currentFields}
+              isFieldVisible={isFieldVisible}
               preview={preview}
-              selected={selectedFieldId === field.id}
-              onSelect={onFieldSelect ? () => onFieldSelect(field.id) : undefined}
+              selectedFieldId={selectedFieldId}
+              onFieldSelect={onFieldSelect}
               tenantName={tenantName}
             />
-          ))}
+          ) : (
+            currentFields
+              .filter((f) => isFieldVisible(f))
+              .map((field) => (
+                <WizardFieldBlock
+                  key={field.id}
+                  field={field}
+                  value={values[field.field_key]}
+                  onChange={(v) => setValues({ ...values, [field.field_key]: v })}
+                  preview={preview}
+                  selected={selectedFieldId === field.id}
+                  onSelect={onFieldSelect ? () => onFieldSelect(field.id) : undefined}
+                  tenantName={tenantName}
+                />
+              ))
+          )}
 
           {/* Honeypot */}
           {!preview && (
@@ -270,6 +315,84 @@ export function WizardFormRenderer({
       </div>
     </div>
   )
+}
+
+function IteratedFields({
+  iterateKey,
+  values,
+  setValues,
+  fields,
+  isFieldVisible,
+  preview,
+  selectedFieldId,
+  onFieldSelect,
+  tenantName,
+}: {
+  iterateKey: string
+  values: Record<string, unknown>
+  setValues: (v: Record<string, unknown>) => void
+  fields: WizardField[]
+  isFieldVisible: (field: WizardField, scope?: Record<string, unknown>) => boolean
+  preview?: boolean
+  selectedFieldId?: string | null
+  onFieldSelect?: (fieldId: string) => void
+  tenantName?: string
+}) {
+  const items = (Array.isArray(values[iterateKey]) ? (values[iterateKey] as Array<Record<string, unknown>>) : []) ?? []
+
+  if (items.length === 0) {
+    return (
+      <div className="rounded-[var(--radius)] border border-dashed border-[var(--color-border)] p-6 text-sm text-[var(--color-muted-foreground)] text-center">
+        Add at least one item on the previous step to continue.
+      </div>
+    )
+  }
+
+  const updateItem = (index: number, patch: Record<string, unknown>) => {
+    const next = items.map((it, i) => (i === index ? { ...it, ...patch } : it))
+    setValues({ ...values, [iterateKey]: next })
+  }
+
+  return (
+    <div className="space-y-5">
+      {items.map((item, index) => {
+        const itemLabel = labelForItem(item, index)
+        return (
+          <div key={index} className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-background)]/40 p-4 md:p-5">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)]/10 px-3 py-1 text-xs font-semibold text-[var(--color-primary)]">
+              {itemLabel}
+            </div>
+            <div className="space-y-4">
+              {fields
+                .filter((f) => isFieldVisible(f, item))
+                .map((field) => (
+                  <WizardFieldBlock
+                    key={`${field.id}-${index}`}
+                    field={field}
+                    value={item[field.field_key]}
+                    onChange={(v) => updateItem(index, { [field.field_key]: v })}
+                    preview={preview}
+                    selected={selectedFieldId === field.id}
+                    onSelect={onFieldSelect ? () => onFieldSelect(field.id) : undefined}
+                    tenantName={tenantName}
+                  />
+                ))}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function labelForItem(item: Record<string, unknown>, index: number): string {
+  const name =
+    (typeof item.first_name === 'string' && item.first_name.trim()) ||
+    (typeof item.preferred_name === 'string' && item.preferred_name.trim()) ||
+    (typeof item.name === 'string' && item.name.trim()) ||
+    null
+  if (name) return name
+  return `#${index + 1}`
 }
 
 function WizardFieldBlock({

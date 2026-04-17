@@ -87,6 +87,7 @@ async function seedSingleTemplate(
         description: section.description ?? null,
         sort_order: i,
         page_number: section.page_number,
+        iterate_over_field_key: section.iterate_over_field_key ?? null,
       })
       .select('id')
       .single()
@@ -213,6 +214,7 @@ export async function spawnFormInstance(
         sort_order: section.sort_order,
         page_number: section.page_number,
         logic_rules: section.logic_rules,
+        iterate_over_field_key: section.iterate_over_field_key ?? null,
       })
       .select('id')
       .single()

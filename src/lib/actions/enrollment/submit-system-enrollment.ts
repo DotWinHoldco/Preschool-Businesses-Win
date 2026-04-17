@@ -70,12 +70,7 @@ export async function submitSystemEnrollment(
     const applicationIds: string[] = []
     const applicationMetadata = {
       parent: {
-        address: {
-          street: data.parent_address_street,
-          city: data.parent_address_city,
-          state: data.parent_address_state,
-          zip: data.parent_address_zip,
-        },
+        address: data.parent_address ?? '',
         occupation: data.parent_occupation,
         work_phone: data.parent_work_phone,
         drivers_license: data.parent_drivers_license,
@@ -84,12 +79,7 @@ export async function submitSystemEnrollment(
         ? {
             name: data.other_parent_name,
             same_address: data.other_parent_same_address,
-            address: {
-              street: data.other_parent_address_street,
-              city: data.other_parent_address_city,
-              state: data.other_parent_address_state,
-              zip: data.other_parent_address_zip,
-            },
+            address: data.other_parent_address ?? '',
             occupation: data.other_parent_occupation,
             work_phone: data.other_parent_work_phone,
             drivers_license: data.other_parent_drivers_license,

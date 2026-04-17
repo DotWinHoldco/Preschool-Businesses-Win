@@ -5,7 +5,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { cn } from '@/lib/cn'
-import { WizardFormRenderer } from '@/components/forms/wizard/wizard-form-renderer'
+import { EnrollmentWizardWrapper } from './enrollment-wizard-wrapper'
 import { createAdminClient } from '@/lib/supabase/admin'
 import {
   Shield,
@@ -451,10 +451,9 @@ export default async function EnrollPage() {
             </div>
 
             {form ? (
-              <WizardFormRenderer
+              <EnrollmentWizardWrapper
                 formId={form.id}
                 title={form.title}
-                mode={form.mode as 'conversational' | 'document'}
                 feeEnabled={form.fee_enabled ?? false}
                 feeAmountCents={form.fee_amount_cents}
                 feeDescription={form.fee_description ?? 'Application Fee'}
