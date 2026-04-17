@@ -1,174 +1,59 @@
-// @anchor: marketing.contact
-// Contact page with form + info per COPY.md.
-
-import type { Metadata } from 'next'
-import { cn } from '@/lib/cn'
-import { ContactForm } from '@/components/home/contact-form'
-import { MapPin, Phone, Mail, Clock } from 'lucide-react'
+import type { Metadata } from 'next';
+import Image from 'next/image';
+import { ScrollReveal } from '@/components/marketing/ScrollReveal';
+import { ContactForm } from '@/components/marketing/ContactForm';
 
 export const metadata: Metadata = {
-  title: 'Contact — Crandall Christian Academy',
-  description:
-    'Contact Crandall Christian Academy. Schedule a tour, ask questions, or get directions. We\u2019d love to hear from you.',
-}
-
-const CONTACT_INFO = [
-  {
-    icon: Phone,
-    label: 'Phone',
-    value: '(972) 555-0123',
-    href: 'tel:+19725550123',
-  },
-  {
-    icon: Mail,
-    label: 'Email',
-    value: 'info@crandallchristianacademy.com',
-    href: 'mailto:info@crandallchristianacademy.com',
-  },
-  {
-    icon: MapPin,
-    label: 'Address',
-    value: 'Crandall, TX 75114',
-    href: null,
-  },
-  {
-    icon: Clock,
-    label: 'Office Hours',
-    value: 'Monday \u2013 Friday, 6:30 AM \u2013 6:30 PM',
-    href: null,
-  },
-] as const
+  title: 'Contact',
+  description: 'Get in touch with Crandall Christian Academy. Connect with us for more information about enrollment, programs, and employment opportunities.',
+};
 
 export default function ContactPage() {
   return (
     <>
-      {/* Hero */}
-      <section
-        className="py-16 md:py-24 lg:py-32"
-        style={{ background: 'var(--gradient-hero)' }}
-      >
-        <div className="mx-auto max-w-7xl px-6 md:px-10">
-          <div className="mx-auto max-w-2xl text-center">
-            <span
-              className="text-xs font-semibold uppercase tracking-[0.12em]"
-              style={{ color: 'var(--color-primary)' }}
-            >
-              Get in touch
-            </span>
-            <h1
-              className={cn(
-                'mt-4 text-[32px] font-extrabold leading-[0.95] tracking-tight md:text-[48px] lg:text-[56px]',
-                'text-balance',
-              )}
-              style={{
-                fontFamily: 'var(--font-heading)',
-                color: 'var(--color-foreground)',
-              }}
-            >
-              We&rsquo;d love to hear from you.
+      <section className="relative py-24 px-6 bg-cca-cream">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-12">
+          <ScrollReveal className="w-full md:w-1/2">
+            <p className="font-coming-soon text-sm uppercase tracking-wider text-cca-green mb-3">Get In Touch</p>
+            <h1 className="font-kollektif text-4xl md:text-5xl text-cca-ink">
+              Connect with Us for More Information and Enrollment
             </h1>
-            <p
-              className="mt-6 text-lg leading-relaxed text-pretty mx-auto max-w-xl"
-              style={{ color: 'var(--color-muted-foreground)' }}
-            >
-              Have questions? Want to schedule a tour? Fill out the form, give us
-              a call, or stop by. The door is always open.
-            </p>
-          </div>
+          </ScrollReveal>
+          <ScrollReveal className="w-full md:w-1/2" delay={0.15}>
+            <div className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-xl">
+              <Image
+                src="/marketing/contact/hero-painting-class.jpg"
+                alt="Painting class at CCA"
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 50vw"
+                priority
+              />
+            </div>
+          </ScrollReveal>
         </div>
       </section>
 
-      {/* Content */}
-      <section className="py-16 md:py-24" id="tour">
-        <div className="mx-auto max-w-7xl px-6 md:px-10">
-          <div className="grid gap-12 lg:grid-cols-5">
-            {/* Contact info */}
-            <div className="lg:col-span-2">
-              <h2
-                className={cn(
-                  'text-xl font-bold leading-tight md:text-2xl',
-                  'text-balance',
-                )}
-                style={{
-                  fontFamily: 'var(--font-heading)',
-                  color: 'var(--color-foreground)',
-                }}
-              >
-                Contact information
-              </h2>
-              <div className="mt-6 space-y-5">
-                {CONTACT_INFO.map((item) => (
-                  <div key={item.label} className="flex gap-4">
-                    <div
-                      className="h-10 w-10 shrink-0 inline-flex items-center justify-center rounded-xl"
-                      style={{
-                        backgroundColor: `color-mix(in srgb, var(--color-primary) 12%, transparent)`,
-                      }}
-                    >
-                      <item.icon size={18} style={{ color: 'var(--color-primary)' }} />
-                    </div>
-                    <div>
-                      <p
-                        className="text-xs font-semibold uppercase tracking-[0.08em]"
-                        style={{ color: 'var(--color-muted-foreground)' }}
-                      >
-                        {item.label}
-                      </p>
-                      {item.href ? (
-                        <a
-                          href={item.href}
-                          className="mt-0.5 text-base font-medium transition-colors hover:opacity-80"
-                          style={{ color: 'var(--color-foreground)' }}
-                        >
-                          {item.value}
-                        </a>
-                      ) : (
-                        <p
-                          className="mt-0.5 text-base font-medium"
-                          style={{ color: 'var(--color-foreground)' }}
-                        >
-                          {item.value}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Map placeholder */}
-              <div
-                className={cn(
-                  'mt-8 aspect-video rounded-[var(--radius,0.75rem)] overflow-hidden border',
-                  'flex items-center justify-center',
-                )}
-                style={{
-                  borderColor: 'var(--color-border)',
-                  backgroundColor: 'var(--color-muted)',
-                }}
-              >
-                <div className="text-center p-4">
-                  <MapPin
-                    size={32}
-                    className="mx-auto opacity-30"
-                    style={{ color: 'var(--color-muted-foreground)' }}
-                  />
-                  <p
-                    className="mt-2 text-sm"
-                    style={{ color: 'var(--color-muted-foreground)' }}
-                  >
-                    Map coming soon
-                  </p>
-                </div>
-              </div>
+      <section className="py-20 px-6 bg-white">
+        <div className="max-w-4xl mx-auto">
+          <ScrollReveal>
+            <h2 className="font-kollektif text-3xl md:text-4xl text-cca-blue text-center mb-6">
+              We&apos;re Here to Answer Your Questions and Help Your Child Thrive
+            </h2>
+            <div className="font-questrial text-lg text-cca-ink/80 leading-relaxed text-center space-y-4 mb-12">
+              <p>
+                Thank you for your interest in Crandall Christian Academy. We are excited to connect with families who are seeking a nurturing, faith-based learning environment for their children.
+              </p>
+              <p>
+                Whether you have questions about enrollment, programs, or employment opportunities, our team is here to help.
+              </p>
             </div>
-
-            {/* Contact form */}
-            <div className="lg:col-span-3">
-              <ContactForm />
-            </div>
-          </div>
+          </ScrollReveal>
+          <ScrollReveal delay={0.15}>
+            <ContactForm />
+          </ScrollReveal>
         </div>
       </section>
     </>
-  )
+  );
 }
