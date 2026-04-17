@@ -10,6 +10,7 @@ import { getSession, getUserMembership } from '@/lib/auth/session'
 import { getImpersonationState } from '@/lib/auth/impersonation'
 import { PortalShell } from '@/components/portal/portal-shell'
 import { ImpersonationBanner } from '@/components/portal/impersonation-banner'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export default async function PortalLayout({
   children,
@@ -64,33 +65,18 @@ export default async function PortalLayout({
   // Check impersonation state
   const impersonation = await getImpersonationState()
 
-  // Tenant features (placeholder until fetched from DB)
-  const features = [
-    { feature_key: 'check_in', enabled: true, config: {} },
-    { feature_key: 'daily_reports', enabled: true, config: {} },
-    { feature_key: 'billing', enabled: true, config: {} },
-    { feature_key: 'messaging', enabled: true, config: {} },
-    { feature_key: 'curriculum', enabled: true, config: {} },
-    { feature_key: 'attendance_tracking', enabled: true, config: {} },
-    { feature_key: 'calendar_events', enabled: true, config: {} },
-    { feature_key: 'document_vault', enabled: true, config: {} },
-    { feature_key: 'checklists', enabled: true, config: {} },
-    { feature_key: 'analytics', enabled: true, config: {} },
-    { feature_key: 'newsfeed', enabled: true, config: {} },
-    { feature_key: 'cacfp', enabled: true, config: {} },
-    { feature_key: 'expense_tracking', enabled: true, config: {} },
-    { feature_key: 'enrollment_crm', enabled: true, config: {} },
-    { feature_key: 'surveys', enabled: true, config: {} },
-    { feature_key: 'carline', enabled: true, config: {} },
-    { feature_key: 'drop_in', enabled: true, config: {} },
-    { feature_key: 'subsidy_tracking', enabled: true, config: {} },
-    { feature_key: 'door_control', enabled: true, config: {} },
-    { feature_key: 'camera_feeds', enabled: true, config: {} },
-    { feature_key: 'emergency_system', enabled: true, config: {} },
-    { feature_key: 'dfps_compliance', enabled: true, config: {} },
-    { feature_key: 'training_tracker', enabled: true, config: {} },
-    { feature_key: 'portfolios', enabled: true, config: {} },
-  ]
+  // Tenant features — fetched from DB (tenant_features table).
+  const supabase = createAdminClient()
+  const { data: featureRows } = await supabase
+    .from('tenant_features')
+    .select('feature_key, enabled, config')
+    .eq('tenant_id', effectiveTenantId)
+
+  const features = (featureRows ?? []).map((f) => ({
+    feature_key: f.feature_key as string,
+    enabled: f.enabled as boolean,
+    config: (f.config as Record<string, unknown>) ?? {},
+  }))
 
   // TODO (Phase 2): Fetch real classroom assignments for staff
   const classrooms = [
