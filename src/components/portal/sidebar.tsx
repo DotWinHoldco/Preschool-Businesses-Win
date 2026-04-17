@@ -42,6 +42,8 @@ import {
   Banknote,
   ClipboardCheck,
   Newspaper,
+  FilePlus2,
+  CalendarCheck,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import {
@@ -144,6 +146,8 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/portal/admin/subsidies', label: 'Subsidies', icon: Banknote, roles: ADMIN_ROLES, featureKey: 'subsidy_tracking' },
       { href: '/portal/admin/enrollment', label: 'Enrollment', icon: UserPlus, roles: ADMIN_ROLES },
       { href: '/portal/admin/leads', label: 'Leads', icon: PieChart, roles: ADMIN_ROLES, featureKey: 'enrollment_crm' },
+      { href: '/portal/admin/appointments', label: 'Appointments', icon: CalendarCheck, roles: ADMIN_ROLES },
+      { href: '/portal/admin/forms', label: 'Forms', icon: FilePlus2, roles: ADMIN_ROLES, featureKey: 'form_builder' },
       { href: '/portal/admin/drop-in', label: 'Drop-in', icon: CalendarClock, roles: ADMIN_ROLES, featureKey: 'drop_in' },
     ],
   },

@@ -1,7 +1,7 @@
 // @anchor: cca.enrollment.admin-page
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { ApplicationQueue } from '@/components/portal/enrollment/application-queue'
-import { FileText } from 'lucide-react'
+import { FileText, Star } from 'lucide-react'
 import Link from 'next/link'
 
 interface SearchParams {
@@ -94,6 +94,18 @@ export default async function EnrollmentPage({
       </div>
 
       <ApplicationQueue applications={mapped} />
+
+      <div className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-muted)]/30 p-4 text-xs text-[var(--color-muted-foreground)]">
+        <div className="mb-1 flex items-center gap-1 font-medium text-[var(--color-foreground)]">
+          <Star className="h-3.5 w-3.5 fill-[var(--color-warning)] text-[var(--color-warning)]" />
+          Triage priority score
+        </div>
+        <p>
+          Auto-computed from the application (higher = higher priority / 100 max). Base 50 + sibling
+          enrolled 15 + referral 10 + faith community 10 + Pre-K 10 + infant 5. Used to sort the
+          queue and flag hot leads — does not determine acceptance.
+        </p>
+      </div>
     </div>
   )
 }
