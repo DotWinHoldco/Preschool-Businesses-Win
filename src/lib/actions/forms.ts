@@ -87,6 +87,103 @@ export async function updateForm(input: UpdateFormInput): Promise<ActionResult> 
   return { ok: true, id }
 }
 
+export async function createFormSection(input: {
+  form_id: string
+  title: string
+  description?: string
+  page_number: number
+  iterate_over_field_key?: string | null
+}): Promise<ActionResult> {
+  await assertRole('admin')
+  const tenantId = await getTenantId()
+  const actorId = await getActorId()
+  const supabase = createAdminClient()
+
+  const { count } = await supabase
+    .from('form_sections')
+    .select('id', { count: 'exact', head: true })
+    .eq('form_id', input.form_id)
+
+  const { data, error } = await supabase
+    .from('form_sections')
+    .insert({
+      form_id: input.form_id,
+      title: input.title,
+      description: input.description ?? null,
+      sort_order: count ?? 0,
+      page_number: input.page_number,
+      iterate_over_field_key: input.iterate_over_field_key ?? null,
+    })
+    .select('id')
+    .single()
+
+  if (error || !data) return { ok: false, error: error?.message ?? 'Insert failed' }
+
+  await supabase.from('audit_log').insert({
+    tenant_id: tenantId,
+    actor_id: actorId,
+    action: 'form.section.create',
+    entity_type: 'form_section',
+    entity_id: data.id,
+    after: input,
+  })
+
+  return { ok: true, id: data.id as string }
+}
+
+export async function updateFormSection(
+  id: string,
+  updates: {
+    title?: string | null
+    description?: string | null
+    page_number?: number
+    iterate_over_field_key?: string | null
+    sort_order?: number
+  },
+): Promise<ActionResult> {
+  await assertRole('admin')
+  const tenantId = await getTenantId()
+  const actorId = await getActorId()
+  const supabase = createAdminClient()
+
+  const { error } = await supabase.from('form_sections').update(updates).eq('id', id)
+  if (error) return { ok: false, error: error.message }
+
+  await supabase.from('audit_log').insert({
+    tenant_id: tenantId,
+    actor_id: actorId,
+    action: 'form.section.update',
+    entity_type: 'form_section',
+    entity_id: id,
+    after: updates,
+  })
+
+  return { ok: true, id }
+}
+
+export async function deleteFormSection(id: string): Promise<ActionResult> {
+  await assertRole('admin')
+  const tenantId = await getTenantId()
+  const actorId = await getActorId()
+  const supabase = createAdminClient()
+
+  // Unlink fields in this section (set section_id = null) before deleting
+  await supabase.from('form_fields').update({ section_id: null }).eq('section_id', id)
+
+  const { error } = await supabase.from('form_sections').delete().eq('id', id)
+  if (error) return { ok: false, error: error.message }
+
+  await supabase.from('audit_log').insert({
+    tenant_id: tenantId,
+    actor_id: actorId,
+    action: 'form.section.delete',
+    entity_type: 'form_section',
+    entity_id: id,
+  })
+
+  return { ok: true }
+}
+
 export async function createFormInstance(input: SpawnFormInstanceInput): Promise<ActionResult> {
   await assertRole('admin')
   const parsed = SpawnFormInstanceSchema.safeParse(input)
@@ -200,6 +297,7 @@ export async function revertSystemForm(
         description: s.description ?? null,
         sort_order: i,
         page_number: s.page_number,
+        iterate_over_field_key: s.iterate_over_field_key ?? null,
       })
       .select('id')
       .single()

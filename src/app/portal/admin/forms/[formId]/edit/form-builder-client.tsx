@@ -3,14 +3,14 @@
 // @anchor: platform.form-builder.builder-ui
 
 import { useState, useCallback, useTransition } from 'react'
-import { createFormField, updateFormField, deleteFormField, updateForm, createFormInstance, revertSystemForm } from '@/lib/actions/forms'
+import { createFormField, updateFormField, deleteFormField, updateForm, createFormInstance, revertSystemForm, createFormSection, updateFormSection, deleteFormSection } from '@/lib/actions/forms'
 import type { CreateFormFieldInput } from '@/lib/schemas/form'
 import { WizardFormRenderer, type WizardField, type WizardSection } from '@/components/forms/wizard/wizard-form-renderer'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import type { FormFieldType } from '@/lib/schemas/form'
-import { Settings, Sparkles, Copy, RotateCcw, Code2 } from 'lucide-react'
+import { Settings, Sparkles, Copy, RotateCcw, Code2, Layers, Trash2, Plus, Repeat } from 'lucide-react'
 
 interface FormDef {
   id: string; title: string; slug: string; status: string; mode: string
@@ -29,7 +29,14 @@ interface FieldDef {
   is_locked?: boolean; is_system_field?: boolean
 }
 
-interface SectionDef { id: string; title: string | null; description: string | null; sort_order: number }
+interface SectionDef {
+  id: string
+  title: string | null
+  description: string | null
+  sort_order: number
+  page_number?: number
+  iterate_over_field_key?: string | null
+}
 interface ActionDef { id: string; action_type: string; config: Record<string, unknown>; sort_order: number }
 
 const FIELD_PALETTE: { category: string; types: { type: FormFieldType; label: string }[] }[] = [
@@ -73,18 +80,20 @@ export function FormBuilderClient({ form, initialFields, initialSections, initia
   const [showSpawn, setShowSpawn] = useState(false)
   const [, startTransition] = useTransition()
 
-  const [sections] = useState<WizardSection[]>(
-    (initialSections ?? []).map((s) => ({
-      id: s.id,
-      title: s.title,
-      description: s.description,
-      sort_order: s.sort_order,
-      page_number: (s as unknown as { page_number?: number }).page_number ?? 1,
-    })),
-  )
+  const [sections, setSections] = useState<SectionDef[]>(initialSections ?? [])
   const [showRevert, setShowRevert] = useState(false)
   const [revertText, setRevertText] = useState('')
   const [showEmbed, setShowEmbed] = useState(false)
+  const [showSteps, setShowSteps] = useState(false)
+
+  const wizardSections: WizardSection[] = sections.map((s) => ({
+    id: s.id,
+    title: s.title,
+    description: s.description,
+    sort_order: s.sort_order,
+    page_number: s.page_number ?? 1,
+    iterate_over_field_key: s.iterate_over_field_key ?? null,
+  }))
 
   const [settings, setSettings] = useState({
     title: form.title,
@@ -249,6 +258,10 @@ export function FormBuilderClient({ form, initialFields, initialSections, initia
               </div>
             </div>
             <div className="flex gap-2">
+              <Button variant="secondary" onClick={() => setShowSteps(true)} className="inline-flex items-center gap-1">
+                <Layers className="h-4 w-4" />
+                Steps
+              </Button>
               <Button variant="secondary" onClick={() => setShowEmbed(true)} className="inline-flex items-center gap-1">
                 <Code2 className="h-4 w-4" />
                 Embed
@@ -295,7 +308,7 @@ export function FormBuilderClient({ form, initialFields, initialSections, initia
               feeDescription={settings.fee_description}
               thankYouTitle={settings.thank_you_title}
               thankYouMessage={settings.thank_you_message}
-              sections={sections}
+              sections={wizardSections}
               fields={fields as unknown as WizardField[]}
               preview
               onFieldSelect={setSelectedFieldId}
@@ -568,6 +581,186 @@ export function FormBuilderClient({ form, initialFields, initialSections, initia
       {showEmbed && (
         <EmbedModal form={form} onClose={() => setShowEmbed(false)} />
       )}
+
+      {showSteps && (
+        <StepsModal
+          formId={form.id}
+          sections={sections}
+          fields={fields}
+          onClose={() => setShowSteps(false)}
+          onChange={setSections}
+        />
+      )}
+    </div>
+  )
+}
+
+function StepsModal({
+  formId,
+  sections,
+  fields,
+  onClose,
+  onChange,
+}: {
+  formId: string
+  sections: SectionDef[]
+  fields: FieldDef[]
+  onClose: () => void
+  onChange: (sections: SectionDef[]) => void
+}) {
+  const [busy, setBusy] = useState(false)
+  const [, startTransition] = useTransition()
+
+  const repeaterFields = fields.filter((f) => f.field_type === 'repeater_group')
+
+  const sorted = [...sections].sort(
+    (a, b) =>
+      (a.page_number ?? a.sort_order) - (b.page_number ?? b.sort_order) || a.sort_order - b.sort_order,
+  )
+
+  const update = (id: string, patch: Partial<SectionDef>) => {
+    onChange(sections.map((s) => (s.id === id ? { ...s, ...patch } : s)))
+    startTransition(async () => {
+      await updateFormSection(id, patch)
+    })
+  }
+
+  const add = () => {
+    const nextPage = Math.max(0, ...sections.map((s) => s.page_number ?? 0)) + 1
+    setBusy(true)
+    startTransition(async () => {
+      const result = await createFormSection({
+        form_id: formId,
+        title: `Step ${nextPage}`,
+        page_number: nextPage,
+      })
+      setBusy(false)
+      if (result.ok && result.id) {
+        onChange([
+          ...sections,
+          {
+            id: result.id,
+            title: `Step ${nextPage}`,
+            description: null,
+            sort_order: sections.length,
+            page_number: nextPage,
+            iterate_over_field_key: null,
+          },
+        ])
+      }
+    })
+  }
+
+  const remove = (id: string) => {
+    if (!confirm('Delete this step? Fields inside will stay but become unassigned.')) return
+    setBusy(true)
+    startTransition(async () => {
+      await deleteFormSection(id)
+      setBusy(false)
+      onChange(sections.filter((s) => s.id !== id))
+    })
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-2xl rounded-[var(--radius)] bg-[var(--color-card)] p-6 shadow-xl max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 className="text-lg font-bold mb-1 inline-flex items-center gap-2">
+          <Layers className="h-5 w-5" />
+          Wizard steps
+        </h3>
+        <p className="text-sm text-[var(--color-muted-foreground)] mb-5">
+          Each step becomes one page in the wizard. Set <em>Iterate over</em> to repeat the step&apos;s
+          fields for each item in a repeater — useful for per-child program selection, per-student
+          medical info, or any &ldquo;for each&rdquo; pattern.
+        </p>
+
+        <ol className="space-y-3">
+          {sorted.map((s, i) => (
+            <li
+              key={s.id}
+              className="rounded-[var(--radius)] border border-[var(--color-border)] p-4 space-y-3"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--color-primary)]/10 text-xs font-semibold text-[var(--color-primary)]">
+                  {i + 1}
+                </span>
+                <button
+                  type="button"
+                  disabled={busy || sections.length <= 1}
+                  onClick={() => remove(s.id)}
+                  className="text-xs text-[var(--color-destructive)] hover:underline disabled:opacity-40 inline-flex items-center gap-1"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Delete
+                </button>
+              </div>
+
+              <div>
+                <label className="text-xs font-medium block mb-1">Title</label>
+                <Input
+                  value={s.title ?? ''}
+                  onChange={(e) => update(s.id, { title: e.target.value })}
+                  placeholder={`Step ${i + 1}`}
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-medium block mb-1">Description (optional)</label>
+                <Input
+                  value={s.description ?? ''}
+                  onChange={(e) => update(s.id, { description: e.target.value })}
+                  placeholder="Shown under the step title"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-medium block mb-1 inline-flex items-center gap-1">
+                  <Repeat className="h-3.5 w-3.5" />
+                  Iterate over
+                </label>
+                <select
+                  value={s.iterate_over_field_key ?? ''}
+                  onChange={(e) =>
+                    update(s.id, { iterate_over_field_key: e.target.value || null })
+                  }
+                  className="w-full rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                >
+                  <option value="">— No iteration (render fields once) —</option>
+                  {repeaterFields.map((f) => (
+                    <option key={f.id} value={f.field_key}>
+                      {f.label ?? f.field_key} (repeater)
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-[11px] text-[var(--color-muted-foreground)]">
+                  When set, every field in this step renders once per item — grouped under each item&apos;s
+                  name or index. Downstream submissions merge each iteration&apos;s values back into the
+                  repeater&apos;s array.
+                </p>
+              </div>
+            </li>
+          ))}
+        </ol>
+
+        <div className="mt-5 flex justify-between items-center">
+          <Button
+            variant="secondary"
+            disabled={busy}
+            onClick={add}
+            className="inline-flex items-center gap-1.5"
+          >
+            <Plus className="h-4 w-4" />
+            Add step
+          </Button>
+          <Button onClick={onClose}>Done</Button>
+        </div>
+      </div>
     </div>
   )
 }
