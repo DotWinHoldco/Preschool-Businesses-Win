@@ -16,6 +16,7 @@ export const metadata: Metadata = {
 };
 
 const APPLY_URL = '/enroll';
+const VIDEO_BASE = 'https://oajfxyiqjqymuvevnoui.supabase.co/storage/v1/object/public/marketing-videos';
 
 const PILLARS = [
   {
@@ -119,8 +120,8 @@ export default function HomePage() {
     <>
       {/* === SECTION 1: Hero === */}
       <VideoBackground
-        src1080="/marketing/home/videos/facility-hero-1080p.mp4"
-        src720="/marketing/home/videos/facility-hero-720p.mp4"
+        src1080={`${VIDEO_BASE}/facility-hero-1080p.mp4`}
+        src720={`${VIDEO_BASE}/facility-hero-720p.mp4`}
         poster="/marketing/home/facility-hero-poster.jpg"
         className="min-h-[80vh] flex items-center"
         overlay="bg-black/40"
@@ -193,8 +194,8 @@ export default function HomePage() {
 
       {/* === SECTION 4: A Parent's Dream Come True / Apply CTA === */}
       <VideoBackground
-        src1080="/marketing/home/videos/facility-hero-1080p.mp4"
-        src720="/marketing/home/videos/facility-hero-720p.mp4"
+        src1080={`${VIDEO_BASE}/facility-hero-1080p.mp4`}
+        src720={`${VIDEO_BASE}/facility-hero-720p.mp4`}
         poster="/marketing/home/facility-hero-poster.jpg"
         className="py-24"
         overlay="bg-black/50"
@@ -310,8 +311,8 @@ export default function HomePage() {
 
       {/* === SECTION 9: Newsletter === */}
       <VideoBackground
-        src1080="/marketing/home/videos/newsletter-bg-1080p.mp4"
-        src720="/marketing/home/videos/newsletter-bg-720p.mp4"
+        src1080={`${VIDEO_BASE}/newsletter-bg-1080p.mp4`}
+        src720={`${VIDEO_BASE}/newsletter-bg-720p.mp4`}
         poster="/marketing/home/facility-hero-poster.jpg"
         className="py-20"
         overlay="bg-cca-blue/80"
@@ -342,8 +343,8 @@ export default function HomePage() {
 
       {/* === SECTION 11: Where Little Minds Shine — Closing CTA === */}
       <VideoBackground
-        src1080="/marketing/home/videos/facility-hero-1080p.mp4"
-        src720="/marketing/home/videos/facility-hero-720p.mp4"
+        src1080={`${VIDEO_BASE}/facility-hero-1080p.mp4`}
+        src720={`${VIDEO_BASE}/facility-hero-720p.mp4`}
         poster="/marketing/home/facility-hero-poster.jpg"
         className="py-28"
         overlay="bg-black/50"
