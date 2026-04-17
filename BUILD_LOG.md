@@ -40,6 +40,17 @@
 
 ---
 
+### 2026-04-16 — PHASE 13: Custom fields engine + form builder
+- **What:** Built tenant-scoped custom fields engine (18 field types, entity-scoped, admin UI, search/filter integration) and form builder (30+ field types, conversational + document modes, logic engine, e-signatures, Stripe payment, submission action pipeline, standalone pages, admin responses + analytics).
+- **Why:** CCA_BUILD_BRIEF.md §44 + §45 / OVERNIGHT_BUILD_PLAN.md Phase 13
+- **Where:** `supabase/migrations/0044_custom_fields.sql` · `supabase/migrations/0045_form_builder.sql` · `src/lib/schemas/custom-field.ts` · `src/lib/schemas/form.ts` · `src/lib/forms/logic-engine.ts` · `src/lib/actions/custom-fields.ts` · `src/lib/actions/forms.ts` · `src/lib/actions/form-responses.ts` · `src/components/custom-fields/CustomFieldsSection.tsx` · `src/components/forms/fields/index.tsx` · `src/components/forms/ConversationalForm.tsx` · `src/components/forms/DocumentForm.tsx` · `src/app/portal/admin/settings/custom-fields/page.tsx` · `src/app/portal/admin/forms/page.tsx` · `src/app/portal/admin/forms/new/page.tsx` · `src/app/portal/admin/forms/[formId]/edit/page.tsx` · `src/app/portal/admin/forms/[formId]/responses/page.tsx` · `src/app/portal/admin/forms/[formId]/analytics/page.tsx` · `src/app/(forms)/[tenantSlug]/[formSlug]/page.tsx`
+- **How to extend:** Add new field types in `src/components/forms/fields/index.tsx` FIELD_RENDERERS map. Add new submission actions in `form_submission_actions` table. Seed templates via `form_templates` table.
+- **Grep anchors:** `@anchor: platform.custom-fields`, `@anchor: platform.custom-fields.schema`, `@anchor: platform.custom-fields.actions`, `@anchor: platform.custom-fields.section-component`, `@anchor: platform.custom-fields.admin-page`, `@anchor: platform.custom-fields.manager-component`, `@anchor: platform.form-builder`, `@anchor: platform.form-builder.schema`, `@anchor: platform.form-builder.actions`, `@anchor: platform.form-builder.response-actions`, `@anchor: platform.form-builder.logic-engine`, `@anchor: platform.form-builder.field-registry`, `@anchor: platform.form-builder.conversational-renderer`, `@anchor: platform.form-builder.document-renderer`, `@anchor: platform.form-builder.list-page`, `@anchor: platform.form-builder.create-page`, `@anchor: platform.form-builder.edit-page`, `@anchor: platform.form-builder.builder-ui`, `@anchor: platform.form-builder.responses-page`, `@anchor: platform.form-builder.analytics-page`, `@anchor: platform.form-builder.standalone-page`
+- **Spec ref:** `CCA_BUILD_BRIEF.md §44 §45` / `OVERNIGHT_BUILD_PLAN.md Phase 13`
+- **Database tables created:** custom_field_entity_types, custom_fields, custom_field_options, custom_field_values, forms, form_sections, form_fields, form_variables, form_responses, form_response_values, form_response_drafts, form_signature_requests, form_submission_actions, form_templates
+- **Feature flags added:** custom_fields, form_builder (enabled for CCA)
+- **Build status:** `npm run build` PASSES CLEAN
+
 ### 2026-04-08 — PHASES 1-14: Full platform build pushed to main
 - **What:** Built Phases 1-14 in parallel: auth, CRUD, check-in, daily reports, staff, billing, messaging, curriculum, CRM, CACFP, expenses, checklists, documents, calendar, surveys, analytics, emergency, compliance, hardware, marketing site. 342 files, 47,897 lines.
 - **Why:** Complete overnight build per OVERNIGHT_BUILD_PLAN.md
