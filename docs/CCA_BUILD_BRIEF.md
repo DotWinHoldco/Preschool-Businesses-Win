@@ -1,7 +1,7 @@
 # Preschool Businesses Win — Platform Build Brief
 **For: Claude Code**
 **Last updated: 2026-04-10**
-**Status:** v3.0 — Multi-tenant platform architecture. CCA is the first tenant. Expanded spec after competitive gap analysis against Brightwheel, Procare, Lillio, Kangarootime, Playground, Famly, Sandbox, and LineLeader. 43 feature areas. SuiteDash audit appendix to be added after read-only walkthrough.
+**Status:** v3.1 — Multi-tenant platform architecture. CCA is the first tenant. Expanded spec after competitive gap analysis against Brightwheel, Procare, Lillio, Kangarootime, Playground, Famly, Sandbox, and LineLeader. 48 feature areas. Added system forms (§46), application pipeline (§47), and appointment booking (§48). SuiteDash audit appendix to be added after read-only walkthrough.
 
 > ⚠️ **THIS IS A MULTI-TENANT PLATFORM.** Read `PLATFORM_ARCHITECTURE.md` first. Every table in this spec has an implicit `tenant_id uuid not null references tenants(id)` column. Every RLS policy includes `tenant_id = current_setting('app.tenant_id')::uuid` as the first predicate. Every component uses CSS variables (`var(--color-primary)`) for theming — never hardcoded colors. CCA-specific content (copy, logos, faith components) is tenant configuration, not hardcoded values.
 
@@ -379,6 +379,21 @@ src/
           integrations/page.tsx
           billing-config/page.tsx  # Fee config, processing fees, late fee rules
           drop-in/page.tsx         # Drop-in availability + rates config
+          custom-fields/page.tsx   # Custom fields manager (§44)
+        forms/
+          page.tsx                 # All forms list
+          new/page.tsx             # Form builder (create)
+          [formId]/
+            edit/page.tsx          # Form builder (edit)
+            responses/page.tsx     # Response table view
+            responses/[responseId]/page.tsx  # Single response detail
+            analytics/page.tsx     # Form analytics
+            settings/page.tsx      # Form settings + submission actions
+    (forms)/                        # Public/embedded form rendering (outside portal chrome)
+      [tenantSlug]/
+        [formSlug]/
+          page.tsx                 # Standalone form page (public or authenticated)
+          embed/page.tsx           # Embeddable iframe version (no site chrome)
       staff/
         layout.tsx
         page.tsx                # Staff dashboard (my classrooms today)
@@ -839,6 +854,11 @@ supabase/
     0041_enhanced_billing.sql
     0042_entity_notes.sql
     0043_rls_policies_v2.sql
+    0044_custom_fields.sql
+    0045_form_builder.sql
+    0046_system_forms.sql
+    0047_application_pipeline.sql
+    0048_appointments.sql
     0099_seed_cca.sql             # CCA tenant seed data
 public/
   pwa/
@@ -1394,11 +1414,16 @@ Use **Claude in Chrome** to navigate SuiteDash. Each adapter:
 25. **Advanced analytics dashboard + custom reports + scheduled delivery (§33).**
 26. **Texas DFPS compliance module: standards checklist + inspection prep + deficiency tracker (§39).**
 27. **Emergency broadcast + lockdown mode + reunification (§37).**
-28. **PWA + push + kiosk mode.**
-29. **Audit log viewer + impersonation.**
-30. **Migration scripts (after SuiteDash audit).**
-31. **Lighthouse pass, accessibility pass, security review.**
-32. **Vercel preview → Skylar smoke test → production cutover.**
+28. **Custom fields system: entity-scoped custom fields engine, admin UI, search/filter integration (§44).**
+29. **Form builder: conversational + document mode, 30+ field types, logic engine, e-signatures, payment, embedding, templates (§45).**
+30. **System enrollment form: 7-step wizard, multi-child repeater, fee toggle, form instance spawning (§46).**
+31. **Application pipeline: multi-step enrollment flow, interview invitation, pipeline tracking (§47).**
+32. **Appointment booking: Calendly-style widget, staff availability, Google/Outlook/iCal sync (§48).**
+33. **PWA + push + kiosk mode.**
+34. **Audit log viewer + impersonation.**
+35. **Migration scripts (after SuiteDash audit).**
+36. **Lighthouse pass, accessibility pass, security review.**
+37. **Vercel preview → Skylar smoke test → production cutover.**
 
 ---
 
@@ -2116,6 +2141,261 @@ CCA operates under Texas Health and Human Services (HHS) Child Care Regulation, 
 
 ---
 
+## 44. Custom fields system (v3.0 addition)
+
+> SuiteDash has basic custom fields. Brightwheel and Procare have none. Every growing school eventually needs fields that don't exist in the schema. Instead of bloating the core tables, we build a first-class custom fields engine that extends any entity type without schema changes.
+
+### Philosophy
+
+Custom fields are **tenant-scoped** — each school defines their own fields for their own entity types. The platform ships with zero custom fields by default. Admins create them from Settings → Custom Fields. Field values are stored in a dedicated table, not as JSONB blobs on entity tables, so they can be indexed, filtered, searched, and used in form builder logic.
+
+### Supported entity types
+
+Custom fields can be attached to: `student`, `family`, `staff`, `classroom`, `enrollment_application`, `incident_report`, `checklist_item`. New entity types can be added by inserting a row into `custom_field_entity_types` — no code changes needed.
+
+### Field types
+
+| Type | Rendered as | Stored as | Notes |
+|---|---|---|---|
+| `text` | Single-line input | `text` | Max 500 chars |
+| `textarea` | Multi-line textarea | `text` | Max 5000 chars |
+| `number` | Numeric input | `numeric` | Min/max/step configurable |
+| `currency` | Currency input with symbol | `numeric` | Symbol from tenant locale |
+| `date` | Date picker | `date` | |
+| `datetime` | Date + time picker | `timestamptz` | |
+| `boolean` | Toggle switch | `boolean` | |
+| `select` | Dropdown | `text` | Options defined in `custom_field_options` |
+| `multi_select` | Multi-select chips | `text[]` (jsonb) | Options defined in `custom_field_options` |
+| `email` | Email input with validation | `text` | |
+| `phone` | Phone input with formatting | `text` | |
+| `url` | URL input with validation | `text` | |
+| `file` | File upload | `text` (storage path) | Uses tenant storage bucket |
+| `image` | Image upload with preview | `text` (storage path) | Uses tenant storage bucket |
+| `rating` | Star rating (1–5 or 1–10) | `integer` | Scale configurable |
+| `color` | Color picker | `text` (hex) | |
+| `json` | JSON editor (admin only) | `jsonb` | For advanced integrations |
+
+### Data model additions
+
+```
+- `custom_field_entity_types` — `(id, tenant_id, entity_type text unique per tenant, label, icon, enabled boolean)`.
+  Pre-seeded with: student, family, staff, classroom, enrollment_application, incident_report, checklist_item.
+
+- `custom_fields` — `(id, tenant_id, entity_type, field_key slug, label, description, field_type, is_required boolean, is_searchable boolean, is_filterable boolean, is_visible_to_parents boolean, default_value jsonb, validation_rules jsonb, sort_order integer, section_label text, created_by, created_at, updated_at, deleted_at)`.
+  `field_key` is a slug (e.g., "shirt_size") auto-generated from label, unique per (tenant_id, entity_type).
+  `validation_rules` — JSON with optional keys: `{ min, max, step, pattern, min_length, max_length, options_source }`.
+  `section_label` — groups fields visually under a header (e.g., "Church Information", "Transportation").
+
+- `custom_field_options` — `(id, custom_field_id, label, value, sort_order, color text nullable, icon text nullable)`.
+  For select and multi_select field types.
+
+- `custom_field_values` — `(id, tenant_id, custom_field_id, entity_type, entity_id uuid, value_text, value_numeric, value_boolean, value_date, value_json jsonb, value_file_path, created_at, updated_at)`.
+  One row per entity per field. Uses the typed column matching `field_type`. Only one value column is non-null per row.
+  Indexed: `(tenant_id, entity_type, entity_id)` and `(tenant_id, custom_field_id)`.
+```
+
+### Features
+
+- **Admin UI:** Settings → Custom Fields. List all fields grouped by entity type. Drag-to-reorder. Create/edit/archive fields. Preview how the field renders on the entity form.
+- **Entity form injection:** When rendering a student/family/staff/etc. form, query `custom_fields` for that entity type and inject the fields into the form at the bottom (or grouped by `section_label`). Use the same react-hook-form + Zod pipeline as core fields.
+- **Search + filter integration:** Fields marked `is_searchable` appear in the universal search index. Fields marked `is_filterable` appear as filter options in list views (students, families, staff, etc.).
+- **Form builder integration (§45):** Custom fields are available as dynamic data placeholders in the form builder. Forms can write values back to custom field values on submission.
+- **Parent visibility:** Fields marked `is_visible_to_parents` render on the parent portal for that entity. Parents can edit their own family's custom field values if the field is also marked `is_parent_editable`.
+- **Import/export:** Custom field values included in CSV exports. Bulk import via CSV with column mapping to field keys.
+- **Audit:** All custom field value changes written to `audit_log`.
+
+### Acceptance criteria
+- [ ] Admin creates a custom field and it appears on the entity form within the same page load (no deploy needed).
+- [ ] Custom field values persist, display on entity detail, and export in CSV.
+- [ ] Searchable fields return results in universal search.
+- [ ] Filterable fields appear in list view filter dropdowns.
+- [ ] Deleting a field soft-deletes it and hides values (does not destroy data).
+- [ ] Custom field values available as merge variables in form builder (§45).
+- [ ] File/image fields upload to tenant-isolated storage bucket.
+
+---
+
+## 45. Form builder (v3.0 addition — THE FORM EXPERIENCE)
+
+> Typeform pioneered conversational forms with auto-advance. JotForm has 100+ field widgets. DocuSign owns legally-binding e-signatures. Tally has Notion-like freeform layout. **Nobody combines all of these.** We do. This is the most powerful form builder in the preschool management space — and competitive with standalone form products.
+
+### Two builder modes
+
+1. **Conversational mode (Typeform-style):** One question per screen. Auto-advance on selection. Smooth slide/fade/zoom transitions between questions. Progress bar. Keyboard navigation (Enter to advance, arrow keys for options). Ideal for parent-facing enrollment forms, surveys, and applications. Highest completion rates.
+
+2. **Document mode (traditional):** Multi-section scrollable form. Field groups with headers. Side-by-side columns. Inline validation. Ideal for staff data-entry forms, incident reports, checklists, and DocuSign-style signing workflows.
+
+Both modes use the same underlying form schema. A form can be switched between modes without losing configuration.
+
+### Field types (30+)
+
+| Category | Fields |
+|---|---|
+| **Text** | Short text, long text, rich text (Markdown), email, phone, URL, number, currency |
+| **Choice** | Single select (dropdown), single select (radio), multi-select (checkboxes), image choice (grid of images with labels), button group, rating (stars), opinion scale (1–10), NPS (0–10), yes/no toggle, legal acceptance (checkbox with terms link) |
+| **Date/Time** | Date picker, time picker, date + time, date range, appointment slot picker (calendar widget) |
+| **Media** | File upload (any type), image upload (with preview + crop), video embed (YouTube/Vimeo URL), signature pad (draw-to-sign with timestamp + IP logging) |
+| **Layout** | Section header, description block (Markdown), divider, image banner, video banner, spacer |
+| **Advanced** | Payment (Stripe checkout — one-time, subscription, or calculated amount), calculator (hidden field with formula referencing other fields), hidden field (for UTM params, prefill, or tracking), address (auto-complete + structured), matrix/grid (rows × columns rating), ranking (drag-to-reorder options), slider (numeric range with labels) |
+| **Data** | Entity lookup (search students/families/staff by name, returns entity_id), custom field value (pulls from §44 custom fields), dynamic select (options populated from a database query or API) |
+| **Signature** | E-signature block with full audit trail: signer name, email, IP, timestamp, browser fingerprint, hash of signed content. Rendered as a signature pad (draw or type). Legally sufficient for school permission slips, enrollment agreements, and tuition contracts under ESIGN/UETA. Multiple signers supported (sequential or parallel). |
+
+### Logic engine
+
+- **Conditional show/hide:** Any field can have visibility rules: "Show this field if [Field X] [equals/contains/is greater than/is not empty] [value]". Multiple conditions with AND/OR. Nested groups.
+- **Conditional jump (conversational mode):** After answering Question A, jump to Question C (skipping B) based on answer value. Branching endpoints — different thank-you screens based on path.
+- **Calculated fields:** Formula engine supporting arithmetic (`+`, `-`, `*`, `/`), conditionals (`if/then/else`), field references (`{{field_key}}`), and aggregation (`sum`, `count`, `avg` across matrix/ranking fields). Results can drive payment amounts, display as live-updating totals, or be stored as hidden values.
+- **Variable system:** Named variables that accumulate across the form (e.g., `total_fees = application_fee + supply_fee + tuition_deposit`). Variables can be referenced in any subsequent field's logic, labels, or description text.
+- **Page/section logic:** In document mode, entire sections can be conditionally shown/hidden. In conversational mode, groups of questions can be skipped via jump logic.
+- **Validation rules:** Per-field: required, min/max length, min/max value, regex pattern, file type/size, custom error messages. Cross-field: "End date must be after start date", "At least one phone number required if email is empty".
+
+### Design system
+
+- **Per-form theming:** Forms inherit the tenant's CSS variable theme by default, but each form can override: primary color, background color/image/gradient, font family, border radius, button style, field style (underline/outline/filled), progress bar style.
+- **Animations (conversational mode):** Configurable transition between questions: slide-up (default), fade, zoom, flip. Easing curves from the platform motion system. Entrance animations on field focus. Micro-interactions on selection (ripple, scale-bounce, check-mark draw).
+- **Responsive:** Every form renders perfectly on phone, tablet, and desktop. Conversational mode is phone-native. Document mode reflows to single-column on phone.
+- **Header/footer:** Optional branded header (logo, title, description, cover image or video) and footer (powered-by, legal links, custom HTML). Header can be sticky or scroll-away.
+- **Custom CSS:** Advanced users (platform admin) can inject custom CSS per form.
+- **Dark mode:** Forms respect `prefers-color-scheme` and can be forced to light/dark via form settings.
+- **Background media:** Full-bleed background image or video behind the form (with overlay opacity control).
+
+### Embedding + access control
+
+- **Standalone page:** Every form gets a URL: `{tenant_domain}/forms/{form_slug}`. Beautiful full-page render with optional site header/footer.
+- **Embedded iframe:** `<iframe src="{tenant_domain}/forms/{form_slug}/embed">`. Auto-resizing. Post-message communication with parent page.
+- **Popup/modal:** JavaScript snippet that opens the form in a centered modal triggered by button click, timer, or scroll depth.
+- **Inline embed:** React component `<FormEmbed formId="..." />` for in-portal embedding (e.g., enrollment form embedded in the admin applicant review page).
+- **Access control:**
+  - **Public:** No authentication required. Anyone with the link can fill it out. Spam protection via turnstile/recaptcha.
+  - **Authenticated (any role):** Requires portal login. Respondent identity auto-captured.
+  - **Role-restricted:** Only specific roles can access (e.g., only parents, only staff, only admins).
+  - **Pre-filled + tokenized:** URL contains a signed token that pre-fills fields from entity data (e.g., parent receives email link with their name, child's name, and family ID pre-filled). Token expires after configurable period.
+  - **Single-use:** Form can only be submitted once per user (or once per entity). Useful for annual re-enrollment forms.
+
+### Dynamic data placeholders (merge fields)
+
+Forms can pull live data from the database to pre-fill fields or display personalized content:
+
+- **Entity fields:** `{{student.first_name}}`, `{{family.billing_email}}`, `{{staff.certification_expiry}}`, `{{classroom.name}}`
+- **Custom fields (§44):** `{{student.custom.shirt_size}}`, `{{family.custom.church_name}}`
+- **Calculated values:** `{{tuition_agreement.monthly_amount}}`, `{{account.balance_due}}`
+- **System fields:** `{{current_date}}`, `{{tenant.name}}`, `{{tenant.phone}}`, `{{form.submission_count}}`
+- **Respondent fields:** `{{respondent.name}}`, `{{respondent.email}}`, `{{respondent.role}}`
+
+Placeholders resolve at form-load time (for display/prefill) and at submission time (for stored values). Unresolved placeholders render as blank with a subtle "missing data" indicator (never show raw `{{...}}` to end users).
+
+### Submission handling
+
+- **On-submit actions (configurable per form, multiple allowed):**
+  1. **Store response** — always on. Writes to `form_responses` + `form_response_values`.
+  2. **Write to entity** — update fields on an existing entity (student, family, staff). Maps form fields → entity columns or custom fields. Useful for "update your info" forms.
+  3. **Create entity** — create a new student, family member, enrollment application, incident report, etc. Maps form fields → entity creation payload.
+  4. **Send notification** — email/SMS/push to configurable recipients (form creator, admin, respondent, specific users). Template with `{{response.field_key}}` placeholders.
+  5. **Trigger webhook** — POST JSON payload to external URL. Configurable headers and payload mapping.
+  6. **Create Stripe charge** — if form includes a payment field, process the charge on submission via the tenant's Stripe Connect account.
+  7. **Generate PDF** — render the completed form as a branded PDF (with signatures if present) and attach to the response record + optionally email to respondent.
+  8. **Assign checklist** — trigger a checklist assignment (§34) for the respondent or a linked entity.
+  9. **Update custom field** — write specific response values back to custom field values on an entity.
+
+- **Thank-you screen:** Configurable per form (or per logic branch). Options: message + redirect URL, message + next-form link, message + PDF download, confetti animation.
+- **Response editing:** Optionally allow respondents to edit their submission before a deadline. Admin can always edit responses.
+- **Partial saves:** In conversational mode, progress is auto-saved to `form_response_drafts` so users can resume later (requires auth or token).
+
+### E-signature workflow
+
+- **Single signer:** One signature field in the form. Signer draws or types their signature. Captured with: timestamp, IP address, browser user-agent, content hash (SHA-256 of the form data at signing time).
+- **Multi-signer sequential:** Form is filled by Person A, then routed to Person B for review + signature, then optionally Person C. Each signer gets an email with a tokenized link. Status tracked: `pending → in_progress → awaiting_signer_2 → completed`.
+- **Multi-signer parallel:** Multiple signers receive links simultaneously. Form completes when all have signed.
+- **Audit certificate:** Every signed form generates a PDF audit certificate: all signer details, timestamps, IP addresses, content hash, and a tamper-evident seal. Attached to the response record.
+- **Preschool use cases:** Enrollment agreements, photo/media release forms, field trip permission slips, medical authorization forms, custody acknowledgment forms, tuition contracts, incident report parent acknowledgments.
+
+### Form templates (tenant-level)
+
+Pre-built form templates that ship with the platform and are cloneable by any tenant:
+
+1. **Enrollment application** — multi-step: parent info → student info → medical/allergy → emergency contacts → program selection → payment (application fee) → e-signature.
+2. **Annual re-enrollment** — pre-filled from existing data, captures updates, collects signature + re-enrollment fee.
+3. **Medical authorization** — allergy info, medication consent, physician authorization. E-signature required.
+4. **Photo/media release** — consent for photos/videos of child on social media, website, internal use. Granular options.
+5. **Field trip permission slip** — event details, emergency contact confirmation, medical info acknowledgment, e-signature.
+6. **Incident report** — staff fills in: student, what happened, action taken. Routes to parent for acknowledgment signature.
+7. **Parent satisfaction survey** — NPS + open-ended questions. Anonymous option.
+8. **Staff onboarding checklist** — document uploads (certifications, background check consent, W-4), e-signatures, training acknowledgments.
+9. **Tuition agreement** — generated from tuition_agreements table data, pre-filled, requires parent e-signature. Stripe payment setup.
+10. **Visitor sign-in** — public form on a kiosk/tablet: name, who visiting, purpose, ID verified toggle. No auth required.
+11. **Waitlist registration** — lightweight lead capture: parent name, email, child DOB, desired start date. Creates enrollment lead.
+12. **Contact us** — public form on marketing site. Creates enrollment lead with source tracking.
+
+### Admin experience
+
+- **Form list:** All forms for the tenant. Sortable by name, status, response count, last response date. Filter by status (draft/published/archived). Quick-duplicate.
+- **Builder:** Full-screen builder with live preview pane (phone/tablet/desktop toggle). Left panel: field palette (drag to add). Center: form canvas. Right panel: field settings, logic rules, design overrides.
+- **Responses tab:** Table view of all responses. Column per field. Sortable, filterable, searchable. Bulk export (CSV, PDF). Individual response detail view with all values + signature audit trail.
+- **Analytics:** Per-form: total responses, completion rate, average time, drop-off by question (conversational mode), payment revenue collected.
+- **Settings:** Access control, notification rules, submission actions, thank-you screen, SEO meta (for standalone pages), expiration date, response limit.
+
+### Data model additions
+
+```
+- `forms` — `(id, tenant_id, title, slug unique per tenant, description, status [draft/published/archived], mode [conversational/document], theme_overrides jsonb, header_config jsonb, footer_config jsonb, background_config jsonb, access_control [public/authenticated/role_restricted/tokenized], allowed_roles text[], require_single_submission boolean, allow_response_edit boolean, edit_deadline timestamptz, expires_at, max_responses integer, redirect_url, thank_you_config jsonb, seo_config jsonb, custom_css text, created_by, published_at, created_at, updated_at, deleted_at)`.
+
+- `form_fields` — `(id, form_id, field_key slug, field_type, label, description, placeholder, is_required boolean, sort_order integer, section_id uuid nullable references form_sections, page_number integer default 1, config jsonb, validation_rules jsonb, logic_rules jsonb, prefill_source text, created_at, updated_at)`.
+  `config` is field-type-specific: e.g., for `select`: `{ options: [{label, value, image_url, color}], allow_other: true }`.
+  For `payment`: `{ mode: "one_time"|"subscription", amount_field_ref: "{{calculated_total}}", currency: "usd" }`.
+  For `signature`: `{ mode: "draw"|"type"|"both", required_signers: [{role, label, email_field_ref}] }`.
+  `logic_rules`: `{ visibility: [{field_ref, operator, value, logic_group}], jump_to_field_id: uuid, jump_condition: {...} }`.
+
+- `form_sections` — `(id, form_id, title, description, sort_order, logic_rules jsonb, page_number integer)`.
+  Groups fields visually (document mode) or into pages (conversational mode).
+
+- `form_variables` — `(id, form_id, variable_name, formula text, referenced_fields text[])`.
+  Named calculated variables usable in labels, logic, and payment amounts.
+
+- `form_responses` — `(id, form_id, tenant_id, respondent_user_id nullable, respondent_email text nullable, respondent_name text nullable, status [draft/in_progress/awaiting_signature/completed/expired], entity_type text nullable, entity_id uuid nullable, ip_address inet, user_agent text, started_at, submitted_at, updated_at)`.
+
+- `form_response_values` — `(id, response_id, field_id, value_text, value_numeric, value_boolean, value_date, value_json jsonb, value_file_path, signature_data jsonb)`.
+  `signature_data`: `{ image_data_url, typed_name, signer_email, signer_ip, signed_at, content_hash, browser_fingerprint }`.
+
+- `form_response_drafts` — `(id, form_id, respondent_user_id nullable, token text unique, draft_values jsonb, last_field_completed integer, created_at, updated_at, expires_at)`.
+  Auto-save for conversational mode resume.
+
+- `form_signature_requests` — `(id, response_id, signer_order integer, signer_role text, signer_email, signer_name, token text unique, status [pending/viewed/signed/declined/expired], signed_at, signer_ip inet, signer_user_agent text, content_hash text, reminder_sent_at, expires_at)`.
+  For multi-signer workflows.
+
+- `form_submission_actions` — `(id, form_id, action_type [store/write_entity/create_entity/notify/webhook/stripe_charge/generate_pdf/assign_checklist/update_custom_field], config jsonb, sort_order integer, is_active boolean)`.
+  Configurable per form. Executed in sort_order on submission.
+
+- `form_templates` — `(id, tenant_id nullable (null = platform-level), name, description, category, form_snapshot jsonb, is_active boolean, sort_order)`.
+  `form_snapshot` is a full serialized form (fields, sections, variables, logic, design) that can be cloned into a new form.
+```
+
+### Migrations
+
+```
+0044_custom_fields.sql          — custom_field_entity_types, custom_fields, custom_field_options, custom_field_values
+0045_form_builder.sql           — forms, form_fields, form_sections, form_variables, form_responses, form_response_values, form_response_drafts, form_signature_requests, form_submission_actions, form_templates
+```
+
+### Acceptance criteria
+- [ ] Admin creates a conversational form with 10 fields, logic jumps, and a payment step in under 10 minutes using the builder.
+- [ ] A parent fills out the enrollment application form on their phone in conversational mode with auto-advance — total time under 8 minutes including e-signature.
+- [ ] Form embeds via iframe on an external site and auto-resizes correctly.
+- [ ] Public forms are accessible without login. Authenticated forms redirect to login first.
+- [ ] Pre-filled tokenized links correctly populate fields from entity data.
+- [ ] E-signature captures all audit data (IP, timestamp, content hash, browser info).
+- [ ] Multi-signer sequential workflow: Person A submits → Person B receives email → Person B signs → form marked complete.
+- [ ] PDF generation renders the completed form with signatures and branding.
+- [ ] Calculated fields update in real-time as the user fills in referenced fields.
+- [ ] Stripe payment processes on submission via tenant's Stripe Connect account.
+- [ ] Form responses appear in admin table view, are searchable, filterable, and exportable as CSV.
+- [ ] Custom field values (§44) available as merge placeholders in form fields and descriptions.
+- [ ] Partial saves in conversational mode allow resume via the same URL (authenticated) or token link.
+- [ ] Completion rate analytics show drop-off by question.
+- [ ] Animations in conversational mode are smooth (60fps) and respect `prefers-reduced-motion`.
+- [ ] Every form template is cloneable and customizable by any tenant admin.
+
+---
+
 ## 20B. CCA vs. industry — competitive matrix (v2.0)
 
 > Updated gap analysis after v2.0 expansion. CCA now matches or exceeds every major competitor in every category.
@@ -2139,6 +2419,8 @@ CCA operates under Texas Health and Human Services (HHS) Child Care Regulation, 
 | Document vault | ✅ Basic | ✅ Good | ❌ | ❌ | ❌ | ❌ | ✅✅ Entity-scoped + versioned + expiry + inspection prep |
 | Calendar + events | ✅ Good | ✅ Basic | ❌ | ❌ | ❌ | ✅ Good | ✅ Events + RSVP + sign-ups + field trip + closure + billing |
 | Emergency / lockdown | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅✅ **UNIQUE** — one-tap lockdown + door lock + reunification |
+| Form builder | ❌ | ⚠️ Basic forms | ❌ | ❌ | ❌ | ⚠️ Basic | ✅✅ **UNIQUE** — Typeform UX + DocuSign e-sig + calc engine + payment + 12 templates |
+| Custom fields | ❌ | ❌ | ❌ | ❌ | ❌ | ⚠️ Basic | ✅✅ **UNIQUE** — 18 field types + search/filter + form builder merge + parent visibility |
 | PD / training tracker | ❌ | ❌ | ✅ Lillio Academy | ❌ | ❌ | ❌ | ✅ Hours + topics + compliance + inspection-ready report |
 | State-specific compliance | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅✅ **UNIQUE** — Texas DFPS Ch.746 ratios + standards + inspection prep |
 | Custody enforcement | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅✅ **UNIQUE** — schedule-aware check-out + hard blocks |
@@ -2149,6 +2431,183 @@ CCA operates under Texas Health and Human Services (HHS) Child Care Regulation, 
 | Faith integration | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ **UNIQUE** — faith domains in curriculum + chapel events + faith component in lesson plans |
 
 **CCA exceeds every competitor in every category that matters.** Five features are completely unique to CCA: emergency lockdown + reunification, Texas DFPS compliance, custody-aware check-out, blended family split billing, and integrated door/camera control. No competitor has all of these — most have none.
+
+---
+
+## 46. System forms + enrollment application (v3.0 addition)
+
+> The enrollment application is the most important form in the platform. It's the first thing a prospective parent interacts with. It needs to be 10x better than SuiteDash — beautiful, wizard-style, with logic for multiple children, conditional medical fields, optional payment, and tight integration with the enrollment pipeline.
+
+### System form concept
+
+A **system form** is a platform-built form that exists as core functionality. Unlike user-created forms from the form builder (§45), system forms:
+
+- Are **seeded automatically** when a tenant is created
+- Have **locked core fields** (`is_locked = true` on `form_fields`) that the form builder cannot delete
+- Allow admin **customization**: add custom fields, reorder non-locked fields, change theme/branding, edit labels/descriptions
+- Have a `system_form_key` identifier (e.g., `'enrollment_application'`) on the `forms` table
+- Can be **spawned as instances** — deep copies with independent settings (e.g., one with application fee, one without)
+
+### System form keys
+
+| Key | Name | Auto-seeded |
+|---|---|---|
+| `enrollment_application` | Enrollment Application | Yes |
+| `re_enrollment` | Annual Re-Enrollment | Yes |
+| `medical_authorization` | Medical Authorization | Yes |
+| `photo_release` | Photo/Media Release | Yes |
+| `field_trip_permission` | Field Trip Permission | Yes |
+| `incident_acknowledgment` | Incident Report Acknowledgment | Yes |
+| `visitor_sign_in` | Visitor Sign-In | Yes |
+| `contact_inquiry` | Contact Us | Yes |
+
+### Form instance spawning
+
+Admin can spawn a new instance of any form (system or custom). The instance is a deep copy with its own slug, label, fee toggle, and settings. Changes to the parent do not propagate to instances. Use case: "Spring Open House — No Application Fee" vs. the standard enrollment form with fee.
+
+### The enrollment application form (7-step wizard)
+
+1. **Welcome + Parent Info** — name, email, phone, relationship, address
+2. **Child Information (repeatable)** — repeater group (1–5 children): name, preferred name, DOB, gender, photo upload. "Add another child" button.
+3. **Program Selection (per child)** — image choice grid of programs per child, schedule preference, desired start date
+4. **Medical & Safety (per child)** — conditional fields: allergies (yes/no → detail), medical conditions, dietary restrictions, medications, pediatrician
+5. **Family & Background** — how heard, referral, faith community, sibling enrolled, parent goals, custom fields injection point
+6. **Agreement & Payment** — legal acceptances, conditional Stripe Payment Elements when `fee_enabled = true`
+7. **Confirmation** — confetti animation, timeline of next steps, application ID
+
+### Enrollment fee toggle
+
+- `fee_enabled boolean` and `fee_amount_cents integer` on `forms` table
+- Admin toggles fee on/off per form instance from form settings
+- When on: Stripe Payment Elements appear in Step 6, charged via tenant's Stripe Connect account
+- When off: Step 6 shows only legal acceptances, no payment
+
+### Multi-child submission
+
+Each child in the repeater creates its own `enrollment_application` row. All linked to the same `form_response_id` and `parent_email`. Each child gets an independent triage score.
+
+### Data model additions
+
+```
+- forms table additions:
+  - is_system_form boolean DEFAULT false
+  - system_form_key text
+  - parent_form_id uuid (for spawned instances)
+  - instance_label text
+  - fee_enabled boolean DEFAULT false
+  - fee_amount_cents integer
+  - fee_description text DEFAULT 'Application Fee'
+- form_fields table additions:
+  - is_locked boolean DEFAULT false
+  - is_system_field boolean DEFAULT false
+```
+
+Migration: `0046_system_forms.sql`
+
+---
+
+## 47. Multi-step application pipeline (v3.0 addition)
+
+> The enrollment form (§46) is Step 1. This section defines the full application pipeline from submission through enrollment.
+
+### Pipeline stages
+
+```
+Form Submitted → Under Review → Interview Invited → Interview Scheduled → Interview Completed → Offer Sent → Offer Accepted → Enrolled
+                      ↓                                                           ↓
+                  Waitlisted                                                  Waitlisted
+                  Rejected                                                    Rejected
+                  Info Requested                                              Withdrawn
+```
+
+### Pipeline features
+
+- **Pipeline step tracking:** `application_pipeline_steps` table records every stage transition with timestamp, actor, and notes
+- **Admin actions:** Accept & Send Interview Invitation, Request Info, Waitlist, Reject, Mark Interview Complete, Send Enrollment Offer
+- **"Accept & Send Interview" action:** Updates application status, creates pipeline step, sends email to parent with tokenized booking link for the appointment system (§48)
+- **Pipeline timeline view:** Admin sees the full journey for each application with timestamps and actors
+- **Pipeline stage filters:** Filter application queue by pipeline stage
+- **Bulk actions:** Send interview invitations to multiple approved applications at once
+
+### Data model additions
+
+```
+- application_pipeline_steps — (id, tenant_id, application_id, step_type, status, assigned_to, notes, metadata jsonb, completed_at, completed_by, created_at)
+- enrollment_applications additions:
+  - pipeline_stage text DEFAULT 'form_submitted'
+  - interview_scheduled_at timestamptz
+  - interview_completed_at timestamptz
+  - interview_notes text
+  - offer_sent_at timestamptz
+  - offer_accepted_at timestamptz
+  - form_response_id uuid
+```
+
+Migration: `0047_application_pipeline.sql`
+
+---
+
+## 48. Appointment booking system (v3.0 addition — Calendly replacement)
+
+> No competitor has integrated appointment booking. Schools currently use Calendly, Acuity, or phone tag. We build it in — tenant-branded, pipeline-integrated, and calendar-synced.
+
+### Why
+
+The interview step of enrollment requires scheduling. External tools (Calendly) break the brand experience, don't link to applications, and cost extra. An integrated booking widget means: parent clicks link in email → sees tenant-branded calendar → picks a time → books → pipeline auto-updates → staff calendar auto-blocked.
+
+### Appointment types
+
+Admin-configurable per tenant: name, duration, buffer, location (in-person/virtual/phone), assigned staff, round-robin, booking window, min notice, max per day, reminders.
+
+Default for CCA: "School Tour & Interview" — 30 min, in-person, 15-min buffer after, 24h min notice, max 4/day.
+
+### Booking widget
+
+Standalone page at `/{tenantSlug}/book/{appointmentTypeSlug}`. Beautiful, mobile-first, tenant-branded. Calendar month view with available date dots → time slot picker → booking form (name, email, phone, notes) → confirmation with "Add to Calendar" buttons (Google, Outlook, Apple .ics).
+
+### Staff availability
+
+- Recurring weekly patterns (M-F 9am-3pm)
+- Date-specific overrides (block vacation days, open special hours)
+- Connected external calendars: sync busy times from Google Calendar, Outlook/Microsoft 365, Apple iCal
+- Available time slots computed from: availability patterns − overrides − existing bookings − external calendar busy times − buffer times
+
+### Calendar integration
+
+- **Google Calendar:** OAuth 2.0, read free/busy + write events. `googleapis` package.
+- **Outlook/Microsoft 365:** OAuth 2.0 via Microsoft Graph, read free/busy + write events. `@microsoft/microsoft-graph-client` package.
+- **Apple Calendar:** Read-only via CalDAV/iCal URL. Parse .ics feed for busy times. `ical.js` package.
+- Background sync every 15 minutes via Supabase Edge Function.
+
+### Pipeline integration
+
+When appointment is booked for an enrollment application:
+- Application pipeline stage → `interview_scheduled`
+- `interview_scheduled_at` set on application record
+- Pipeline step created
+- Staff notified
+
+### Data model
+
+```
+- appointment_types — (id, tenant_id, name, slug, description, duration_minutes, buffer_before, buffer_after, location, location_type, virtual_meeting_url, booking_window_days, min_notice_hours, max_per_day, max_per_slot, assigned_staff uuid[], round_robin, auto_confirm, reminder_hours integer[], linked_pipeline_stage, is_active)
+- staff_availability — (id, tenant_id, user_id, day_of_week, start_time, end_time, appointment_type_id, effective_from, effective_to)
+- staff_availability_overrides — (id, tenant_id, user_id, date, is_available, start_time, end_time, reason)
+- calendar_connections — (id, tenant_id, user_id, provider [google/outlook/apple], access_token_encrypted, refresh_token_encrypted, calendar_id, sync_direction [read/write/both], last_synced_at, status)
+- appointments — (id, tenant_id, appointment_type_id, booked_by_user_id, booked_by_name, booked_by_email, booked_by_phone, start_at, end_at, timezone, staff_user_id, status [pending/confirmed/cancelled_by_parent/cancelled_by_staff/rescheduled/no_show/completed], enrollment_application_id, notes, staff_notes, external_calendar_event_id, reminder_sent_at, created_at)
+```
+
+Migration: `0048_appointments.sql`
+
+### Acceptance criteria
+- [ ] Booking widget renders with tenant branding on phone. Parent selects date + time + books in under 2 minutes.
+- [ ] Available slots correctly computed from staff availability minus existing bookings minus synced calendar busy times.
+- [ ] Round-robin distributes bookings evenly among assigned staff.
+- [ ] Booking confirmation shows "Add to Calendar" buttons that generate correct .ics files.
+- [ ] Reminder emails sent at configured intervals.
+- [ ] Pipeline auto-updates when appointment booked from enrollment email link.
+- [ ] Staff availability overrides correctly block/open specific dates.
+- [ ] Google Calendar sync reads busy times and writes booked appointments.
 
 ---
 

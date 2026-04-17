@@ -521,24 +521,290 @@ Build the `components/ui/*` library (all using CSS variables):
 
 ---
 
-## PHASE 13: Hardware + emergency + compliance
+## PHASE 13: Custom fields + form builder (THE FORM EXPERIENCE)
+**Estimated: 90–120 minutes**
+
+> This phase builds two tightly coupled systems: a custom fields engine (§44) and a state-of-the-art form builder (§45). The form builder is Typeform-quality conversational UX + DocuSign-quality e-signatures + Stripe payment integration + dynamic data merge fields — all in one. It must be built before the marketing site (Phase 15) so the enrollment form can use it.
+
+### 13.1 — Custom fields engine (§44 of CCA_BUILD_BRIEF)
+
+**Migration:** `0044_custom_fields.sql`
+- `custom_field_entity_types` — pre-seeded with: student, family, staff, classroom, enrollment_application, incident_report, checklist_item
+- `custom_fields` — tenant-scoped field definitions with field_key slug, 18 field types, validation_rules jsonb, sort_order, section_label grouping
+- `custom_field_options` — options for select/multi_select fields (label, value, color, icon, sort_order)
+- `custom_field_values` — typed value storage (value_text, value_numeric, value_boolean, value_date, value_json, value_file_path), one row per entity per field
+- RLS: all tables tenant-isolated. Custom field values visible to entity owner (parent sees their family's fields if `is_visible_to_parents = true`).
+- Indexes: `(tenant_id, entity_type, entity_id)` on values, `(tenant_id, custom_field_id)` on values
+
+**Admin UI:** `src/app/(portal)/admin/settings/custom-fields/page.tsx`
+- List all custom fields grouped by entity type (tabs)
+- Create/edit field: label, type, required, searchable, filterable, parent-visible, parent-editable, default value, validation rules, section label
+- Drag-to-reorder within entity type
+- Preview: shows how the field renders on the entity form
+- Archive (soft-delete) with data preservation
+
+**Entity form injection:**
+- `src/components/custom-fields/CustomFieldsSection.tsx` — queries custom fields for an entity type and renders them using the standard form pipeline (react-hook-form + Zod)
+- Inject at bottom of student, family, staff, classroom, enrollment_application, incident_report forms
+- Grouped by `section_label` with collapsible headers
+- File/image fields upload to `tenant-{id}-custom-fields/` storage bucket
+
+**Search + filter integration:**
+- Fields marked `is_searchable` indexed in universal search (§41)
+- Fields marked `is_filterable` appear as filter options in list views (students, families, staff)
+
+**VERIFY:** Create a custom field (text, select, file) on students. Fill value on a student. Verify value persists, displays on student detail, appears in CSV export. Verify searchable field returns in universal search. Verify parent can see/edit parent-visible fields. Push to main.
+
+### 13.2 — Form builder data model (§45)
+
+**Migration:** `0045_form_builder.sql`
+- `forms` — tenant-scoped form definitions: title, slug, description, status (draft/published/archived), mode (conversational/document), theme_overrides jsonb, header_config jsonb, footer_config jsonb, background_config jsonb, access_control (public/authenticated/role_restricted/tokenized), custom_css, SEO config
+- `form_fields` — field definitions per form: field_key, field_type (30+ types), label, description, placeholder, config jsonb (type-specific), validation_rules jsonb, logic_rules jsonb (visibility conditions + jump logic), prefill_source, sort_order, section_id, page_number
+- `form_sections` — section/page grouping with title, description, sort_order, logic_rules
+- `form_variables` — named calculated variables with formula and referenced_fields
+- `form_responses` — submission records: respondent info, status (draft/in_progress/awaiting_signature/completed/expired), entity linking, IP/user-agent
+- `form_response_values` — per-field values with typed columns + signature_data jsonb
+- `form_response_drafts` — auto-save drafts for conversational mode resume (token-based)
+- `form_signature_requests` — multi-signer workflow: signer_order, status, token, IP, content_hash, timestamps
+- `form_submission_actions` — configurable post-submission actions: store, write_entity, create_entity, notify, webhook, stripe_charge, generate_pdf, assign_checklist, update_custom_field
+- `form_templates` — platform-level + tenant-level templates (serialized form snapshots)
+- RLS: forms owned by tenant. Public forms readable without auth. Responses scoped to tenant + respondent.
+
+### 13.3 — Form builder UI
+
+**Builder page:** `src/app/(portal)/admin/forms/new/page.tsx` and `[formId]/edit/page.tsx`
+- Full-screen builder with three panels:
+  - **Left:** Field palette (draggable field types organized by category: Text, Choice, Date/Time, Media, Layout, Advanced, Data, Signature)
+  - **Center:** Form canvas (WYSIWYG — what you drag is what you see). Drag-to-reorder. Click field to select.
+  - **Right:** Field settings panel (appears when field selected): label, placeholder, required, validation, logic rules, prefill source, field-type-specific config
+- Mode toggle: Conversational ↔ Document (preserves all field config)
+- Section management: create/reorder/delete sections, section-level logic rules
+- Variable editor: create named variables with formulas referencing fields
+- Theme panel: override tenant defaults (colors, fonts, border radius, field style, background image/video, header/footer config)
+- Live preview pane: toggle between phone (375px), tablet (768px), desktop (1440px)
+- Save as draft / publish toggle
+- Duplicate form, save as template
+
+**Field types to implement (all 30+):**
+- Text: short_text, long_text, rich_text, email, phone, url, number, currency
+- Choice: single_select_dropdown, single_select_radio, multi_select_checkbox, image_choice, button_group, rating, opinion_scale, nps, yes_no, legal_acceptance
+- Date/Time: date, time, datetime, date_range, appointment_slot
+- Media: file_upload, image_upload, video_embed, signature_pad
+- Layout: section_header, description_block, divider, image_banner, video_banner, spacer
+- Advanced: payment_stripe, calculator, hidden_field, address_autocomplete, matrix_grid, ranking, slider
+- Data: entity_lookup, custom_field_value, dynamic_select
+
+**Logic engine:**
+- `src/lib/forms/logic-engine.ts` — evaluates visibility rules, jump conditions, calculated fields
+- Operators: equals, not_equals, contains, not_contains, greater_than, less_than, is_empty, is_not_empty, starts_with, ends_with
+- AND/OR groups with nesting
+- Jump logic (conversational mode): "If answer is X, skip to question Y"
+- Calculated fields: arithmetic + conditionals + field references + aggregation
+- Variable system: accumulate values across form, reference in labels/logic/payment amounts
+
+### 13.4 — Form rendering engine
+
+**Conversational mode renderer:** `src/components/forms/ConversationalForm.tsx`
+- One question per screen, centered, large typography
+- Auto-advance on selection (single_select, yes_no, rating, nps, image_choice, button_group)
+- Enter key to advance on text fields
+- Arrow keys for option navigation
+- Configurable transitions between questions: slide-up (default), fade, zoom, flip. Use Motion library.
+- Progress bar (percentage or step count)
+- Back button to revisit previous questions
+- Keyboard-first, touch-optimized
+- Partial save: auto-save to `form_response_drafts` on every field completion
+
+**Document mode renderer:** `src/components/forms/DocumentForm.tsx`
+- Multi-section scrollable form
+- Sections with headers, grouped fields
+- Side-by-side fields on desktop (single column on phone)
+- Inline validation on blur
+- Sticky submit button on phone
+- Section-level conditional show/hide
+
+**Shared components:**
+- `src/components/forms/fields/` — one component per field type, all using react-hook-form register/control
+- `src/components/forms/FormHeader.tsx` — branded header (logo, title, description, cover image/video)
+- `src/components/forms/FormFooter.tsx` — powered-by, legal links, custom content
+- `src/components/forms/SignaturePad.tsx` — canvas-based draw pad + type-to-sign toggle. Captures: image data URL, typed name, IP, timestamp, browser fingerprint, content hash (SHA-256 of form data at sign time)
+- `src/components/forms/PaymentStep.tsx` — Stripe Elements integration for one-time or calculated payment amounts via tenant's Stripe Connect account
+- `src/components/forms/ImageChoice.tsx` — grid of image options with labels, selection animation (scale-bounce + check-mark draw)
+- `src/components/forms/DynamicPlaceholders.tsx` — resolves `{{entity.field}}` and `{{custom.field}}` at render time
+
+### 13.5 — Form access + embedding
+
+**Standalone page:** `src/app/(forms)/[tenantSlug]/[formSlug]/page.tsx`
+- Beautiful full-page render (no portal navigation chrome)
+- Optional site header/footer (from form settings)
+- SEO meta tags for shared forms
+- Turnstile/reCAPTCHA for public forms
+
+**Embed page:** `src/app/(forms)/[tenantSlug]/[formSlug]/embed/page.tsx`
+- Minimal chrome, auto-resizing via postMessage to parent window
+- Embed snippet generator in admin form settings
+
+**Inline embed:** `src/components/forms/FormEmbed.tsx`
+- React component for embedding forms inside portal pages (e.g., enrollment form in admin review)
+- Props: `formId`, `prefillData`, `onSubmit` callback
+
+**Access control middleware:**
+- Public: no auth, turnstile spam protection
+- Authenticated: redirect to login if not authenticated, capture respondent_user_id
+- Role-restricted: check user role against form's `allowed_roles`
+- Tokenized: decode signed JWT from URL, prefill fields, validate expiry
+
+### 13.6 — Submission handling + actions
+
+**On-submit pipeline:** `src/lib/forms/submission-handler.ts`
+- Execute `form_submission_actions` in sort_order:
+  1. **store** — always: write to `form_responses` + `form_response_values`
+  2. **write_entity** — update existing entity fields (student, family, staff, etc.) from mapped form fields
+  3. **create_entity** — create new enrollment_application, incident_report, etc. from mapped form fields
+  4. **notify** — send email/SMS/push to configured recipients with `{{response.field}}` placeholders
+  5. **webhook** — POST JSON to external URL with configurable payload mapping
+  6. **stripe_charge** — process Stripe charge via tenant Connect account (amount from payment field or calculated variable)
+  7. **generate_pdf** — render completed form as branded PDF with signatures, attach to response + optionally email to respondent
+  8. **assign_checklist** — trigger checklist assignment (§34) for respondent or linked entity
+  9. **update_custom_field** — write specific response values back to custom field values (§44)
+
+**E-signature workflow:**
+- Single signer: signature_pad field in form, audit data captured on submit
+- Multi-signer sequential: on first signer submit, status → `awaiting_signer_2`, email sent to next signer with tokenized link. Each signer sees read-only form data + their signature field. Repeat until all signed.
+- Multi-signer parallel: all signers emailed simultaneously. Form completes when all have signed.
+- Audit certificate PDF: generated on completion, attached to response. Contains: all signer details, timestamps, IPs, content hash, sequential event log.
+
+### 13.7 — Form templates + admin experience
+
+**Seed platform-level templates:** 12 templates per §45 of CCA_BUILD_BRIEF (enrollment application, re-enrollment, medical authorization, photo release, field trip permission, incident report, parent survey, staff onboarding, tuition agreement, visitor sign-in, waitlist, contact us).
+- Each template is a full form_snapshot (fields, sections, variables, logic, design) stored in `form_templates` with `tenant_id = null` (platform-level).
+
+**Admin responses view:** `src/app/(portal)/admin/forms/[formId]/responses/page.tsx`
+- TanStack Table: column per field, sortable, filterable, searchable
+- Bulk export: CSV, PDF
+- Individual response detail with all values, signature images, audit trail
+- Response editing (admin can always edit; respondent can edit if `allow_response_edit` is true before deadline)
+
+**Admin analytics:** `src/app/(portal)/admin/forms/[formId]/analytics/page.tsx`
+- Total responses, completion rate, average time to complete
+- Drop-off by question (conversational mode) — bar chart showing where users abandon
+- Payment revenue collected (if payment field present)
+- Response timeline chart
+
+**VERIFY:** Create a conversational form with 10+ fields including image choice, logic jumps, calculated pricing, signature, and payment. Publish. Fill it out on phone — verify auto-advance, animations (60fps), and payment processes. Verify standalone page renders beautifully. Verify embed auto-resizes. Verify multi-signer sequential workflow (signer 1 → email → signer 2 → complete). Verify PDF generation with signatures. Verify custom field merge placeholders resolve. Verify partial save + resume works. Verify admin response table + analytics. Push to main.
+
+---
+
+## PHASE 13B: System enrollment form + application pipeline + appointment booking
+**Estimated: 90–120 minutes**
+
+> This phase uses the form builder from Phase 13 to create the platform's flagship system enrollment form, builds a multi-step application pipeline, and adds a Calendly-style appointment booking system. See `docs/prompts/ENROLLMENT_SYSTEM_PROMPT.md` for the full standalone prompt.
+
+### 13B.1 — System form infrastructure (§46 of CCA_BUILD_BRIEF)
+
+**Migration:** `0046_system_forms.sql`
+- Add `is_system_form`, `system_form_key`, `parent_form_id`, `instance_label`, `fee_enabled`, `fee_amount_cents`, `fee_description` to `forms` table
+- Add `is_locked`, `is_system_field` to `form_fields` table
+- System form registry in `src/lib/forms/system-forms.ts`
+- System form seeding logic (runs on tenant creation)
+- Form instance spawning: deep-copy form with independent settings
+- Admin UI: "Create Instance" button, fee toggle, instance management
+
+### 13B.2 — Enrollment application system form (§46)
+
+Build the 7-step wizard enrollment form as the first system form:
+- Step 1: Welcome + Parent Info (name, email, phone, relationship, address)
+- Step 2: Child Information with **repeater group** (1–5 children: name, DOB, gender, photo)
+- Step 3: Program Selection per child (image choice grid with classroom photos)
+- Step 4: Medical & Safety per child (conditional: allergies, conditions, dietary, medications, pediatrician)
+- Step 5: Family & Background (how heard, referral, faith, sibling, goals, custom fields injection)
+- Step 6: Agreement & Payment (legal acceptances, conditional Stripe Payment Elements)
+- Step 7: Confirmation (confetti, timeline of next steps)
+
+**New form field type:** `repeater_group` — renders a set of fields that can be duplicated (add/remove child). Stores values as JSON arrays. Downstream steps iterate over repeater items for per-child rendering.
+
+**Submission actions:** store → create enrollment_application per child → create enrollment_lead → stripe_charge (if fee) → notify director → notify parent → generate PDF
+
+### 13B.3 — Multi-step application pipeline (§47)
+
+**Migration:** `0047_application_pipeline.sql`
+- `application_pipeline_steps` table
+- Pipeline columns on `enrollment_applications`
+- Pipeline stages: form_submitted → under_review → interview_invited → interview_scheduled → interview_completed → offer_sent → offer_accepted → enrolled (+ waitlisted, rejected, withdrawn branches)
+
+**Admin pipeline UI:**
+- Pipeline stage column + filters on enrollment page
+- Pipeline timeline view on application detail
+- Action buttons: Accept & Send Interview, Request Info, Waitlist, Reject
+- "Accept & Send Interview" sends email with tokenized appointment booking link
+- Bulk actions for multiple applications
+
+**Server actions:** `src/lib/actions/enrollment/pipeline-actions.ts`
+
+### 13B.4 — Appointment booking system (§48)
+
+**Migration:** `0048_appointments.sql`
+- `appointment_types`, `staff_availability`, `staff_availability_overrides`, `calendar_connections`, `appointments` tables
+- All with tenant_id + RLS
+
+**New dependencies:**
+```bash
+npm i googleapis @microsoft/microsoft-graph-client ical.js
+```
+Justifications: Google Calendar API for booking sync, Microsoft Graph for Outlook sync, iCal parser for Apple Calendar sync.
+
+**Booking widget:** `src/app/(forms)/[tenantSlug]/book/[appointmentTypeSlug]/page.tsx`
+- Standalone page with tenant branding (outside portal chrome)
+- Month calendar with available date dots
+- Time slot picker (computed from availability − bookings − external calendar busy times)
+- Booking form: name, email, phone, notes (pre-filled from application token)
+- Confirmation screen with "Add to Calendar" buttons (Google, Outlook, Apple .ics)
+
+**Staff availability:**
+- Weekly recurring patterns (admin sets per staff member)
+- Date-specific overrides (block vacation, open special hours)
+- Calendar sync: OAuth for Google + Outlook, CalDAV URL for Apple
+- Background sync every 15 minutes via Supabase Edge Function
+
+**Admin UI:**
+- Appointment type management (settings page)
+- Staff availability editor (weekly grid + override calendar)
+- Calendar connection management (OAuth flows)
+- Appointments dashboard (calendar + list view, quick actions)
+
+**Pipeline integration:**
+- Booking from enrollment email auto-updates pipeline stage to `interview_scheduled`
+- Creates `application_pipeline_steps` record
+- Notifies assigned staff
+
+### 13B.5 — Seed CCA data
+
+- Seed "School Tour & Interview" appointment type (30 min, in-person, max 4/day)
+- Seed enrollment application system form with all 7 steps
+- Seed remaining system form templates (re-enrollment, medical auth, photo release, etc.)
+
+**VERIFY:** Submit enrollment form with 2 children + fee on phone. Verify 2 application rows created. Admin accepts + sends interview invitation. Parent clicks booking link. Verify Calendly-style widget with tenant branding. Book appointment. Verify pipeline updates to "Interview Scheduled." Verify staff calendar shows booking. Verify .ics download works. Verify reminder email queued. Verify admin appointments dashboard shows booking. Toggle fee off on a spawned instance — verify no payment step. Push to main.
+
+---
+
+## PHASE 14: Hardware + emergency + compliance (was Phase 13)
 **Estimated: 45–60 minutes**
 
-### 13.1 — Door control (§14 of CCA_BUILD_BRIEF)
+### 14.1 — Door control (§14 of CCA_BUILD_BRIEF)
 - `src/lib/hardware/door-control.ts` — adapter interface
 - HTTP adapter for smart locks (August, Yale, Kisi, Brivo)
 - Unlock from app, auto-lock timer, access log
 - Role-based access rules enforced server-side
 - Door access log table
 
-### 13.2 — Camera feeds (§14)
+### 14.2 — Camera feeds (§14)
 - `src/lib/hardware/camera.ts` — adapter interface
 - ONVIF-compliant IP camera adapter
 - HLS.js stream display
 - Snapshot, motion events, bookmarks
 - Admin-only live feeds, staff see assigned classroom only
 
-### 13.3 — Emergency system (§37)
+### 14.3 — Emergency system (§37)
 - `0030_emergency.sql` — emergency_events, emergency_actions, reunification_records
 - One-tap lockdown button (behind confirmation)
 - Door auto-lock, camera auto-record, attendance snapshot
@@ -549,7 +815,7 @@ Build the `components/ui/*` library (all using CSS variables):
 - Drill mode (tagged as drill, required for Texas licensing)
 - Post-incident report PDF
 
-### 13.4 — Texas DFPS compliance (§39)
+### 14.4 — Texas DFPS compliance (§39)
 - `0031_compliance.sql` — compliance_standards, compliance_checks, inspection_records
 - Chapter 746 ratio engine (age-specific tables pre-seeded)
 - Minimum standards checklist (digitized Chapter 746)
@@ -561,10 +827,10 @@ Build the `components/ui/*` library (all using CSS variables):
 
 ---
 
-## PHASE 14: Marketing site (CCA as first tenant)
+## PHASE 15: Marketing site (CCA as first tenant)
 **Estimated: 60–90 minutes**
 
-### 14.1 — Marketing pages (per CCA_MARKETING_BRIEF.md)
+### 15.1 — Marketing pages (per CCA_MARKETING_BRIEF.md)
 Build all marketing pages using tenant branding + CCA content:
 - Homepage with hero, program cards, testimonials, CTA
 - Programs page (Infants, Toddlers, 2s, 3s, Pre-K, Private Kinder)
@@ -572,7 +838,7 @@ Build all marketing pages using tenant branding + CCA content:
 - Contact page with form
 - Enrollment wizard (multi-step form → enrollment_applications → triggers lead + application)
 
-### 14.2 — Marketing components
+### 15.2 — Marketing components
 - Hero section with video background (CCA videos from `CCA ASSETS/`)
 - Program cards with animations
 - Testimonial carousel
@@ -580,7 +846,7 @@ Build all marketing pages using tenant branding + CCA content:
 - Newsletter signup (Resend)
 - SEO metadata, sitemap, robots.txt, Open Graph images
 
-### 14.3 — Enrollment form
+### 15.3 — Enrollment form (use the form builder from Phase 13)
 - Multi-step wizard matching SuiteDash form fields: parent info, student info (name, DOB, class selection), parent goals/expectations
 - Application fee collection (Stripe Payment Intent)
 - Confirmation email (Resend)
@@ -590,27 +856,27 @@ Build all marketing pages using tenant branding + CCA content:
 
 ---
 
-## PHASE 15: PWA + push + kiosk + service worker
+## PHASE 16: PWA + push + kiosk + service worker
 **Estimated: 30–45 minutes**
 
-### 15.1 — PWA setup
+### 16.1 — PWA setup
 - `public/manifest.webmanifest` — brand theme color from tenant config, icons from tenant branding
 - Workbox service worker configuration
 - Offline shell for check-in screen
 - Background sync queue for check-ins, attendance, daily report entries
 - iOS install prompt component
 
-### 15.2 — Web Push (VAPID)
+### 16.2 — Web Push (VAPID)
 - Push subscription management
 - Push notification delivery
 - Notification preferences per user (which channels: push, email, SMS)
 
-### 15.3 — Kiosk mode
+### 16.3 — Kiosk mode
 - Full-screen check-in mode
 - Auto-return to scan screen after 15s inactivity
 - Admin toggle in settings
 
-### 15.4 — Touch optimization
+### 16.4 — Touch optimization
 - 48px minimum touch targets everywhere
 - Bottom action bar on phone
 - Swipe gestures where appropriate
@@ -619,34 +885,34 @@ Build all marketing pages using tenant branding + CCA content:
 
 ---
 
-## PHASE 16: Migration + audit + polish
+## PHASE 17: Migration + audit + polish
 **Estimated: 45–60 minutes**
 
-### 16.1 — SuiteDash migration scripts (§19)
+### 17.1 — SuiteDash migration scripts (§19)
 - `scripts/import-suitedash/` with idempotent loaders
 - Each loader: reads from `exports/suitedash/{entity}/{id}.json` → writes to new schema → records in `legacy_suitedash_ids`
 - Run order: students → families → family_members → classrooms → classroom_assignments → staff → enrollment_history → billing_history
 - `--dry-run` flag on every loader
 - Migration dashboard at `/portal/admin/migration`
 
-### 16.2 — Audit log viewer
+### 17.2 — Audit log viewer
 - `src/app/(portal)/admin/audit-log/page.tsx`
 - Filterable by: entity type, action, user, date range
 - Immutable, append-only
 
-### 16.3 — Accessibility pass
+### 17.3 — Accessibility pass
 - WCAG 2.2 AA compliance
 - `aria-live` regions for check-in confirmations, attendance changes
 - Keyboard-only flows: check in, record attendance, publish daily report, make payment
 - Screen-reader pass on critical flows
 - Reduced motion respected
 
-### 16.4 — i18n wiring
+### 17.4 — i18n wiring
 - All user-facing strings through `t()` helper
 - Not translated yet (v2) but structure is in place
 - Spanish is priority second language
 
-### 16.5 — Security review
+### 17.5 — Security review
 - No PHI beyond child safety requirements
 - COPPA compliance (no data from children directly)
 - Encryption at rest (Supabase AES-256), sensitive columns with pgcrypto
@@ -655,12 +921,12 @@ Build all marketing pages using tenant branding + CCA content:
 - Rate limiting in proxy.ts
 - Photo storage in private buckets with signed URLs
 
-### 16.6 — Sentry integration
+### 17.6 — Sentry integration
 - Error tracking configured
 - Synthetic error in preview deploy
 - Performance monitoring
 
-### 16.7 — Final Lighthouse pass
+### 17.7 — Final Lighthouse pass
 - Every page: mobile (375px), tablet (768px), desktop (1440px)
 - PWA score = 100
 - Performance > 90
@@ -671,10 +937,10 @@ Build all marketing pages using tenant branding + CCA content:
 
 ---
 
-## PHASE 17: End-to-end smoke test + deploy
+## PHASE 18: End-to-end smoke test + deploy
 **Estimated: 30 minutes**
 
-### 17.1 — The complete journey test
+### 18.1 — The complete journey test
 Run through this entire flow without stopping:
 
 1. Visit CCA marketing site → browse programs → click Apply
@@ -689,7 +955,7 @@ Run through this entire flow without stopping:
 10. Admin: initiate emergency drill → all notifications fire → resolve → post-incident report
 11. Admin: generate CACFP claim → export expenses to QuickBooks → view P&L
 
-### 17.2 — Deploy to production
+### 18.2 — Deploy to production
 - Vercel preview deploy → smoke test
 - Configure custom domains: `crandallchristianacademy.com`, `portal.crandallchristianacademy.com`
 - Production deploy
@@ -697,10 +963,10 @@ Run through this entire flow without stopping:
 - Verify push notifications in production
 - Verify Resend email delivery
 
-### 17.3 — BUILD_LOG.md final entry
+### 18.3 — BUILD_LOG.md final entry
 ```md
-### 2026-04-11 — PLATFORM COMPLETE: All 17 phases built
-- **What:** Full Preschool Businesses Win platform shipped. Multi-tenant, 43 feature areas, CCA as first tenant.
+### 2026-04-11 — PLATFORM COMPLETE: All 19 phases built (0–18 + 13B)
+- **What:** Full Preschool Businesses Win platform shipped. Multi-tenant, 48 feature areas, CCA as first tenant.
 - **Where:** Entire repo.
 - **Grep anchors:** ALL @anchor: tags active.
 ```
@@ -724,11 +990,13 @@ Run through this entire flow without stopping:
 | 10 | CACFP + expenses + subsidies | 45–60 min |
 | 11 | Checklists + document vault + calendar | 45–60 min |
 | 12 | Surveys + drop-in + analytics | 45–60 min |
-| 13 | Hardware + emergency + compliance | 45–60 min |
-| 14 | Marketing site (CCA) | 60–90 min |
-| 15 | PWA + push + kiosk | 30–45 min |
-| 16 | Migration + audit + polish | 45–60 min |
-| 17 | End-to-end smoke test + deploy | 30 min |
-| **TOTAL** | | **~14–18 hours** |
+| 13 | **Custom fields + form builder** | **90–120 min** |
+| 13B | **System enrollment form + pipeline + appointment booking** | **90–120 min** |
+| 14 | Hardware + emergency + compliance | 45–60 min |
+| 15 | Marketing site (CCA) | 60–90 min |
+| 16 | PWA + push + kiosk | 30–45 min |
+| 17 | Migration + audit + polish | 45–60 min |
+| 18 | End-to-end smoke test + deploy | 30 min |
+| **TOTAL** | | **~18–22 hours** |
 
 **Do not stop between phases. This is a continuous overnight build.**

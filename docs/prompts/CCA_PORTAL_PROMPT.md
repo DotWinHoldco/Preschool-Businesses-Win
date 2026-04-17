@@ -10,8 +10,8 @@ You are building **Preschool Businesses Win** — a multi-tenant preschool manag
 
 1. `AGENTS.md` — **this is Next.js 16**, not the version you were trained on. Read `node_modules/next/dist/docs/01-app/02-guides/upgrading/version-16.md`. Async `params`/`searchParams`, async `headers()`/`cookies()`, `proxy.ts` (not `middleware.ts`), Turbopack default.
 2. `docs/PLATFORM_ARCHITECTURE.md` — **the multi-tenant architecture.** Tenant resolution, RLS patterns, theming, app shell, feature flags, storage isolation, user model. Read this before touching any table or component.
-3. `docs/CCA_BUILD_BRIEF.md` — **the canonical feature spec.** 43 sections covering every feature area. Every instruction is binding. Read cover-to-cover.
-4. `docs/OVERNIGHT_BUILD_PLAN.md` — **the phased build plan.** 17 continuous phases (0–17). This is your execution order. Follow it phase by phase. Do not skip phases. Do not stop between phases. Log every phase completion in `BUILD_LOG.md`.
+3. `docs/CCA_BUILD_BRIEF.md` — **the canonical feature spec.** 48 sections covering every feature area. Every instruction is binding. Read cover-to-cover. Pay special attention to §44 (custom fields), §45 (form builder), §46 (system enrollment form), §47 (application pipeline), and §48 (appointment booking) — these are the newest and most ambitious features.
+4. `docs/OVERNIGHT_BUILD_PLAN.md` — **the phased build plan.** 20 continuous phases (0–18 + 13B). This is your execution order. Follow it phase by phase. Do not skip phases. Do not stop between phases. Log every phase completion in `BUILD_LOG.md`.
 5. `docs/BRAND.md` — design system tokens (implemented via CSS variables, overridable per tenant).
 6. `docs/CCA_MARKETING_BRIEF.md` — the CCA marketing site brief.
 7. `docs/COPY.md` — CCA marketing copy (tenant-specific content, not hardcoded).
