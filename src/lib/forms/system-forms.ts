@@ -3,6 +3,8 @@
 // structure (sections, fields, submission actions). Seeded into new tenants and
 // can be updated via upgrade migrations without breaking tenant customization.
 
+import { US_STATES } from '@/lib/constants/us-states'
+
 export type SystemFormKey =
   | 'enrollment_application'
   | 're_enrollment'
@@ -122,7 +124,21 @@ const ENROLLMENT_APPLICATION: SystemFormTemplate = {
         ],
       },
     },
-    { field_key: 'parent_address', field_type: 'address_autocomplete', label: 'Address', page_number: 1, section_index: 0, sort_order: 60, is_required: true, is_locked: true, is_system_field: true },
+    { field_key: 'parent_address_street', field_type: 'short_text', label: 'Street address', placeholder: '123 Main St', page_number: 1, section_index: 0, sort_order: 60, is_required: true, is_locked: true, is_system_field: true },
+    { field_key: 'parent_address_city', field_type: 'short_text', label: 'City', page_number: 1, section_index: 0, sort_order: 61, is_required: true, is_locked: true, is_system_field: true },
+    {
+      field_key: 'parent_address_state',
+      field_type: 'single_select_dropdown',
+      label: 'State',
+      page_number: 1,
+      section_index: 0,
+      sort_order: 62,
+      is_required: true,
+      is_locked: true,
+      is_system_field: true,
+      config: { options: US_STATES.map((s) => ({ label: s.label, value: s.value })) },
+    },
+    { field_key: 'parent_address_zip', field_type: 'short_text', label: 'ZIP code', placeholder: '75114', page_number: 1, section_index: 0, sort_order: 63, is_required: true, is_locked: true, is_system_field: true },
     { field_key: 'parent_occupation', field_type: 'short_text', label: 'Your occupation', page_number: 1, section_index: 0, sort_order: 70 },
     { field_key: 'parent_work_phone', field_type: 'phone', label: 'Work phone', page_number: 1, section_index: 0, sort_order: 80 },
     { field_key: 'parent_drivers_license', field_type: 'short_text', label: "Driver's license number", description: 'Used for authorized pickup verification.', page_number: 1, section_index: 0, sort_order: 90 },
@@ -335,7 +351,19 @@ const ENROLLMENT_APPLICATION: SystemFormTemplate = {
     { field_key: 'has_other_parent', field_type: 'yes_no', label: 'Is there another parent or guardian?', page_number: 5, section_index: 4, sort_order: 10 },
     { field_key: 'other_parent_name', field_type: 'short_text', label: "Other parent's full name", page_number: 5, section_index: 4, sort_order: 20, logic_rules: [{ show_if: { field: 'has_other_parent', equals: true } }] },
     { field_key: 'other_parent_same_address', field_type: 'yes_no', label: 'Does this parent live at the same address?', page_number: 5, section_index: 4, sort_order: 30, logic_rules: [{ show_if: { field: 'has_other_parent', equals: true } }] },
-    { field_key: 'other_parent_address', field_type: 'address_autocomplete', label: "Other parent's address", page_number: 5, section_index: 4, sort_order: 40, logic_rules: [{ show_if: { field: 'other_parent_same_address', equals: false } }] },
+    { field_key: 'other_parent_address_street', field_type: 'short_text', label: "Other parent's street address", page_number: 5, section_index: 4, sort_order: 40, logic_rules: [{ show_if: { field: 'other_parent_same_address', equals: false } }] },
+    { field_key: 'other_parent_address_city', field_type: 'short_text', label: 'City', page_number: 5, section_index: 4, sort_order: 41, logic_rules: [{ show_if: { field: 'other_parent_same_address', equals: false } }] },
+    {
+      field_key: 'other_parent_address_state',
+      field_type: 'single_select_dropdown',
+      label: 'State',
+      page_number: 5,
+      section_index: 4,
+      sort_order: 42,
+      config: { options: US_STATES.map((s) => ({ label: s.label, value: s.value })) },
+      logic_rules: [{ show_if: { field: 'other_parent_same_address', equals: false } }],
+    },
+    { field_key: 'other_parent_address_zip', field_type: 'short_text', label: 'ZIP code', page_number: 5, section_index: 4, sort_order: 43, logic_rules: [{ show_if: { field: 'other_parent_same_address', equals: false } }] },
     { field_key: 'other_parent_occupation', field_type: 'short_text', label: "Other parent's occupation", page_number: 5, section_index: 4, sort_order: 50, logic_rules: [{ show_if: { field: 'has_other_parent', equals: true } }] },
     { field_key: 'other_parent_work_phone', field_type: 'phone', label: "Other parent's work phone", page_number: 5, section_index: 4, sort_order: 60, logic_rules: [{ show_if: { field: 'has_other_parent', equals: true } }] },
     { field_key: 'other_parent_drivers_license', field_type: 'short_text', label: "Other parent's driver's license", page_number: 5, section_index: 4, sort_order: 70, logic_rules: [{ show_if: { field: 'has_other_parent', equals: true } }] },
@@ -371,7 +399,8 @@ const ENROLLMENT_APPLICATION: SystemFormTemplate = {
     { field_key: 'parent_goals', field_type: 'long_text', label: 'What are your goals for your child?', page_number: 5, section_index: 4, sort_order: 150 },
     { field_key: 'anything_else', field_type: 'long_text', label: "Anything else you'd like us to know?", page_number: 5, section_index: 4, sort_order: 160 },
 
-    // Step 6: Agreement & Payment
+    // Step 6: Signature, Agreement & Payment
+    { field_key: 'parent_signature', field_type: 'typed_signature', label: 'Your signature', description: 'Type your full legal name below. This serves as your electronic signature.', page_number: 6, section_index: 5, sort_order: 5, is_required: true, is_locked: true, is_system_field: true },
     { field_key: 'agree_to_contact', field_type: 'legal_acceptance', label: 'I agree to be contacted regarding this application.', page_number: 6, section_index: 5, sort_order: 10, is_required: true, is_locked: true, is_system_field: true },
     { field_key: 'agree_to_policies', field_type: 'legal_acceptance', label: 'I have read and agree to the school policies and handbook.', page_number: 6, section_index: 5, sort_order: 20, is_required: true, is_locked: true, is_system_field: true },
     { field_key: 'acknowledge_accuracy', field_type: 'legal_acceptance', label: 'I certify that the information provided is accurate and complete.', page_number: 6, section_index: 5, sort_order: 30, is_required: true, is_locked: true, is_system_field: true },
