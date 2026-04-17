@@ -5,7 +5,8 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { cn } from '@/lib/cn'
-import { EnrollmentWizard } from '@/components/enrollment/enrollment-wizard'
+import { SystemEnrollmentForm } from '@/components/enrollment/system-enrollment-form'
+import { createAdminClient } from '@/lib/supabase/admin'
 import {
   Shield,
   Eye,
@@ -23,7 +24,26 @@ export const metadata: Metadata = {
     'Enroll your child at Crandall Christian Academy. Simple 4-step application. Faith-based preschool in Crandall, TX with small class sizes and certified staff.',
 }
 
-export default function EnrollPage() {
+export default async function EnrollPage() {
+  const supabase = createAdminClient()
+  const { data: form } = await supabase
+    .from('forms')
+    .select('id, tenant_id, fee_enabled, fee_amount_cents, fee_description')
+    .eq('system_form_key', 'enrollment_application')
+    .is('parent_form_id', null)
+    .limit(1)
+    .maybeSingle()
+
+  let tenantName = 'our school'
+  if (form?.tenant_id) {
+    const { data: branding } = await supabase
+      .from('tenant_branding')
+      .select('school_name')
+      .eq('tenant_id', form.tenant_id)
+      .maybeSingle()
+    tenantName = branding?.school_name ?? tenantName
+  }
+
   return (
     <>
       {/* Hero */}
@@ -420,7 +440,13 @@ export default function EnrollPage() {
               </h2>
             </div>
 
-            <EnrollmentWizard />
+            <SystemEnrollmentForm
+              formId={form?.id}
+              tenantName={tenantName}
+              feeEnabled={form?.fee_enabled ?? false}
+              feeAmountCents={form?.fee_amount_cents ?? undefined}
+              feeDescription={form?.fee_description ?? 'Application Fee'}
+            />
           </div>
         </div>
       </section>
