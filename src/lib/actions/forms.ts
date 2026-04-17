@@ -2,11 +2,12 @@
 
 // @anchor: platform.form-builder.actions
 
-import { CreateFormSchema, UpdateFormSchema, CreateFormFieldSchema } from '@/lib/schemas/form'
-import type { CreateFormInput, UpdateFormInput, CreateFormFieldInput } from '@/lib/schemas/form'
+import { CreateFormSchema, UpdateFormSchema, CreateFormFieldSchema, SpawnFormInstanceSchema } from '@/lib/schemas/form'
+import type { CreateFormInput, UpdateFormInput, CreateFormFieldInput, SpawnFormInstanceInput } from '@/lib/schemas/form'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
 import { assertRole } from '@/lib/auth/session'
+import { spawnFormInstance } from '@/lib/forms/seed-system-forms'
 
 type ActionResult = { ok: boolean; id?: string; slug?: string; error?: string; fieldErrors?: Record<string, string> }
 
@@ -84,6 +85,33 @@ export async function updateForm(input: UpdateFormInput): Promise<ActionResult> 
   })
 
   return { ok: true, id }
+}
+
+export async function createFormInstance(input: SpawnFormInstanceInput): Promise<ActionResult> {
+  await assertRole('admin')
+  const parsed = SpawnFormInstanceSchema.safeParse(input)
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' }
+
+  const tenantId = await getTenantId()
+  const actorId = await getActorId()
+  const supabase = createAdminClient()
+
+  try {
+    const result = await spawnFormInstance(supabase, tenantId, parsed.data.source_form_id, {
+      instanceLabel: parsed.data.instance_label,
+      feeEnabled: parsed.data.fee_enabled,
+      feeAmountCents: parsed.data.fee_amount_cents ?? null,
+      feeDescription: parsed.data.fee_description ?? null,
+    })
+    await supabase.from('audit_log').insert({
+      tenant_id: tenantId, actor_id: actorId, action: 'form.spawn_instance',
+      entity_type: 'form', entity_id: result.id,
+      after: { source_form_id: parsed.data.source_form_id, instance_label: parsed.data.instance_label },
+    })
+    return { ok: true, id: result.id, slug: result.slug }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'Failed to spawn instance' }
+  }
 }
 
 export async function deleteForm(id: string): Promise<ActionResult> {
