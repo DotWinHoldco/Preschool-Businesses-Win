@@ -5,7 +5,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { cn } from '@/lib/cn'
-import { SystemEnrollmentForm } from '@/components/enrollment/system-enrollment-form'
+import { WizardFormRenderer } from '@/components/forms/wizard/wizard-form-renderer'
 import { createAdminClient } from '@/lib/supabase/admin'
 import {
   Shield,
@@ -28,13 +28,16 @@ export default async function EnrollPage() {
   const supabase = createAdminClient()
   const { data: form } = await supabase
     .from('forms')
-    .select('id, tenant_id, fee_enabled, fee_amount_cents, fee_description')
+    .select('id, tenant_id, title, mode, fee_enabled, fee_amount_cents, fee_description, thank_you_title, thank_you_message')
     .eq('system_form_key', 'enrollment_application')
     .is('parent_form_id', null)
     .limit(1)
     .maybeSingle()
 
   let tenantName = 'our school'
+  let sections: Array<{ id: string; title: string | null; description: string | null; sort_order: number; page_number: number }> = []
+  let fields: Array<{ id: string; field_key: string; field_type: string; label: string | null; description: string | null; placeholder: string | null; config: Record<string, unknown>; validation_rules: Record<string, unknown>; logic_rules: Record<string, unknown>[]; is_required: boolean; is_locked: boolean; is_system_field: boolean; sort_order: number; page_number: number; section_id: string | null }> = []
+
   if (form?.tenant_id) {
     const { data: branding } = await supabase
       .from('tenant_branding')
@@ -42,6 +45,13 @@ export default async function EnrollPage() {
       .eq('tenant_id', form.tenant_id)
       .maybeSingle()
     tenantName = branding?.school_name ?? tenantName
+
+    const [{ data: s }, { data: f }] = await Promise.all([
+      supabase.from('form_sections').select('*').eq('form_id', form.id).order('sort_order'),
+      supabase.from('form_fields').select('*').eq('form_id', form.id).order('sort_order'),
+    ])
+    sections = (s ?? []) as typeof sections
+    fields = (f ?? []) as typeof fields
   }
 
   return (
@@ -440,13 +450,28 @@ export default async function EnrollPage() {
               </h2>
             </div>
 
-            <SystemEnrollmentForm
-              formId={form?.id}
-              tenantName={tenantName}
-              feeEnabled={form?.fee_enabled ?? false}
-              feeAmountCents={form?.fee_amount_cents ?? undefined}
-              feeDescription={form?.fee_description ?? 'Application Fee'}
-            />
+            {form ? (
+              <WizardFormRenderer
+                formId={form.id}
+                title={form.title}
+                mode={form.mode as 'conversational' | 'document'}
+                feeEnabled={form.fee_enabled ?? false}
+                feeAmountCents={form.fee_amount_cents}
+                feeDescription={form.fee_description ?? 'Application Fee'}
+                thankYouTitle={form.thank_you_title ?? 'Application received!'}
+                thankYouMessage={
+                  form.thank_you_message ??
+                  "We'll review your application within 1-2 business days. Watch for an email with next steps."
+                }
+                sections={sections}
+                fields={fields}
+                tenantName={tenantName}
+              />
+            ) : (
+              <div className="text-center text-sm text-[var(--color-muted-foreground)]">
+                Enrollment form is not yet configured.
+              </div>
+            )}
           </div>
         </div>
       </section>
