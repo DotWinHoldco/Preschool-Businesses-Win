@@ -10,44 +10,46 @@ export function SpinningCTA() {
       src1080={`${VIDEO_BASE}/facility-hero-1080p.mp4`}
       src720={`${VIDEO_BASE}/facility-hero-720p.mp4`}
       poster="/marketing/home/facility-hero-poster.jpg"
-      className="min-h-[80vh] flex items-center"
-      overlay="bg-black/50"
+      className="min-h-screen flex items-center"
+      overlay="bg-black/20"
     >
-      <div className="max-w-3xl mx-auto px-6 text-center">
-        <Link href="/enroll" className="inline-block mb-8 group">
-          <div className="relative w-[240px] h-[240px] md:w-[280px] md:h-[280px] mx-auto">
-            <div className="absolute inset-0 animate-[spin_7s_linear_infinite] motion-reduce:animate-none">
-              <Image
-                src="/marketing/home/mascot-sunshine-face.png"
-                alt=""
-                fill
-                className="object-contain"
-                aria-hidden="true"
-              />
-            </div>
-            <div className="absolute inset-0 flex items-center justify-center z-10">
-              <Image
-                src="/marketing/home/mascot-girl.png"
-                alt="CCA Mascot"
-                width={120}
-                height={160}
-                className="object-contain animate-[float_3s_ease-in-out_infinite] motion-reduce:animate-none drop-shadow-lg"
-              />
-            </div>
-          </div>
+      <div className="w-full min-h-screen relative flex flex-col items-center justify-center px-6 py-24">
+        {/* Spinning "Now Enrolling" sunshine — top-right */}
+        <Link href="/enroll" className="absolute top-[10%] right-[6%] md:right-[10%] lg:right-[15%] w-[200px] h-[200px] md:w-[280px] md:h-[280px] lg:w-[400px] lg:h-[400px] z-20">
+          <Image
+            src="/marketing/home/mascot-sunshine-face.png"
+            alt="Now Enrolling"
+            fill
+            className="object-contain animate-[spin_7s_linear_infinite] motion-reduce:animate-none"
+          />
         </Link>
-        <h2 className="font-coming-soon text-4xl md:text-5xl text-white mb-3">
-          Where Little Minds Shine
-        </h2>
-        <p className="font-questrial text-lg text-white/80 mb-8">
-          Lighting the Way for Lifelong Learning.
-        </p>
-        <Link
-          href="/enroll"
-          className="inline-block bg-cca-blue text-white font-kollektif text-lg px-10 py-4 rounded-full hover:bg-cca-blue/90 transition-colors shadow-lg hover:shadow-xl"
-        >
-          APPLY NOW
-        </Link>
+
+        {/* Centered content */}
+        <div className="flex flex-col items-center text-center">
+          {/* Girl mascot — standalone, centered */}
+          <Image
+            src="/marketing/home/mascot-girl.png"
+            alt="CCA Mascot"
+            width={128}
+            height={155}
+            className="object-contain mb-6 drop-shadow-lg w-[100px] md:w-[128px]"
+          />
+
+          <h1 className="font-coming-soon text-5xl md:text-7xl lg:text-[7rem] text-white text-center">
+            Where Little Minds Shine
+          </h1>
+
+          <p className="font-coming-soon text-lg md:text-xl text-white/80 text-center mt-4">
+            Lighting the Way for Lifelong Learning.
+          </p>
+
+          <Link
+            href="/enroll"
+            className="inline-block bg-cca-blue text-white text-xl md:text-2xl rounded-full px-12 py-5 font-bold uppercase tracking-wider hover:scale-105 transition-transform shadow-2xl min-w-[300px] md:min-w-[420px] text-center mt-8"
+          >
+            APPLY NOW
+          </Link>
+        </div>
       </div>
     </VideoBackground>
   );

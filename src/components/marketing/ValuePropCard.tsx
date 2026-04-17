@@ -9,14 +9,16 @@ interface ValuePropCardProps {
 export function ValuePropCard({ title, body, index }: ValuePropCardProps) {
   return (
     <ScrollReveal delay={index * 0.12}>
-      <div className="text-center p-6 bg-white/15 backdrop-blur-sm rounded-2xl border border-white/20 hover:-translate-y-1 hover:bg-white/25 transition-all duration-300">
-        <div className="w-12 h-12 mx-auto mb-4 rounded-full flex items-center justify-center bg-white/20">
-          <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+      <div className="flex gap-4 items-start p-4 border-b border-gray-100 last:border-b-0">
+        <div className="flex-shrink-0 mt-1">
+          <svg className="w-8 h-8" viewBox="26.5 36.011 147 127.998" fill="#F878AF">
+            <path d="M161.646 47.804l-.035-.035-.002-.002c-15.816-15.672-41.455-15.672-57.271 0l-4.338 4.3-4.338-4.3c-15.816-15.672-41.455-15.672-57.271 0-15.817 15.671-15.817 41.079 0 56.75l.035.036.002.002 61.572 61.034 61.572-61.034.002-.002.035-.036c15.817-15.671 15.817-41.079.037-56.713z" />
           </svg>
         </div>
-        <h3 className="font-kollektif text-lg mb-2 text-white">{title}</h3>
-        <p className="font-questrial text-white/85 text-base leading-relaxed">{body}</p>
+        <div>
+          <h3 className="font-kollektif text-lg text-cca-ink mb-1">{title}</h3>
+          <p className="font-questrial text-cca-ink/70 text-sm leading-relaxed">{body}</p>
+        </div>
       </div>
     </ScrollReveal>
   );
