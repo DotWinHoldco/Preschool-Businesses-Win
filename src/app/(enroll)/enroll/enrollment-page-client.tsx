@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo, useTransition } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft, ArrowRight, CheckCircle2, Lock, Plus, Trash2, Save, ArrowUpRight } from 'lucide-react';
@@ -91,7 +91,7 @@ export function EnrollmentPageClient(props: Props) {
 
   const [step, setStep] = useState(0);
   const [values, setValues] = useState<Record<string, unknown>>({});
-  const [pending, startTransition] = useTransition();
+  const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [saveToast, setSaveToast] = useState(false);
@@ -175,23 +175,24 @@ export function EnrollmentPageClient(props: Props) {
     return currentFields.every((f) => fieldSatisfied(f, values));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setError(null);
-    startTransition(async () => {
-      try {
-        const payload = { ...values, form_id: formId } as unknown as SystemEnrollmentData;
-        const result = await submitSystemEnrollment(payload);
-        if (!result.ok) {
-          setError(result.error ?? 'Submission failed.');
-          return;
-        }
-        localStorage.removeItem(STORAGE_KEY);
-        setSubmitted(true);
-      } catch (err) {
-        console.error('[Enrollment] Submit error:', err);
-        setError('Something went wrong. Please try again or contact us.');
+    setPending(true);
+    try {
+      const payload = { ...values, form_id: formId } as unknown as SystemEnrollmentData;
+      const result = await submitSystemEnrollment(payload);
+      if (!result.ok) {
+        setError(result.error ?? 'Submission failed.');
+        return;
       }
-    });
+      localStorage.removeItem(STORAGE_KEY);
+      setSubmitted(true);
+    } catch (err) {
+      console.error('[Enrollment] Submit error:', err);
+      setError('Something went wrong. Please try again or contact us.');
+    } finally {
+      setPending(false);
+    }
   };
 
   return (
