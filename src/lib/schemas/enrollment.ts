@@ -56,8 +56,8 @@ export const ChildSchema = z.object({
 
   // Program (Step 3, per child)
   program_type: programTypeEnum,
-  schedule_preference: schedulePreferenceEnum,
-  desired_start_date: z.string().min(1, 'Start date is required'),
+  schedule_preference: schedulePreferenceEnum.optional(),
+  desired_start_date: z.string().optional().default(''),
 
   // Medical (Step 4, per child)
   has_allergies: z.boolean().default(false),

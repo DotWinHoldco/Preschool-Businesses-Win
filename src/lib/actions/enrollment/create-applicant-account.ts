@@ -24,32 +24,37 @@ export async function createApplicantAccount(
 
   let userId: string | undefined
 
-  const { data: existingUsers } = await supabase.auth.admin.listUsers({
-    page: 1,
-    perPage: 1,
+  // Try to create first — if user already exists, Supabase returns an error
+  const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
+    email: parentEmail,
+    email_confirm: true,
+    user_metadata: {
+      first_name: parentFirstName,
+      last_name: parentLastName,
+    },
   })
 
-  const existingUser = existingUsers?.users?.find(
-    (u) => u.email?.toLowerCase() === parentEmail.toLowerCase(),
-  )
-
-  if (existingUser) {
-    userId = existingUser.id
-  } else {
-    const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
-      email: parentEmail,
-      email_confirm: true,
-      user_metadata: {
-        first_name: parentFirstName,
-        last_name: parentLastName,
-      },
-    })
-
-    if (createError) {
+  if (createError) {
+    if (createError.message.includes('already been registered') || createError.status === 422) {
+      // User exists — look them up by paginating through users
+      let page = 1
+      while (!userId) {
+        const { data: batch } = await supabase.auth.admin.listUsers({ page, perPage: 50 })
+        const users = batch?.users ?? []
+        if (users.length === 0) break
+        const match = users.find((u) => u.email?.toLowerCase() === parentEmail.toLowerCase())
+        if (match) { userId = match.id; break }
+        page++
+      }
+      if (!userId) {
+        console.error('[CreateApplicantAccount] User exists but could not be found by email')
+        return {}
+      }
+    } else {
       console.error('[CreateApplicantAccount] Failed to create auth user:', createError.message)
       return {}
     }
-
+  } else {
     userId = newUser.user.id
   }
 
