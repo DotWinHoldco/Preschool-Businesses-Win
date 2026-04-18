@@ -19,6 +19,7 @@ interface FormDef {
   is_system_form?: boolean; system_form_key?: string | null
   parent_form_id?: string | null; instance_label?: string | null
   fee_enabled?: boolean; fee_amount_cents?: number | null; fee_description?: string | null
+  hide_fee_notice?: boolean
 }
 
 interface FieldDef {
@@ -101,6 +102,7 @@ export function FormBuilderClient({ form, initialFields, initialSections, initia
     fee_enabled: form.fee_enabled ?? false,
     fee_amount_cents: form.fee_amount_cents ?? 10000,
     fee_description: form.fee_description ?? 'Application Fee',
+    hide_fee_notice: (form as FormDef & { hide_fee_notice?: boolean }).hide_fee_notice ?? false,
     access_control: form.access_control,
     thank_you_title: form.thank_you_title ?? '',
     thank_you_message: form.thank_you_message ?? '',
@@ -164,6 +166,7 @@ export function FormBuilderClient({ form, initialFields, initialSections, initia
         fee_enabled: settings.fee_enabled,
         fee_amount_cents: settings.fee_enabled ? settings.fee_amount_cents : null,
         fee_description: settings.fee_description,
+        hide_fee_notice: settings.hide_fee_notice,
         thank_you_title: settings.thank_you_title,
         thank_you_message: settings.thank_you_message,
         instance_label: settings.instance_label || undefined,
@@ -306,6 +309,7 @@ export function FormBuilderClient({ form, initialFields, initialSections, initia
               feeEnabled={settings.fee_enabled}
               feeAmountCents={settings.fee_amount_cents}
               feeDescription={settings.fee_description}
+              hideFeeNotice={settings.hide_fee_notice}
               thankYouTitle={settings.thank_you_title}
               thankYouMessage={settings.thank_you_message}
               sections={wizardSections}
@@ -410,6 +414,11 @@ export function FormBuilderClient({ form, initialFields, initialSections, initia
                   />
                   <span className="text-sm font-medium">Collect an application fee</span>
                 </label>
+                <p className="text-xs text-[var(--color-muted-foreground)] mb-3 pl-6">
+                  {settings.fee_enabled
+                    ? 'An application fee will be charged at submission.'
+                    : 'The fee section is completely hidden from applicants.'}
+                </p>
                 {settings.fee_enabled && (
                   <div className="space-y-3 pl-6">
                     <div>
@@ -440,6 +449,19 @@ export function FormBuilderClient({ form, initialFields, initialSections, initia
                     </p>
                   </div>
                 )}
+
+                <label className="flex items-center gap-2 mt-3">
+                  <input
+                    type="checkbox"
+                    checked={settings.hide_fee_notice}
+                    onChange={(e) => setSettings({ ...settings, hide_fee_notice: e.target.checked })}
+                    className="rounded accent-[var(--color-primary)]"
+                  />
+                  <span className="text-sm font-medium">Hide fee notice entirely</span>
+                </label>
+                <p className="text-xs text-[var(--color-muted-foreground)] pl-6 mt-1">
+                  Removes the fee banner completely — no &ldquo;fee waived&rdquo; promotion, no fee amount. Applicants see no mention of fees.
+                </p>
               </div>
 
               <div className="pt-2 border-t" style={{ borderColor: 'var(--color-border)' }}>

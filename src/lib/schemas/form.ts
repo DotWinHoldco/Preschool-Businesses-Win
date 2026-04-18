@@ -52,6 +52,7 @@ export const UpdateFormSchema = z.object({
   fee_enabled: z.boolean().optional(),
   fee_amount_cents: z.number().int().min(0).max(10000000).optional().nullable(),
   fee_description: z.string().max(200).optional(),
+  hide_fee_notice: z.boolean().optional(),
   instance_label: z.string().max(200).optional(),
 })
 export type UpdateFormInput = z.infer<typeof UpdateFormSchema>
