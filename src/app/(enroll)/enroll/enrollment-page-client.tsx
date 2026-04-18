@@ -178,14 +178,19 @@ export function EnrollmentPageClient(props: Props) {
   const handleSubmit = () => {
     setError(null);
     startTransition(async () => {
-      const payload = { ...values, form_id: formId } as unknown as SystemEnrollmentData;
-      const result = await submitSystemEnrollment(payload);
-      if (!result.ok) {
-        setError(result.error ?? 'Submission failed.');
-        return;
+      try {
+        const payload = { ...values, form_id: formId } as unknown as SystemEnrollmentData;
+        const result = await submitSystemEnrollment(payload);
+        if (!result.ok) {
+          setError(result.error ?? 'Submission failed.');
+          return;
+        }
+        localStorage.removeItem(STORAGE_KEY);
+        setSubmitted(true);
+      } catch (err) {
+        console.error('[Enrollment] Submit error:', err);
+        setError('Something went wrong. Please try again or contact us.');
       }
-      localStorage.removeItem(STORAGE_KEY);
-      setSubmitted(true);
     });
   };
 
