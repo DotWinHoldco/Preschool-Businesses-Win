@@ -13,12 +13,14 @@ import {
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId } from '@/lib/actions/get-tenant-id'
 import { writeAudit } from '@/lib/audit'
+import { createApplicantAccount } from './create-applicant-account'
 
 interface SubmitResult {
   ok: boolean
   error?: string
   response_id?: string
   application_ids?: string[]
+  magic_link_sent?: boolean
 }
 
 function computeTriageScore(data: SystemEnrollmentData, child: ChildData): number {
@@ -205,7 +207,22 @@ export async function submitSystemEnrollment(
       notes: `Auto-created from enrollment application — ${data.children.length} child(ren)`,
     })
 
-    return { ok: true, response_id: responseId, application_ids: applicationIds }
+    // Create applicant parent account (non-blocking — failure here doesn't fail the submission)
+    let magicLinkSent = false
+    try {
+      const accountResult = await createApplicantAccount({
+        tenantId,
+        parentEmail: data.parent_email,
+        parentFirstName: data.parent_first_name,
+        parentLastName: data.parent_last_name,
+        applicationIds,
+      })
+      magicLinkSent = accountResult.magicLinkSent ?? false
+    } catch (accountErr) {
+      console.error('[Enrollment] Applicant account creation failed (non-blocking):', accountErr)
+    }
+
+    return { ok: true, response_id: responseId, application_ids: applicationIds, magic_link_sent: magicLinkSent }
   } catch (err) {
     console.error('System enrollment submit error:', err)
     return { ok: false, error: 'Something went wrong. Please try again.' }

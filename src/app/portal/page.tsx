@@ -37,6 +37,8 @@ export default async function PortalEntryPage() {
     case 'aide':
     case 'front_desk':
       redirect('/portal/staff')
+    case 'applicant_parent':
+      redirect('/portal/applicant')
     case 'parent':
     default:
       redirect('/portal/parent')

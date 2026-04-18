@@ -7,6 +7,7 @@ export type Role =
   | 'aide'
   | 'front_desk'
   | 'parent'
+  | 'applicant_parent'
 
 /** Ordered from highest privilege to lowest */
 const ROLE_HIERARCHY: Role[] = [
@@ -18,6 +19,7 @@ const ROLE_HIERARCHY: Role[] = [
   'aide',
   'front_desk',
   'parent',
+  'applicant_parent',
 ]
 
 /**
@@ -85,6 +87,10 @@ const PERMISSION_MAP: Record<Role, string[]> = {
     'billing:pay',
     'enrollment:read',
     'enrollment:submit',
+  ],
+  applicant_parent: [
+    'enrollment:read',
+    'appointment:book',
   ],
 }
 

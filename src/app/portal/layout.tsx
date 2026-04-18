@@ -51,6 +51,7 @@ export default async function PortalLayout({
         aide: 'aide',
         front_desk: 'aide',
         parent: 'parent',
+        applicant_parent: 'applicant_parent',
       }
       userRole = roleMap[membership.role] ?? 'parent'
       user = {
