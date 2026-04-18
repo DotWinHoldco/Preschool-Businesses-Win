@@ -47,37 +47,41 @@ export function NewsletterForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-md mx-auto">
-      <h3 className="font-kollektif text-xl text-white text-center mb-4">
+    <form onSubmit={handleSubmit} className="w-full">
+      <h3 className="font-kollektif text-2xl md:text-3xl text-white text-center mb-6">
         Subscribe To Our Newsletter
       </h3>
-      <div className="flex flex-col sm:flex-row gap-3">
-        <input
-          type="email"
-          required
-          placeholder="Email*"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="flex-1 px-4 py-3 rounded-full text-cca-ink font-questrial focus:outline-none focus:ring-2 focus:ring-cca-green"
-          aria-label="Email address"
-        />
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm text-white/90 font-questrial mb-1.5">
+            Email <span className="text-white/60">*</span>
+          </label>
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full px-4 py-3 rounded-sm text-cca-ink font-questrial focus:outline-none focus:ring-2 focus:ring-cca-green"
+            aria-label="Email address"
+          />
+        </div>
+        <label className="flex items-center gap-2 text-sm text-white/80 font-questrial cursor-pointer">
+          <input
+            type="checkbox"
+            checked={consent}
+            onChange={(e) => setConsent(e.target.checked)}
+            className="rounded border-white/40"
+          />
+          Yes, subscribe me to your newsletter.
+        </label>
         <button
           type="submit"
           disabled={status === 'loading'}
-          className="bg-white text-cca-green font-kollektif px-6 py-3 rounded-full hover:bg-white/90 transition-colors disabled:opacity-50"
+          className="w-full bg-cca-green text-white font-kollektif px-6 py-3 rounded-sm hover:bg-cca-green/90 transition-colors disabled:opacity-50"
         >
           {status === 'loading' ? 'Sending...' : 'Submit'}
         </button>
       </div>
-      <label className="flex items-center gap-2 mt-3 text-sm text-white/80 font-questrial cursor-pointer">
-        <input
-          type="checkbox"
-          checked={consent}
-          onChange={(e) => setConsent(e.target.checked)}
-          className="rounded border-white/40"
-        />
-        Yes, subscribe me to your newsletter.
-      </label>
       <input type="text" name="website" className="hidden" tabIndex={-1} autoComplete="off" aria-hidden="true" />
       {status === 'error' && (
         <p className="text-red-300 text-sm mt-2 text-center font-questrial">{errorMsg}</p>
