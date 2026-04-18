@@ -42,16 +42,18 @@ export async function submitSystemEnrollment(
 
   const parsed = SystemEnrollmentSchema.safeParse(raw)
   if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' }
+    console.error('[Enrollment] Zod validation failed:', JSON.stringify(parsed.error.issues, null, 2))
+    const msg = parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ')
+    return { ok: false, error: msg || 'Validation failed' }
   }
 
   const data = parsed.data
-  const tenantId = await getTenantId()
-  const supabase = createAdminClient()
 
   let responseId: string | undefined
 
   try {
+    const tenantId = await getTenantId()
+    const supabase = createAdminClient()
     // Link to the system enrollment form if one is seeded for this tenant
     if (data.form_id) {
       const { data: response } = await supabase
