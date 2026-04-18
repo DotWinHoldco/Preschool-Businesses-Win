@@ -5,9 +5,11 @@
 // See CCA_BUILD_BRIEF.md §4.2 for classroom switcher behavior.
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { Search, Bell, ChevronDown, Menu } from 'lucide-react'
 import { cn } from '@/lib/cn'
+import { getSupabaseBrowserClient } from '@/lib/supabase/browser'
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
@@ -54,6 +56,14 @@ export function PortalTopbar({
 }: TopbarProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const router = useRouter()
+
+  async function handleSignOut() {
+    const supabase = getSupabaseBrowserClient()
+    await supabase.auth.signOut()
+    router.push('/')
+    router.refresh()
+  }
 
   /** Get the user's initials for the avatar fallback. */
   function getInitials(name: string): string {
@@ -269,6 +279,7 @@ export function PortalTopbar({
               />
               <button
                 type="button"
+                onClick={handleSignOut}
                 className="w-full text-left px-3 py-2 text-sm transition-colors hover:bg-[var(--color-muted)]"
                 style={{ color: 'var(--color-destructive)' }}
                 role="menuitem"
