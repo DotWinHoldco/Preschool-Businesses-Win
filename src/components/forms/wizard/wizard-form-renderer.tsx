@@ -49,6 +49,7 @@ export interface WizardFormProps {
   feeEnabled?: boolean
   feeAmountCents?: number | null
   feeDescription?: string
+  hideFeeNotice?: boolean
   thankYouTitle?: string
   thankYouMessage?: string
   sections: WizardSection[]
@@ -81,6 +82,7 @@ export function WizardFormRenderer({
   feeEnabled = false,
   feeAmountCents,
   feeDescription,
+  hideFeeNotice = false,
   thankYouTitle = 'Thank you!',
   thankYouMessage = 'Your response has been submitted.',
   sections,
@@ -212,6 +214,7 @@ export function WizardFormRenderer({
         feeEnabled={feeEnabled}
         feeAmountCents={feeAmountCents}
         feeDescription={feeDescription}
+        hideFeeNotice={hideFeeNotice}
       />
 
       <WizardStepIndicator current={step} steps={steps.map((s) => ({ id: s.id, label: s.label }))} />

@@ -1,5 +1,3 @@
-// @anchor: platform.form-wizard.fee-notice
-
 import { cn } from '@/lib/cn'
 import { ShieldCheck, Sparkles } from 'lucide-react'
 
@@ -7,13 +5,17 @@ export function WizardFeeNotice({
   feeEnabled,
   feeAmountCents,
   feeDescription = 'Application Fee',
+  hideFeeNotice = false,
   variant = 'banner',
 }: {
   feeEnabled: boolean
   feeAmountCents?: number | null
   feeDescription?: string
+  hideFeeNotice?: boolean
   variant?: 'banner' | 'inline'
 }) {
+  if (hideFeeNotice) return null
+
   const isBanner = variant === 'banner'
 
   if (feeEnabled && feeAmountCents) {
