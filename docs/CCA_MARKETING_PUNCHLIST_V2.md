@@ -1,269 +1,396 @@
 # CCA Marketing Site — Visual Parity Punchlist V2
 
-## @anchor cca-marketing-punchlist-v2
+> **Source of truth:** `crandallchristianacademy.com` (original Wix site)  
+> **Target:** `crandallchristian.cc` (Next.js replica)  
+> **Goal:** The replica must look identical to the original or better. Every section, every icon, every color.
 
-**Purpose:** Close remaining visual gaps between `crandallchristian.cc` (replica) and `crandallchristianacademy.com` (original). The hero section is wrong, section order is wrong, colors are wrong, and several components need layout fixes.
-
-**Read ONLY:** `CLAUDE.md` and this file. Do NOT read other docs. Execute fixes in the numbered order below. Log progress to `BUILD_LOG.md`. On completion, move this file to `docs/build-archives/` and update `CLAUDE.md`.
-
----
-
-## VERIFIED ORIGINAL SECTION ORDER (from DOM inspection April 17 2026)
-
-The original site's ACTUAL rendered section order, verified by JavaScript DOM inspection with `getBoundingClientRect()`:
-
-```
- 1. HERO: "Where Little Minds Shine" (SpinningCTA) — 1170px, video bg
- 2. CONTENT ZONE: "A Place To Shine Bright" + "More Than A Preschool" + "Play, Explore, Discover, Grow" + "A Parent's Dream Come True" — 577px, NO marquee
- 3. "Today's Learners. Tomorrow's Leaders. Together!" — 942px, video bg + blue overlay
- 4. CURRICULUM: "Our Curriculum" — 4 pillar cards — 1184px
- 5. STICKY: Infants / Toddlers — 996px
- 6. STICKY: Twos / Threes — 996px
- 7. "Why Choose Us" — 631px, WHITE bg, pink heart icons
- 8. STICKY: Pre-K / Private Kinder — 985px
- 9. AMBIENT VIDEO — 618px, classroom video, no text
-10. NEWSLETTER: "Subscribe To Our Newsletter" — 467px
-11. INGREDIENTS: "The Ingredients Of A Perfect Pre-School" — 1431px, cream bg
-12. FINAL CTA: "Crandall's New Pre-School Gem" — 777px
-```
-
-**CRITICAL:** The sticky programs are SPLIT around "Why Choose Us" — Infants/Toddlers and Twos/Threes come BEFORE, Pre-K/Kinder comes AFTER. "Why Choose Us" is sandwiched between them. This is NOT how the replica has it.
+**Read ONLY:** `CLAUDE.md` and this file. Execute fixes in numbered order. Log to `BUILD_LOG.md`. On completion move this file to `docs/build-archives/`.
 
 ---
 
-## CURRENT REPLICA ORDER (WRONG)
+## VERIFIED SECTION ORDER (DOM-inspected April 17 2026)
 
 ```
- 1. "A Place To Shine Bright" hero (WRONG — should be SpinningCTA)
- 2. MarqueeBanner (WRONG — doesn't exist on original)
- 3. "Today's Learners" (correct section, wrong position)
- 4. "More Than A Preschool" (should be in content zone)
- 5. Curriculum pillars (correct section, wrong position)
- 6. ALL Sticky Programs together (WRONG — should be split around Why Choose Us)
- 7. "Why Choose Us" on GREEN bg (WRONG bg color, WRONG position)
- 8. SpinningCTA (WRONG position — should be hero #1)
- 9. Newsletter on GREEN bg (WRONG position, WRONG bg)
-10. Ingredients (correct section, wrong position)
-11. SpinningCTA repeated (WRONG — only once on original)
-12. MarqueeBanner repeated (WRONG — doesn't exist)
-13. Final CTA (correct)
+ 1. HERO: "Where Little Minds Shine" — SpinningCTA, video bg, spinning sunshine top-right, girl mascot center
+ 2. CONTENT ZONE: "A Parent's Dream Come True" big heading + 3 COLUMNS with line-drawing SVG icons
+ 3. "Today's Learners. Tomorrow's Leaders. Together!" — WHITE bg, 2-column, blob-masked image left, text right
+ 4. CURRICULUM: "Our Curriculum" — 4 pillar cards
+ 5. STICKY: Infants / Toddlers
+ 6. STICKY: Twos / Threes
+ 7. WHY CHOOSE US: white bg, 2-col, pink heart icons, green value-prop headings
+ 8. STICKY: Pre-K / Private Kinder
+ 9. AMBIENT VIDEO: classroom footage, no text
+10. NEWSLETTER: "Subscribe To Our Newsletter"
+11. INGREDIENTS: "The Ingredients Of A Perfect Pre-School" — cream bg
+12. FINAL CTA: "Crandall's New Pre-School Gem"
 ```
+
+**Sticky programs are SPLIT:** pairs 1-2 come BEFORE "Why Choose Us", pair 3 comes AFTER.
 
 ---
 
-## FIX 1: REORDER THE ENTIRE PAGE (HIGHEST PRIORITY)
+## WHAT'S WRONG WITH THE REPLICA (EVERY GAP)
 
-Rewrite `src/app/(marketing)/page.tsx` section order to match the original exactly:
+| # | What's wrong | Original | Replica |
+|---|---|---|---|
+| 1 | **Hero is wrong section** | SpinningCTA "Where Little Minds Shine" is the hero | "A Place To Shine Bright" video hero is position 1 |
+| 2 | **MarqueeBanner exists** | No scrolling marquee on original | Two MarqueeBanner instances |
+| 3 | **Content zone is 1 column** | 3 columns side-by-side with SVG line-drawing icons | Single centered column, no icons |
+| 4 | **"Today's Learners" is video overlay** | White bg, 2-column, blob-masked photo left, text right | Full-width video bg with blue overlay, centered text |
+| 5 | **Sticky programs have bg photos** | Clean text on solid cream/white backgrounds, NO photos | Full-bleed photos with dark overlays |
+| 6 | **Why Choose Us has green bg** | WHITE bg, 2-column, pink heart SVGs, green headings | Bright green bg, 3-column glassmorphism cards, star icons |
+| 7 | **Header utility bar is yellow** | CCA BLUE (`rgb(58,113,176)`) utility bar, 48px | Yellow/gold bg |
+| 8 | **Logo too small** | 338×118px colorful handwritten logo | ~100px small logo |
+| 9 | **"NOW HIRING" is red pill button** | Plain text nav item, same style as other links | Coral red pill button |
+| 10 | **Section order is wrong** | See verified order above | Multiple sections in wrong positions |
+| 11 | **Program heading colors missing** | Each program has unique color (blue, coral, yellow, green, pink) | All white text on dark photos |
+| 12 | **No ambient video section** | 618px silent video section between Pre-K and Newsletter | Missing entirely |
+| 13 | **Newsletter bg wrong** | Has green elements | Green bg (might be ok, verify) |
+| 14 | **Value prop headings wrong color** | GREEN `rgb(92,185,97)` | White (on green bg) |
+| 15 | **Curriculum heading wrong color** | "Our Curriculum" in GREEN, pillar titles in BLUE | Default dark colors |
+| 16 | **No "Read More" / "Learn More" links** | Every section has navigation links | Many sections missing links |
+| 17 | **"Email Us" missing from header** | Top bar: Tel + Email Us (mailto) + Location pin | Only phone number |
+| 18 | **SpinningCTA appears twice** | Once (as hero) | Twice on page |
+| 19 | **"More Than A Preschool" is standalone section** | Part of the 3-column content zone | Separate image+text section |
+
+---
+
+## FIX 1: HEADER — UTILITY BAR + LOGO + NAV
+
+The header is the FIRST thing parents see. It's wrong in 4 ways.
+
+**Original header structure (verified):**
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│ [UTILITY BAR — CCA BLUE bg, 48px, white text]                      │
+│ Tel. (945) 226-6584    ✉ Email Us    📍 Premier Pre-School...      │
+├─────────────────────────────────────────────────────────────────────┤
+│ [LOGO ROW — white bg]                                               │
+│ [CCA Logo 338×118]              Home  About  Contact  FAQ  NOW HIRING│
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+**Changes needed in `src/components/layout/` (Header component):**
+
+1. **Utility bar background:** Change from yellow/gold to `bg-cca-blue` (rgb(58,113,176)). Text stays white.
+
+2. **Add "Email Us" link:** Between phone and location text. Use `mailto:admin@crandallchristianacademy.com`. Add a mail/envelope icon (SVG or lucide `Mail` icon) before the text, and a pin/map-pin icon before the location text.
+
+3. **Logo size:** The original logo displays at 338×118px. Make the logo MUCH larger. Use the `CCA Logo Full.png` image from `/public/cca-assets/` or `/public/marketing/`. Set width to ~300-340px.
+
+4. **"NOW HIRING" nav item:** Remove the red/coral pill button styling. Make it a plain text nav link matching the other items (Home, About, Contact, FAQ). Same font, same size, same color. No background, no border-radius.
+
+**Files to edit:** The Header/Nav component in `src/components/layout/`. Find the utility bar, logo image, and nav items.
+
+---
+
+## FIX 2: HERO — SPINNING CTA LAYOUT
+
+SpinningCTA must be the FIRST section (position 1). Its internal layout is also wrong — the sunshine and girl are stacked on top of each other. They must be SEPARATE elements.
+
+**Original layout (verified):**
+- **Spinning sunshine:** 406×405px, positioned UPPER-RIGHT (x:1057 on 1728px viewport ≈ `right: ~15%`). Spins `7s linear infinite`. Links to enrollment form. The "Now Enrolling" text is BAKED INTO the image file — it's not CSS text.
+- **Girl mascot:** 128×155px, positioned CENTER (x:623 on 1728px viewport). Does NOT spin. Standalone cartoon element. Not layered on the sunshine.
+- **H1:** "Where Little Minds Shine" — ~109px white, Coming Soon (`font-coming-soon`) cursive font. Positioned bottom-center of section.
+- **Subtitle:** "Lighting the Way for Lifelong Learning." — white, below heading.
+- **APPLY NOW button:** Blue pill `rgb(58,113,176)`, ~420px wide, borderRadius 30px. Centered below subtitle.
+- **Background:** Classroom video. LIGHT overlay only (bg-black/20 to bg-black/30 max). The original feels warm and bright, NOT dark and moody.
+
+**ACTION — Rewrite `src/components/marketing/SpinningCTA.tsx`:**
+
+```
+Layout:
+  <section className="relative min-h-screen overflow-hidden">
+    <VideoBackground ... overlay="bg-black/25">  ← LIGHT overlay, keep it warm
+      
+      {/* Spinning sunshine — absolute, top-right, INDEPENDENT */}
+      <Link href="/enroll" className="absolute top-[8%] right-[8%] lg:right-[15%] w-[250px] h-[250px] md:w-[340px] md:h-[340px] lg:w-[400px] lg:h-[400px] z-20">
+        <Image src="/marketing/home/mascot-sunshine-face.png"
+               className="animate-[spin_7s_linear_infinite] w-full h-full object-contain" />
+      </Link>
+      
+      {/* Center content — girl + heading + subtitle + button */}
+      <div className="relative z-10 flex flex-col items-center justify-end min-h-screen pb-20 px-6">
+        
+        {/* Girl mascot — standalone, centered, NOT near sunshine */}
+        <Image src="/marketing/home/mascot-girl.png"
+               width={128} height={155}
+               className="mb-6" />
+        
+        {/* H1 — HUGE cursive */}
+        <h1 className="font-coming-soon text-5xl md:text-7xl lg:text-[7rem] text-white text-center leading-tight">
+          Where Little Minds Shine
+        </h1>
+        
+        {/* Subtitle */}
+        <p className="font-coming-soon text-lg md:text-xl text-white/80 mt-4 text-center">
+          Lighting the Way for Lifelong Learning.
+        </p>
+        
+        {/* APPLY NOW — blue pill, wide */}
+        <Link href="/enroll"
+              className="mt-8 bg-cca-blue text-white font-kollektif text-xl px-16 py-5 rounded-full 
+                         min-w-[300px] md:min-w-[420px] text-center uppercase tracking-wider
+                         hover:scale-105 transition-transform shadow-2xl">
+          APPLY NOW
+        </Link>
+      </div>
+    </VideoBackground>
+  </section>
+```
+
+**CRITICAL:** Girl and sunshine are TWO INDEPENDENT elements in completely different screen positions. Do NOT stack or layer them.
+
+---
+
+## FIX 3: CONTENT ZONE — THREE COLUMNS WITH SVG ICONS
+
+This is the biggest visual gap. The original has a beautiful 3-column layout with line-drawing icons. The replica has a boring single-column stack.
+
+**Original layout (verified):**
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│              "A Parent's Dream Come True"                             │
+│           (blue rgb(58,113,176), ~57px, centered, Coming Soon font)  │
+│                                                                      │
+│  🏫 A Place To Shine Bright  │  👥 More Than A Preschool  │  🛝 Play, Explore...  │
+│  (yellow heading)             │  (yellow heading)           │  (yellow heading)      │
+│  [body text left-aligned]     │  [body text left-aligned]   │  [body text left-align]│
+│                               │                             │                        │
+│  [Blue building SVG icon      │  [Coral people SVG icon     │  [Green slide SVG icon │
+│   122×122, fill #1C31F4]      │   122×122, fill #F26656]    │   122×122, fill #266040│
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+**Verified icon details:**
+- **Column 1 icon:** Building/school — viewBox "25 20.001 150 159.999", 17 paths, fill `#1C31F4` (blue). Shows a house/building with windows and a door.
+- **Column 2 icon:** People group — viewBox "39.885 44.886 120.229 108.33", fill `#F26656` (coral). Shows a group of 3+ people figures.
+- **Column 3 icon:** Playground/slide — viewBox "20 29.5 160.001 140.999", fill `#266040` (dark green). Shows a playground slide.
+
+**Heading colors (verified):**
+- "A Place To Shine Bright" — `rgb(242,176,32)` = `text-cca-yellow`
+- "More Than A Preschool" — `rgb(242,176,32)` = `text-cca-yellow`
+- "Play, Explore, Discover, Grow." — `rgb(242,176,32)` = `text-cca-yellow`
+- "A Parent's Dream Come True" — `rgb(58,113,176)` = `text-cca-blue`, MUCH larger (~57px vs ~25px)
+
+**ACTION — Create `src/components/marketing/ContentZone.tsx` or inline in page.tsx:**
+
+Remove the standalone "A Place To Shine Bright" VideoBackground hero and the standalone "More Than A Preschool" section. Replace them with ONE section:
 
 ```tsx
-<main id="main-content">
-  {/* 1. HERO — "Where Little Minds Shine" spinning CTA */}
-  <SpinningCTA />
-
-  {/* 2. CONTENT ZONE — 4 blocks in one continuous section */}
-  {/* See FIX 3 for the content zone component */}
-  <ContentZone />
-
-  {/* 3. "Today's Learners. Tomorrow's Leaders. Together!" — video bg, blue overlay */}
-  {/* (existing TodaysLearners section — keep as-is, just move here) */}
-
-  {/* 4. Curriculum — 4 pillar cards */}
-  {/* (existing curriculum section — move here) */}
-
-  {/* 5. Sticky: Infants / Toddlers */}
-  <StickyPrograms section="infants-toddlers" />
-
-  {/* 6. Sticky: Twos / Threes */}
-  <StickyPrograms section="twos-threes" />
-
-  {/* 7. "Why Choose Us" — WHITE bg, pink heart icons */}
-  {/* See FIX 7 for styling changes */}
-
-  {/* 8. Sticky: Pre-K / Private Kinder */}
-  <StickyPrograms section="prek-kinder" />
-
-  {/* 9. Ambient video — classroom footage, no text */}
-  {/* See FIX 6 */}
-
-  {/* 10. Newsletter */}
-
-  {/* 11. "The Ingredients Of A Perfect Pre-School" */}
-
-  {/* 12. "Crandall's New Pre-School Gem" — final CTA */}
-</main>
-```
-
-**Key changes from current replica:**
-- SpinningCTA moves from position 8 → position 1 (THE HERO)
-- Remove the SECOND SpinningCTA (only appears once on original)
-- Remove BOTH MarqueeBanner instances (doesn't exist on original)
-- "A Place To Shine Bright" is NOT a standalone hero — it becomes part of ContentZone
-- "More Than A Preschool" moves from standalone section into ContentZone
-- Sticky programs are SPLIT: 2 sections before "Why Choose Us", 1 after
-- Newsletter moves from position 9 → position 10 (after ambient video)
-- Add ambient video section (position 9)
-
-**StickyPrograms refactor:** The current `StickyPrograms` component renders all 3 sticky sections as one component. It needs to be refactored so each pair can be placed independently in the page. Either:
-- (A) Split into 3 separate components: `StickyInfantsToddlers`, `StickyTwosThrees`, `StickyPreKKinder`
-- (B) Accept a `pair` prop that selects which pair to render
-- (C) Keep all 3 in one `<StickyPrograms />` but use a wrapper approach with `<WhyChooseUs />` injected between via CSS order (NOT recommended — too fragile)
-
-**Recommended: Option B.** Refactor `StickyPrograms` to accept a `pair` prop:
-
-```tsx
-// Usage in page.tsx:
-<StickyPrograms pair={0} />  {/* Infants / Toddlers */}
-<StickyPrograms pair={1} />  {/* Twos / Threes */}
-{/* ... Why Choose Us section here ... */}
-<StickyPrograms pair={2} />  {/* Pre-K / Private Kinder */}
-```
-
-Each `<StickyPrograms pair={N} />` renders ONE sticky `div` (h-screen, sticky top-0, grid-cols-2) with the left and right programs for that pair.
-
-**IMPORTANT:** Each individual pair must still be `position: sticky; top: 0` so consecutive pairs create the scroll-over effect. But when "Why Choose Us" sits between pair 1 and pair 2, it naturally breaks the sticky chain — pair 2 (Pre-K/Kinder) scrolls up fresh after "Why Choose Us", which is exactly how the original works.
-
----
-
-## FIX 2: HERO SECTION — SPINNING CTA LAYOUT
-
-The SpinningCTA component exists but its LAYOUT is completely wrong. The spinning sunshine and girl mascot are STACKED ON TOP OF EACH OTHER in the CENTER. They should be separate elements in different positions.
-
-**What the original actually does (verified from DOM inspection):**
-- **Spinning sunshine:** `Yellow Black Cute Sunshine Face Positivity Mug (3).png` — 406x405px, positioned at x:1057 (RIGHT side of viewport on 1728px screen). This is roughly `right: 15%`. The image spins (7s linear infinite). It links to the enrollment form. The "Now Enrolling" text is BAKED INTO the image.
-- **Girl mascot:** `girl.png` — 128x155px, positioned at x:623 (CENTER of viewport). She does NOT spin. She is NOT near the sunshine. She is a standalone element.
-- **H1:** "Where Little Minds Shine" — 109px font size, white, Coming Soon font family. Centered below the girl.
-- **Subtitle:** "Lighting the Way for Lifelong Learning." — white, centered below heading.
-- **APPLY NOW button:** blue bg `rgb(58,113,176)`, 420px wide, borderRadius 30px (pill shape). Centered below subtitle.
-- **Background:** Video of classroom scene (group-of-children-and-teacher-in-the-preschool-cca.mp4) with LIGHT overlay (not heavy dark). The video is warm and bright.
-- **Section height:** 1170px (full viewport).
-
-**ACTION:** Rewrite `src/components/marketing/SpinningCTA.tsx`:
-
-```
-Section: relative, min-h-screen, overflow-hidden
-  Background: VideoBackground component (classroom video, muted, loop)
-  Light overlay only (bg-black/20 max — keep it BRIGHT, original is warm)
-  
-  Content container: relative, z-10, w-full, min-h-screen, flex flex-col items-center justify-center
-
-    // Spinning "Now Enrolling" sunshine — ABSOLUTE positioned TOP-RIGHT
-    // This is a SINGLE image that already contains the "Now Enrolling" text
-    Link to /enroll:
-      div: absolute top-[10%] right-[10%] lg:right-[15%] w-[280px] h-[280px] md:w-[340px] md:h-[340px] lg:w-[400px] lg:h-[400px]
-        img: mascot-sunshine-face.png (or the "Yellow Black Cute..." file)
-          animate-[spin_7s_linear_infinite]
-          w-full h-full object-contain
+<section className="py-16 md:py-24 px-6 bg-white">
+  <div className="max-w-6xl mx-auto">
     
-    // Centered content — vertically centered
-    div: flex flex-col items-center text-center px-6
+    {/* Big centered heading */}
+    <h2 className="font-coming-soon text-4xl md:text-6xl text-cca-blue text-center mb-16">
+      A Parent's Dream Come True
+    </h2>
+    
+    {/* 3-column grid */}
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
       
-      // Girl mascot — centered, standalone, NOT near the spinner
-      img: mascot-girl.png, w-[100px] md:w-[128px], mx-auto, mb-6
+      {/* Column 1 */}
+      <div className="flex gap-4">
+        <div className="flex-shrink-0">
+          {/* Blue building SVG icon, ~80-120px */}
+          <BuildingIcon className="w-20 h-20 md:w-[100px] md:h-[100px] text-[#1C31F4]" />
+        </div>
+        <div>
+          <h3 className="font-coming-soon text-2xl text-cca-yellow mb-3">
+            A Place To Shine Bright
+          </h3>
+          <p className="font-questrial text-cca-ink/70 text-sm leading-relaxed">
+            Crandall Christian Academy's preschool program in Crandall, Texas, provides a faith-based, nurturing environment where young minds flourish...
+          </p>
+        </div>
+      </div>
       
-      // Heading — LARGE
-      h1: "Where Little Minds Shine"
-        font-coming-soon, text-5xl md:text-7xl lg:text-[7rem], text-white, text-center
+      {/* Column 2 */}
+      <div className="flex gap-4">
+        <div className="flex-shrink-0">
+          {/* Coral people group SVG icon */}
+          <PeopleGroupIcon className="w-20 h-20 md:w-[100px] md:h-[100px] text-[#F26656]" />
+        </div>
+        <div>
+          <h3 className="font-coming-soon text-2xl text-cca-yellow mb-3">
+            More Than A Preschool
+          </h3>
+          <p className="font-questrial text-cca-ink/70 text-sm leading-relaxed">
+            At Crandall Christian Academy, we're more than a place for learning—we're a Christ-centered, close-knit community...
+          </p>
+        </div>
+      </div>
       
-      // Subtitle
-      p: "Lighting the Way for Lifelong Learning."
-        font-coming-soon, text-lg md:text-xl, text-white/80, text-center, mt-4
+      {/* Column 3 */}
+      <div className="flex gap-4">
+        <div className="flex-shrink-0">
+          {/* Dark green playground/slide SVG icon */}
+          <PlaygroundIcon className="w-20 h-20 md:w-[100px] md:h-[100px] text-[#266040]" />
+        </div>
+        <div>
+          <h3 className="font-coming-soon text-2xl text-cca-yellow mb-3">
+            Play, Explore, Discover, Grow.
+          </h3>
+          <p className="font-questrial text-cca-ink/70 text-sm leading-relaxed">
+            At Crandall Christian Academy, we create spaces for students to play freely, explore new ideas, and discover their unique potential...
+          </p>
+        </div>
+      </div>
       
-      // CTA button — blue pill, 420px wide
-      Link to /enroll: "APPLY NOW"
-        bg-cca-blue, text-white, text-xl md:text-2xl,
-        rounded-full, px-12 py-5, font-bold, uppercase, tracking-wider,
-        hover:scale-105 transition-transform, shadow-2xl,
-        min-w-[300px] md:min-w-[420px], text-center, mt-8
+    </div>
+  </div>
+</section>
 ```
 
-**CRITICAL:** The girl mascot and the spinning sunshine are TWO INDEPENDENT elements in completely different positions. Do NOT stack them. Do NOT layer them on top of each other.
+**SVG ICONS ARE ALREADY SAVED.** Use `<Image>` or `<img>` to render them from these paths:
+
+- **Column 1:** `/marketing/home/icons/building.svg` — blue school building, fill `#1C31F4`
+- **Column 2:** `/marketing/home/icons/people-group.svg` — coral people group, fill `#F26656`
+- **Column 3:** `/marketing/home/icons/playground.svg` — dark green playground slide, fill `#266040`
+
+Render at ~80-120px (e.g. `w-20 h-20 md:w-[100px] md:h-[100px]`). These are the EXACT SVGs extracted from the original Wix site.
+
+**ALSO REMOVE:** 
+- Both `<MarqueeBanner />` instances from page.tsx
+- The standalone "A Place To Shine Bright" VideoBackground section
+- The standalone "More Than A Preschool" two-column section
+- The second `<SpinningCTA />` instance (only one, as hero)
 
 ---
 
-## FIX 3: CONTENT ZONE — COMBINE INTO ONE SECTION
+## FIX 4: "TODAY'S LEARNERS" — 2-COLUMN WHITE LAYOUT WITH BLOB IMAGE
 
-On the original, position 2 is a SINGLE continuous section (577px) containing 4 blocks. The replica scatters these across separate sections.
+This section is COMPLETELY wrong. The replica uses a full-width video overlay with centered text. The original is a clean WHITE background 2-column layout with a blob-masked image.
 
-**Original heading colors (verified):**
-- "A Place To Shine Bright" — golden yellow `rgb(242,176,32)` = `text-cca-yellow`
-- "More Than A Preschool" — golden yellow `rgb(242,176,32)` = `text-cca-yellow`
-- "Play, Explore, Discover, Grow." — golden yellow `rgb(242,176,32)` = `text-cca-yellow`
-- "A Parent's Dream Come True" — blue `rgb(58,113,176)` = `text-cca-blue`, MUCH LARGER (57px vs 25px)
+**Original layout (verified):**
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│ WHITE BACKGROUND                                                       │
+│                                                                        │
+│  ┌─────────────────────┐    Peace of Mind for Parents (blue eyebrow)   │
+│  │                     │                                               │
+│  │  [CLASSROOM PHOTO   │    Today's Learners.                          │
+│  │   in ORGANIC BLOB   │    Tomorrow's Leaders.                        │
+│  │   SHAPE with SVG    │    Together!                                  │
+│  │   mask-image, warm  │    (large dark heading, ~40-50px)             │
+│  │   yellow accent     │                                               │
+│  │   behind it]        │    At CCA, we believe in partnering with      │
+│  │   757×700px         │    parents to create the best environment...  │
+│  │                     │                                               │
+│  └─────────────────────┘    ────────────────────────────────────       │
+│                                                                        │
+│  [Apply Now!] blue pill      Learn More →                              │
+│  below the image                                         bottom-right  │
+└────────────────────────────────────────────────────────────────────────┘
+```
 
-**ACTION:** Create one unified section or inline these blocks in `page.tsx`:
+**Key details:**
+- Background: WHITE (not video, not blue overlay)
+- Left column: Classroom photo (757×700px) with an **SVG mask-image** creating an organic blob/circular shape. There's a warm yellow/golden accent shape visible behind/around the image.
+- Right column: "Peace of Mind for Parents" eyebrow in blue, then the heading in dark navy (NOT white), then body text in dark text
+- "Apply Now!" blue pill button positioned below the image on the left
+- "Learn More →" text link positioned bottom-right with an arrow
+- A subtle horizontal line divider between body text and "Learn More"
+
+**ACTION — Replace the VideoBackground "Today's Learners" section entirely:**
 
 ```tsx
-<section className="bg-white py-16 md:py-24 px-6">
-  <div className="max-w-5xl mx-auto space-y-16">
+<section className="py-20 md:py-28 px-6 bg-white">
+  <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
     
-    {/* Block 1: A Place To Shine Bright */}
-    <div className="text-center">
-      <h2 className="font-coming-soon text-3xl md:text-4xl text-cca-yellow">
-        A Place To Shine Bright
+    {/* LEFT: Blob-masked classroom image */}
+    <div className="relative">
+      {/* Yellow accent shape behind the image */}
+      <div className="absolute -top-8 -left-8 w-[80%] h-[80%] bg-cca-yellow/20 rounded-full blur-3xl" />
+      
+      {/* Image with organic blob mask */}
+      <div className="relative" style={{
+        maskImage: 'url("data:image/svg+xml,...")', /* Use a blob SVG path */
+        WebkitMaskImage: '...',
+        maskSize: 'contain',
+        maskRepeat: 'no-repeat'
+      }}>
+        <Image
+          src="/marketing/home/more-than-a-preschool.jpg"
+          alt="Children learning together"
+          width={757} height={700}
+          className="w-full h-auto object-cover"
+        />
+      </div>
+      
+      {/* Apply Now button below image */}
+      <div className="mt-8">
+        <Link href="/enroll"
+              className="bg-cca-blue text-white font-kollektif text-lg px-10 py-4 rounded-full 
+                         hover:scale-105 transition-transform shadow-lg inline-block">
+          Apply Now!
+        </Link>
+      </div>
+    </div>
+    
+    {/* RIGHT: Text content */}
+    <div>
+      <p className="font-coming-soon text-base text-cca-blue mb-3">
+        Peace of Mind for Parents
+      </p>
+      <h2 className="font-kollektif text-3xl md:text-5xl text-cca-ink leading-tight mb-6">
+        Today's Learners.<br />
+        Tomorrow's Leaders.<br />
+        Together!
       </h2>
-      <p className="mt-4 text-lg text-cca-ink/70 max-w-2xl mx-auto font-questrial">
-        Crandall Christian Academy's preschool program in Crandall, Texas offers a nurturing environment where young minds grow through hands-on learning and character-building activities.
+      <p className="font-questrial text-cca-ink/70 text-lg leading-relaxed mb-8">
+        At Crandall Christian Academy, we believe in partnering with parents to create the best environment for their child's growth and success. Through open communication and collaboration, we ensure every child feels supported, nurtured, and inspired to learn.
       </p>
-    </div>
-    
-    {/* Block 2: More Than A Preschool */}
-    <div className="text-center">
-      <h3 className="font-coming-soon text-3xl md:text-4xl text-cca-yellow">
-        More Than A Preschool
-      </h3>
-      <p className="mt-4 text-cca-ink/70 font-questrial max-w-2xl mx-auto">
-        At Crandall Christian Academy, we're more than a place for learning — we're a loving, close-knit community where children, teachers, and families build meaningful relationships.
-      </p>
-    </div>
-    
-    {/* Block 3: Play, Explore, Discover, Grow */}
-    <div className="text-center">
-      <h3 className="font-coming-soon text-3xl md:text-4xl text-cca-yellow">
-        Play, Explore, Discover, Grow.
-      </h3>
-      <p className="mt-4 text-cca-ink/70 font-questrial max-w-2xl mx-auto">
-        At Crandall Christian Academy, we create spaces for students to play freely, explore new ideas, and discover their unique abilities.
-      </p>
-    </div>
-    
-    {/* Block 4: A Parent's Dream Come True — BIG blue heading */}
-    <div className="text-center pt-8">
-      <h2 className="font-coming-soon text-4xl md:text-6xl text-cca-blue">
-        A Parent's Dream Come True
-      </h2>
+      <hr className="border-gray-200 mb-4" />
+      <div className="flex justify-end">
+        <Link href="/about" className="font-kollektif text-cca-ink flex items-center gap-2 hover:text-cca-blue transition-colors">
+          Learn More
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+          </svg>
+        </Link>
+      </div>
     </div>
     
   </div>
 </section>
 ```
 
-**IMPORTANT:** 
-- "A Parent's Dream Come True" is NOT a scrolling marquee ticker. It's a large styled heading.
-- Remove ALL `<MarqueeBanner />` instances from the page. The component can stay in the components folder but must NOT appear on the homepage.
-- The three smaller headings are golden YELLOW (`text-cca-yellow`), not blue.
-- "A Parent's Dream Come True" is blue and significantly larger than the others.
+**FOR THE BLOB MASK:** Use a CSS `mask-image` with an inline SVG blob shape. A simple approach:
+
+```css
+mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='%23000' d='M44.7,-76.4C58.8,-69.2,71.8,-58.7,79.6,-45.3C87.4,-31.9,89.9,-15.9,88.3,-0.9C86.7,14.1,80.9,28.3,73.1,41.4C65.3,54.6,55.4,66.7,42.8,74.4C30.2,82.1,15.1,85.3,0.2,85C-14.8,84.7,-29.5,80.9,-42.4,73.5C-55.3,66.1,-66.3,55.2,-73.6,42.1C-81,29.1,-84.6,14.5,-84.4,0.1C-84.2,-14.3,-80.1,-28.5,-72.5,-40.7C-64.9,-52.9,-53.8,-63,-41.1,-71C-28.4,-79,-14.2,-84.8,0.6,-85.8C15.4,-86.8,30.7,-83.1,44.7,-76.4Z' transform='translate(100 100)'/%3E%3C/svg%3E");
+```
+
+Or use `border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%` on the image container as a simpler alternative that still looks organic.
 
 ---
 
-## FIX 4: STICKY PROGRAMS — SPLIT INTO 3 + REMOVE FULL-BLEED PHOTOS + MATCH ORIGINAL
+## FIX 5: STICKY PROGRAMS — REMOVE PHOTOS, USE SOLID COLORS
 
-**Current problems:**
-1. All 3 sticky pairs render as one `<StickyPrograms />` block — needs splitting so "Why Choose Us" can go between pairs 1-2 and pair 3
-2. The replica uses FULL-BLEED BACKGROUND PHOTOS with dark overlays — the original does NOT. The original uses CLEAN TEXT on SOLID COLORED BACKGROUNDS with no images at all.
+The original's sticky program sections use CLEAN TEXT on SOLID COLORED BACKGROUNDS with NO background images whatsoever. The replica's dramatic full-bleed photos are completely different from the original.
 
-**What the original actually does (verified from DOM inspection):**
-- Each sticky section is a split-screen (2 columns on desktop, stacked on mobile)
-- LEFT column: solid colored background (cream/beige tones)
-- RIGHT column: solid colored background (white/light tones)
-- Program heading in a UNIQUE COLOR per age group (see color chart below)
-- Body text in dark ink
-- "Learn More" link (→ /about) and "Apply Now" link (→ /enroll) per half
-- NO background images. NO dark overlays. NO full-bleed photos.
-- Clean, text-focused, warm, easy to read
+**Original layout (verified, each pair):**
+```
+┌────────────────────┬────────────────────┐
+│  bg: cream/beige   │  bg: white         │  ← h-screen, sticky top-0
+│  #FAF7F2           │  #FFFFFF           │
+│                    │                    │
+│  [Program Title]   │  [Program Title]   │  ← colored per program
+│  in unique color   │  in unique color   │
+│                    │                    │
+│  Body text...      │  Body text...      │
+│  dark ink          │  dark ink          │
+│                    │                    │
+│  Learn More  Apply │  Learn More  Apply │
+└────────────────────┴────────────────────┘
+```
 
-**Program heading colors (verified):**
-| Program | Color | RGB |
-|---------|-------|-----|
+**Program heading colors (verified from CSS):**
+
+| Program | Heading Color | Hex |
+|---------|--------------|-----|
 | Infants | CCA Blue | `rgb(58,113,176)` |
 | Toddlers | Coral/Red | `rgb(224,71,47)` |
 | Twos | Golden Yellow | `rgb(242,176,32)` |
@@ -271,71 +398,38 @@ On the original, position 2 is a SINGLE continuous section (577px) containing 4 
 | Pre-K | CCA Blue | `rgb(58,113,176)` |
 | Private Kinder | Pink | `rgb(248,120,175)` |
 
-**ACTION:** Completely rewrite `src/components/marketing/StickyPrograms.tsx`:
+**ACTION — Rewrite `src/components/marketing/StickyPrograms.tsx`:**
+
+1. **Remove ALL `<Image>` background fills and dark overlays.** No photos.
+2. **Use solid backgrounds:** Left half = `bg-[#FAF7F2]` (warm cream), Right half = `bg-white`
+3. **Color-code each heading** with its unique color
+4. **Add `pair` prop** so each pair renders independently (needed for splitting around "Why Choose Us"):
 
 ```tsx
 const PROGRAM_PAIRS = [
   {
-    left: {
-      title: 'Infants',
-      titleColor: 'text-cca-blue',
-      body: 'Our infant program provides a safe, loving, and faith-filled environment where your baby is nurtured from the very beginning.',
-      bg: 'bg-[#FAF7F2]',  // warm cream
-    },
-    right: {
-      title: 'Toddlers',
-      titleColor: 'text-[#E0472F]',
-      body: 'Our toddler program nurtures curiosity and early exploration in a safe, loving environment, promoting developmental milestones through hands-on activities.',
-      bg: 'bg-white',
-    },
+    left: { title: 'Infants', titleColor: 'text-[#3A71B0]', body: '...', bg: 'bg-[#FAF7F2]' },
+    right: { title: 'Toddlers', titleColor: 'text-[#E0472F]', body: '...', bg: 'bg-white' },
   },
   {
-    left: {
-      title: 'Twos',
-      titleColor: 'text-[#F2B020]',
-      body: 'The 2s program introduces structure and socialization, encouraging early learning through age-appropriate activities that build confidence and independence.',
-      bg: 'bg-[#FAF7F2]',
-    },
-    right: {
-      title: 'Threes',
-      titleColor: 'text-[#5CBA60]',
-      body: 'In our 3s program, children engage in creative learning experiences that develop early literacy, math, and social skills while fostering curiosity.',
-      bg: 'bg-white',
-    },
+    left: { title: 'Twos', titleColor: 'text-[#F2B020]', body: '...', bg: 'bg-[#FAF7F2]' },
+    right: { title: 'Threes', titleColor: 'text-[#5CBA60]', body: '...', bg: 'bg-white' },
   },
   {
-    left: {
-      title: 'Pre-K',
-      titleColor: 'text-cca-blue',
-      body: 'The Pre-K program prepares children for kindergarten with a focus on academics, social-emotional growth, and faith-based learning.',
-      bg: 'bg-[#FAF7F2]',
-    },
-    right: {
-      title: 'Private Kinder',
-      titleColor: 'text-[#F878AF]',
-      body: 'Our private kindergarten offers a well-rounded education, blending academic excellence, spiritual growth, and individualized attention.',
-      bg: 'bg-white',
-    },
+    left: { title: 'Pre-K', titleColor: 'text-[#3A71B0]', body: '...', bg: 'bg-[#FAF7F2]' },
+    right: { title: 'Private Kinder', titleColor: 'text-[#F878AF]', body: '...', bg: 'bg-white' },
   },
 ];
-```
 
-Add a `pair` prop so each pair renders independently:
-
-```tsx
-function ProgramHalf({ title, titleColor, body, bg }: ProgramHalfProps) {
+function ProgramHalf({ title, titleColor, body, bg }) {
   return (
     <div className={`${bg} flex items-center justify-center p-8 md:p-16`}>
       <div className="max-w-md text-center">
         <h3 className={`font-kollektif text-3xl md:text-5xl ${titleColor} mb-4`}>{title}</h3>
         <p className="font-questrial text-cca-ink/80 text-base md:text-lg leading-relaxed mb-6">{body}</p>
         <div className="flex flex-wrap gap-3 justify-center">
-          <Link href="/about" className="text-cca-blue font-kollektif hover:underline">
-            Learn More
-          </Link>
-          <Link href="/enroll" className="bg-cca-blue text-white font-kollektif px-6 py-3 rounded-full hover:bg-cca-blue/90 transition-colors">
-            Apply Now
-          </Link>
+          <Link href="/about" className="text-cca-blue font-kollektif hover:underline">Learn More</Link>
+          <Link href="/enroll" className="bg-cca-blue text-white font-kollektif px-6 py-3 rounded-full">Apply Now</Link>
         </div>
       </div>
     </div>
@@ -353,34 +447,67 @@ export function StickyPrograms({ pair }: { pair: number }) {
 }
 ```
 
-**CRITICAL:** Remove ALL background images, dark overlays, and `<Image>` fills from the sticky program sections. The original is clean text on solid colors. No photos.
+**In page.tsx:** Use `<StickyPrograms pair={0} />`, `<StickyPrograms pair={1} />`, then "Why Choose Us", then `<StickyPrograms pair={2} />`.
 
 ---
 
-## FIX 5: "TODAY'S LEARNERS" VIDEO SECTION
+## FIX 6: WHY CHOOSE US — WHITE BG + PINK HEARTS + GREEN HEADINGS
 
-**Original:** 942px, video background, blue overlay `rgb(58,113,176)`. Heading "Today's Learners. Tomorrow's Leaders. Together!" in white. Has "Apply Now" and "Learn More" buttons.
+The replica's bright green background with glassmorphism star-icon cards looks nothing like the original.
 
-**Replica current:** Already has this section with `bg-cca-blue/80` overlay. Mostly correct.
+**Original layout (verified):**
+- Background: **WHITE** (transparent/white, NOT green)
+- 2-column layout:
+  - Left: "Why Choose Us" heading (blue `rgb(59,112,176)`), "Every Child with Love & Safety" subtext, paragraph, "Apply Now!" button
+  - Right: 3 value prop cards stacked vertically
+- Each value prop has:
+  - A **PINK HEART SVG** icon (`rgb(248,120,175)` = `#F878AF`)
+  - Heading in **GREEN** (`rgb(92,185,97)` = `#5CB961`) — NOT white, NOT dark
+  - Body text in dark ink
+  - Separated by thin borders/lines
 
-**Verify:**
-- Video background is playing (the Supabase-hosted facility video)
-- Blue overlay matches `rgb(58,113,176)` — use `bg-[rgb(58,113,176)]/80` or `bg-cca-blue/80`
-- Heading uses line breaks between each sentence
-- Has BOTH "Apply Now" (primary, goes to /enroll) AND "Learn More" (secondary, goes to /about) buttons
-- "Peace of Mind for Parents" eyebrow text in yellow above the heading
+**ACTION:**
 
-**This section is mostly correct.** Just verify it's in the right position (#3) after the content zone.
+1. Section bg: `bg-white` (remove `bg-cca-green`)
+2. Layout: 2-column grid (`md:grid-cols-2`)
+3. Left column: heading + subtext + body + "Apply Now" button
+4. Right column: 3 value props with pink heart icons and green headings
+
+```tsx
+{/* Left */}
+<div>
+  <h2 className="font-kollektif text-sm uppercase tracking-widest text-cca-blue mb-2">Why Choose Us</h2>
+  <p className="font-kollektif text-3xl md:text-4xl text-cca-ink mb-4">Every Child with Love & Safety</p>
+  <p className="font-questrial text-cca-ink/70 leading-relaxed mb-6">
+    Crandall Christian Academy is dedicated to fostering academic excellence and Christian values...
+  </p>
+  <Link href="/enroll" className="bg-cca-blue text-white font-kollektif px-8 py-3 rounded-full">Apply Now!</Link>
+</div>
+
+{/* Right */}
+<div className="space-y-6">
+  {VALUE_PROPS.map(vp => (
+    <div className="flex gap-4 items-start pb-6 border-b border-gray-100 last:border-b-0">
+      {/* Pink heart SVG */}
+      <svg className="w-8 h-8 flex-shrink-0 mt-1" viewBox="26.5 36 147 128" fill="#F878AF">
+        <path d="M161.6 47.8c-15.8-15.7-41.5-15.7-57.3 0L100 52.1l-4.3-4.3c-15.8-15.7-41.5-15.7-57.3 0-15.8 15.7-15.8 41.1 0 56.7l61.6 61 61.6-61c15.8-15.6 15.8-41 0-56.7z"/>
+      </svg>
+      <div>
+        <h3 className="font-kollektif text-lg text-[#5CB961] mb-1">{vp.title}</h3>
+        <p className="font-questrial text-cca-ink/70 text-sm leading-relaxed">{vp.body}</p>
+      </div>
+    </div>
+  ))}
+</div>
+```
 
 ---
 
-## FIX 6: AMBIENT VIDEO SECTION (MISSING)
+## FIX 7: AMBIENT VIDEO SECTION (ADD — MISSING)
 
-**Original has a 618px section at position 9** — just a full-width classroom video playing. "Hopscotch" video. No text overlay, no heading. Pure visual breather.
+**Original has a 618px video section at position 9.** Silent classroom video, no text overlay. Visual breather between Pre-K sticky and Newsletter.
 
-**Replica is missing this entirely.**
-
-**ACTION:** Add after the Pre-K/Kinder sticky section and before Newsletter:
+**ACTION — Add between `<StickyPrograms pair={2} />` and Newsletter:**
 
 ```tsx
 <section className="relative h-[50vh] md:h-[60vh] overflow-hidden">
@@ -390,143 +517,26 @@ export function StickyPrograms({ pair }: { pair: number }) {
     poster="/marketing/home/more-than-a-preschool.jpg"
     className="h-full"
     overlay="bg-black/10"
-  />
-</section>
-```
-
-If the `VideoBackground` component doesn't support this usage pattern (it currently requires children), wrap it appropriately or pass an empty child. The point is: full-width video, no text, light overlay, acts as a visual breather.
-
----
-
-## FIX 7: "WHY CHOOSE US" — WRONG BACKGROUND + MISSING HEART ICONS
-
-**Original (verified):**
-- Background: WHITE/transparent (NOT green)
-- Left side: "Why Choose Us" heading + "Every Child with Love & Safety" subtext + paragraph + "Apply Now" button
-- Right side: 3 value prop cards, each with a PINK HEART SVG icon `rgb(248,120,175)`
-- The hearts are SVG with viewBox "26.5 36.011 147 127.998" — standard heart shape
-- Layout is 2-column: text left, value props right (on desktop)
-
-**Replica current:**
-- Background: `bg-cca-green` (BRIGHT GREEN — completely wrong)
-- Layout: 3-column grid of glassmorphism cards (wrong)
-- Icons: white star SVGs (wrong — should be pink hearts)
-- No left-side text column
-
-**ACTION:**
-
-1. Change the section background from `bg-cca-green` to `bg-white`:
-```tsx
-<section className="py-24 px-6 bg-white">
-```
-
-2. Change layout to 2-column (text left, cards right):
-```tsx
-<div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-start">
-  {/* Left: heading + description + CTA */}
-  <div>
-    <p className="font-coming-soon text-sm uppercase tracking-widest text-cca-green mb-2">Why Choose Us</p>
-    <h2 className="font-kollektif text-3xl md:text-4xl text-cca-ink mb-2">
-      Every Child with Love & Safety
-    </h2>
-    <p className="font-questrial text-cca-ink/70 leading-relaxed mb-4">
-      Crandall Christian Academy is dedicated to fostering academic excellence and Christian values in a nurturing environment.
-    </p>
-    <p className="font-questrial text-cca-ink/70 leading-relaxed mb-6">
-      Crandall Christian Academy prides itself on being a place of learning, development, and safety for children and families.
-    </p>
-    <Link href="/enroll" className="inline-block bg-cca-blue text-white font-kollektif px-8 py-3 rounded-full hover:scale-105 transition-transform">
-      Apply Now!
-    </Link>
-  </div>
-
-  {/* Right: 3 value props with pink heart icons */}
-  <div className="space-y-6">
-    {VALUE_PROPS.map((vp, i) => (
-      <ValuePropCard key={vp.title} {...vp} index={i} />
-    ))}
-  </div>
-</div>
-```
-
-3. Rewrite `ValuePropCard` for the new layout:
-```tsx
-export function ValuePropCard({ title, body, index }: ValuePropCardProps) {
-  return (
-    <ScrollReveal delay={index * 0.12}>
-      <div className="flex gap-4 items-start p-4 border-b border-gray-100 last:border-b-0">
-        {/* Pink heart icon */}
-        <div className="flex-shrink-0 mt-1">
-          <svg className="w-8 h-8" viewBox="26.5 36.011 147 127.998" fill="rgb(248,120,175)">
-            <path d="M161.646 47.804l-.035-.035-.002-.002c-15.816-15.672-41.455-15.672-57.271 0l-4.338 4.3-4.338-4.3c-15.816-15.672-41.455-15.672-57.271 0-15.817 15.671-15.817 41.079 0 56.75l.035.036.002.002 61.572 61.034 61.572-61.034.002-.002.035-.036c15.817-15.671 15.817-41.079.037-56.713z" />
-          </svg>
-        </div>
-        <div>
-          <h3 className="font-kollektif text-lg text-cca-ink mb-1">{title}</h3>
-          <p className="font-questrial text-cca-ink/70 text-sm leading-relaxed">{body}</p>
-        </div>
-      </div>
-    </ScrollReveal>
-  );
-}
-```
-
-**NOTE:** The heart SVG path above is approximate. Use any standard heart path — the key is it must be pink `rgb(248,120,175)` / `fill-[#F878AF]`.
-
----
-
-## FIX 8: NEWSLETTER — MOVE POSITION + FIX BACKGROUND
-
-**Original:** Newsletter is at position 10 (after ambient video, before ingredients). 467px height.
-
-**Replica current:** Newsletter is at position 9 (too early) with `bg-cca-green` background.
-
-**ACTION:**
-1. Move newsletter to position 10 in the page order (after ambient video, before ingredients)
-2. Change background. The original newsletter section doesn't have a bright green bg. Use `bg-cca-cream` or `bg-white` to match the original's clean feel.
-
-```tsx
-<section className="py-16 px-6 bg-cca-cream">
-  <div className="max-w-xl mx-auto">
-    <NewsletterForm />
-  </div>
+  >
+    <div /> {/* Empty child if required by component */}
+  </VideoBackground>
 </section>
 ```
 
 ---
 
-## FIX 9: INGREDIENTS SECTION — CREAM BACKGROUND
+## FIX 8: CURRICULUM — GREEN HEADING + BLUE PILLAR TITLES + READ MORE
 
-**Original (verified):** The ingredients section uses a cream/warm background `rgb(248,246,240)`. Blue accent elements.
-
-**Replica current:** Uses `bg-white`. This is close but the cream warmth is missing.
-
-**ACTION:** Change the ingredients section background:
-```tsx
-<section className="py-24 md:py-32 px-6 bg-cca-cream">
-```
-
-This is a minor tweak — `bg-cca-cream` should map to the warm off-white the original uses.
-
----
-
-## FIX 10: CURRICULUM SECTION — HEADING COLORS
-
-**Original (verified):**
-- "Learning Adventures" eyebrow — existing, keep as-is
-- "Our Curriculum" heading — GREEN `rgb(92,185,97)` = `text-cca-green` (NOT default dark)
-- Individual pillar headings — BLUE `rgb(59,112,176)` = `text-cca-blue`
-- Each pillar has a "Read More" link (goes to /about)
-
-**Replica current:**
-- "Our Curriculum" heading color: default (likely `text-cca-ink`)
-- Pillar headings: default dark
-- No "Read More" links
+**Verified colors:**
+- "Learning Adventures" eyebrow — pink (existing, keep)
+- "Our Curriculum" heading — **GREEN `rgb(92,185,97)`** → `text-cca-green`
+- Individual pillar headings (Creative Arts, etc.) — **BLUE `rgb(59,112,176)`** → `text-cca-blue`
+- Each pillar card has a "Read More" link → `/about`
 
 **ACTION:**
-1. Change the `SectionHeader` for curriculum: `headingColor="text-cca-green"`
-2. In `PillarCard`, change the heading color: `<h3 className="font-kollektif text-xl mb-3 text-cca-blue">`
-3. Add a "Read More" link at the bottom of each pillar card:
+1. Change SectionHeader: `headingColor="text-cca-green"`
+2. In `PillarCard`, change heading: `className="font-kollektif text-xl mb-3 text-cca-blue"`
+3. Add a "Read More" link to each PillarCard:
 ```tsx
 <Link href="/about" className="text-cca-blue font-kollektif text-sm hover:underline mt-3 inline-block">
   Read More
@@ -535,59 +545,123 @@ This is a minor tweak — `bg-cca-cream` should map to the warm off-white the or
 
 ---
 
-## IMPLEMENTATION ORDER
+## FIX 9: INGREDIENTS — CREAM BACKGROUND
 
-Execute in this exact sequence:
+**Verified:** Background is cream `rgb(248,246,240)`.
 
-1. **FIX 4: Refactor StickyPrograms** — split into pair-based rendering so sections can be placed independently
-2. **FIX 1: Page reorder** — rewrite page.tsx section order to match original (depends on FIX 4)
-3. **FIX 2: Hero layout** — fix SpinningCTA (sunshine top-right, girl center, separated)
-4. **FIX 3: Content zone** — combine blocks, correct heading colors to yellow, remove MarqueeBanner from page
-5. **FIX 7: Why Choose Us** — white bg, 2-column layout, pink heart icons
-6. **FIX 6: Ambient video** — add the missing breather section
-7. **FIX 8: Newsletter** — move position, fix bg color
-8. **FIX 5: Today's Learners** — verify video bg and blue overlay
-9. **FIX 9: Ingredients** — cream background
-10. **FIX 10: Curriculum** — green heading, blue pillar titles, add Read More links
-
-After ALL fixes, scroll through the full page top-to-bottom and compare section flow against `crandallchristianacademy.com`.
+**ACTION:** Change section bg from `bg-white` to `bg-cca-cream`:
+```tsx
+<section className="py-24 md:py-32 px-6 bg-cca-cream">
+```
 
 ---
 
-## WHAT TO REMOVE FROM THE PAGE
+## FIX 10: PAGE REORDER — FINAL ASSEMBLY
 
-- **Both `<MarqueeBanner />` instances** — remove from page.tsx (component file can stay). The original does NOT have a scrolling marquee ticker.
-- **Second `<SpinningCTA />`** — only one instance, as the hero (#1)
-- **Standalone "A Place To Shine Bright" VideoBackground hero** — this content moves into the ContentZone as text, not a video hero
-- **`bg-cca-green` on Why Choose Us** — change to `bg-white`
-- **`bg-cca-green` on Newsletter** — change to `bg-cca-cream`
+**Rewrite `src/app/(marketing)/page.tsx` with this exact order:**
+
+```tsx
+export default function HomePage() {
+  return (
+    <>
+      {/* 1. HERO */}
+      <SpinningCTA />
+      
+      {/* 2. CONTENT ZONE — 3 columns with icons */}
+      <ContentZone />  {/* or inline the 3-column section */}
+      
+      {/* 3. TODAY'S LEARNERS — white bg, 2-column, blob image */}
+      {/* New component replacing the old VideoBackground version */}
+      <TodaysLearners />
+      
+      {/* 4. CURRICULUM */}
+      <CurriculumSection />
+      
+      {/* 5. STICKY: Infants / Toddlers */}
+      <StickyPrograms pair={0} />
+      
+      {/* 6. STICKY: Twos / Threes */}
+      <StickyPrograms pair={1} />
+      
+      {/* 7. WHY CHOOSE US — white bg, pink hearts */}
+      <WhyChooseUs />
+      
+      {/* 8. STICKY: Pre-K / Kinder */}
+      <StickyPrograms pair={2} />
+      
+      {/* 9. AMBIENT VIDEO */}
+      <AmbientVideo />
+      
+      {/* 10. NEWSLETTER */}
+      <Newsletter />
+      
+      {/* 11. INGREDIENTS — cream bg */}
+      <Ingredients />
+      
+      {/* 12. FINAL CTA */}
+      <FinalCTA />
+    </>
+  );
+}
+```
+
+**REMOVE from page.tsx:**
+- Both `<MarqueeBanner />` instances
+- Second `<SpinningCTA />` instance
+- Standalone "A Place To Shine Bright" VideoBackground hero section
+- Standalone "More Than A Preschool" two-column section
+- Old "Today's Learners" VideoBackground section
+
+---
+
+## IMPLEMENTATION ORDER
+
+1. **FIX 5** — Rewrite StickyPrograms (remove photos, add colors, add `pair` prop)
+2. **FIX 10** — Reorder page.tsx (depends on StickyPrograms refactor)
+3. **FIX 2** — Hero SpinningCTA layout (sunshine top-right, girl center)
+4. **FIX 3** — Content zone (3 columns + SVG icons)
+5. **FIX 4** — "Today's Learners" (white bg, 2-column, blob image)
+6. **FIX 6** — "Why Choose Us" (white bg, pink hearts, green headings)
+7. **FIX 7** — Add ambient video section
+8. **FIX 1** — Header (blue utility bar, bigger logo, plain NOW HIRING)
+9. **FIX 8** — Curriculum colors (green heading, blue titles, Read More)
+10. **FIX 9** — Ingredients cream bg
+
+After ALL fixes: verify the page compiles, then scroll through top-to-bottom.
+
+---
+
+## COLOR REFERENCE TABLE
+
+| Token | Hex | RGB | Use |
+|-------|-----|-----|-----|
+| CCA Blue | `#3A71B0` | `rgb(58,113,176)` | Primary brand, utility bar bg, headings, buttons |
+| Golden Yellow | `#F2B020` | `rgb(242,176,32)` | Content zone headings, "Twos" program |
+| Coral/Red | `#E0472F` | `rgb(224,71,47)` | "Toddlers" program heading |
+| Green | `#5CBA60` | `rgb(92,186,96)` | "Our Curriculum" heading, value prop headings, "Threes" |
+| Pink | `#F878AF` | `rgb(248,120,175)` | Heart icons, "Private Kinder" heading |
+| Icon Blue | `#1C31F4` | | Building icon in content zone |
+| Icon Coral | `#F26656` | | People icon in content zone |
+| Icon Green | `#266040` | | Playground icon in content zone |
+| Cream bg | `#F8F6F0` | `rgb(248,246,240)` | Ingredients bg, sticky program left half |
+| White | `#FFFFFF` | | Default surface, Why Choose Us bg, Today's Learners bg |
+
+## ASSETS
+
+- `public/marketing/home/mascot-sunshine-face.png` — spinning enrollment CTA
+- `public/marketing/home/mascot-girl.png` — girl mascot
+- `public/marketing/home/more-than-a-preschool.jpg` — Today's Learners blob image + ambient video poster
+- `public/marketing/home/pillar-*.jpg` — curriculum pillar images
+- `public/marketing/about/program-*.jpg` — NOT used in sticky sections anymore (photos removed)
+- `public/marketing/home/videos/` — video files
+- `public/marketing/home/icons/building.svg` — blue school building icon (content zone col 1)
+- `public/marketing/home/icons/people-group.svg` — coral people group icon (content zone col 2)
+- `public/marketing/home/icons/playground.svg` — dark green playground/slide icon (content zone col 3)
 
 ## WHAT NOT TO TOUCH
 
-- Portal code, API routes, migrations
-- The VideoBackground component itself (it works)
+- Portal code, API routes, migrations, supabase/
+- The footer
 - The about, contact, FAQ, team pages
-- The footer and header
 - The enrollment form / enrollment wizard
-
-## COLOR REFERENCE (verified from original DOM)
-
-| Element | Original Color | Tailwind Token |
-|---------|---------------|----------------|
-| CCA Blue | `rgb(58,113,176)` | `text-cca-blue` / `bg-cca-blue` |
-| Golden Yellow | `rgb(242,176,32)` | `text-cca-yellow` |
-| Coral/Red | `rgb(224,71,47)` | `text-cca-coral` |
-| Green | `rgb(92,186,96)` | `text-cca-green` |
-| Pink | `rgb(248,120,175)` | `text-[#F878AF]` or add `--color-cca-pink` |
-| Cream bg | `rgb(248,246,240)` | `bg-cca-cream` |
-| White bg | `rgb(255,255,255)` | `bg-white` |
-
-## ASSETS REFERENCE
-
-All at `public/marketing/`:
-- `home/mascot-sunshine-face.png` — spinning enrollment CTA image
-- `home/mascot-girl.png` — girl mascot
-- `home/more-than-a-preschool.jpg` — ambient video poster
-- `home/videos/` — classroom videos
-- `home/pillar-*.jpg` — curriculum pillar images
-- `about/program-*.jpg` — program background images for sticky sections
+- `src/components/ui/` primitives

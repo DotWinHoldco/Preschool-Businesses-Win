@@ -1,11 +1,10 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
-import { VideoBackground } from '@/components/marketing/VideoBackground';
 import { ScrollReveal } from '@/components/marketing/ScrollReveal';
 import { SectionHeader } from '@/components/marketing/SectionHeader';
 import { PillarCard } from '@/components/marketing/PillarCard';
 import { ValuePropCard } from '@/components/marketing/ValuePropCard';
-import { FeatureRow } from '@/components/marketing/FeatureRow';
 import { NewsletterForm } from '@/components/marketing/NewsletterForm';
 import { StickyPrograms } from '@/components/marketing/StickyPrograms';
 import { SpinningCTA } from '@/components/marketing/SpinningCTA';
@@ -16,7 +15,6 @@ export const metadata: Metadata = {
 };
 
 const APPLY_URL = '/enroll';
-const VIDEO_BASE = 'https://oajfxyiqjqymuvevnoui.supabase.co/storage/v1/object/public/marketing-videos';
 
 const PILLARS = [
   {
@@ -79,97 +77,202 @@ const CCA_DIFFERENCE = [
   },
 ];
 
+function BuildingIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 200 200" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+      <path d="M100 20L30 70V180H75V130H90V180H110V130H125V180H170V70L100 20Z" fill="none" stroke="currentColor" strokeWidth="4" strokeLinejoin="round" />
+      <rect x="55" y="85" width="20" height="20" rx="2" fill="none" stroke="currentColor" strokeWidth="3" />
+      <rect x="90" y="85" width="20" height="20" rx="2" fill="none" stroke="currentColor" strokeWidth="3" />
+      <rect x="125" y="85" width="20" height="20" rx="2" fill="none" stroke="currentColor" strokeWidth="3" />
+      <rect x="55" y="115" width="20" height="20" rx="2" fill="none" stroke="currentColor" strokeWidth="3" />
+      <rect x="125" y="115" width="20" height="20" rx="2" fill="none" stroke="currentColor" strokeWidth="3" />
+      <path d="M100 20L100 50" stroke="currentColor" strokeWidth="3" />
+      <line x1="85" y1="50" x2="115" y2="50" stroke="currentColor" strokeWidth="3" />
+      <circle cx="100" cy="55" r="8" fill="none" stroke="currentColor" strokeWidth="2.5" />
+      <path d="M92 180V155H108V180" fill="none" stroke="currentColor" strokeWidth="3" />
+    </svg>
+  );
+}
+
+function PeopleGroupIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 200 200" fill="none" stroke="currentColor" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="100" cy="55" r="20" strokeWidth="4" />
+      <path d="M60 170V140C60 120 80 105 100 105C120 105 140 120 140 140V170" strokeWidth="4" strokeLinecap="round" />
+      <circle cx="55" cy="70" r="15" strokeWidth="3.5" />
+      <path d="M25 170V145C25 130 38 118 55 118C62 118 68 120 73 124" strokeWidth="3.5" strokeLinecap="round" />
+      <circle cx="145" cy="70" r="15" strokeWidth="3.5" />
+      <path d="M175 170V145C175 130 162 118 145 118C138 118 132 120 127 124" strokeWidth="3.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function PlaygroundIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 200 200" fill="none" stroke="currentColor" xmlns="http://www.w3.org/2000/svg">
+      <line x1="50" y1="30" x2="50" y2="180" strokeWidth="4" strokeLinecap="round" />
+      <line x1="50" y1="30" x2="150" y2="80" strokeWidth="4" strokeLinecap="round" />
+      <path d="M50 80Q100 90 150 80" strokeWidth="4" strokeLinecap="round" />
+      <line x1="150" y1="80" x2="150" y2="180" strokeWidth="4" strokeLinecap="round" />
+      <line x1="50" y1="130" x2="90" y2="130" strokeWidth="3" strokeLinecap="round" />
+      <line x1="90" y1="130" x2="90" y2="180" strokeWidth="3" strokeLinecap="round" />
+      <circle cx="70" cy="120" r="5" strokeWidth="2.5" />
+      <path d="M30 180H170" strokeWidth="3" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function WaveDivider({ from = '#FFFFFF', to = '#FAF9F5' }: { from?: string; to?: string }) {
+  return (
+    <div className="w-full overflow-hidden leading-[0]" style={{ backgroundColor: from }}>
+      <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="w-full h-[50px] md:h-[70px]">
+        <path d="M0,0 C300,100 900,20 1200,80 L1200,120 L0,120 Z" fill={to} />
+      </svg>
+    </div>
+  );
+}
+
+const BLOB_MASK = "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='%23000' d='M44.7,-76.4C58.8,-69.2,71.8,-58.7,79.6,-45.3C87.4,-31.9,89.9,-15.9,88.3,-0.9C86.7,14.1,80.9,28.3,73.1,41.4C65.3,54.6,55.4,66.7,42.8,74.4C30.2,82.1,15.1,85.3,0.2,85C-14.8,84.7,-29.5,80.9,-42.4,73.5C-55.3,66.1,-66.3,55.2,-73.6,42.1C-81,29.1,-84.6,14.5,-84.4,0.1C-84.2,-14.3,-80.1,-28.5,-72.5,-40.7C-64.9,-52.9,-53.8,-63,-41.1,-71C-28.4,-79,-14.2,-84.8,0.6,-85.8C15.4,-86.8,30.7,-83.1,44.7,-76.4Z' transform='translate(100 100)'/%3E%3C/svg%3E\")";
+
 export default function HomePage() {
   return (
     <>
-      {/* === 1. HERO — "Where Little Minds Shine" spinning CTA === */}
+      {/* === 1. HERO — "Where Little Minds Shine" === */}
       <SpinningCTA />
 
-      {/* === 2. CONTENT ZONE — 4 blocks in one continuous section === */}
-      <section className="bg-white py-16 md:py-24 px-6">
-        <div className="max-w-5xl mx-auto space-y-16">
+      {/* === 2. CONTENT ZONE — "A Parent's Dream Come True" + 3 columns with SVG icons === */}
+      <section className="py-16 md:py-24 px-6 bg-white">
+        <div className="max-w-6xl mx-auto">
           <ScrollReveal>
-            <div className="text-center">
-              <h2 className="font-coming-soon text-3xl md:text-4xl text-cca-yellow">
-                A Place To Shine Bright
+            <h2 className="font-coming-soon text-4xl md:text-6xl text-cca-blue text-center mb-16">
+              A Parent&apos;s Dream Come True
+            </h2>
+          </ScrollReveal>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
+            <ScrollReveal>
+              <div className="flex gap-4">
+                <div className="flex-shrink-0">
+                  <BuildingIcon className="w-20 h-20 md:w-[100px] md:h-[100px] text-[#1C31F4]" />
+                </div>
+                <div>
+                  <h3 className="font-coming-soon text-2xl text-cca-yellow mb-3">
+                    A Place To Shine Bright
+                  </h3>
+                  <p className="font-questrial text-cca-ink/70 text-sm leading-relaxed">
+                    Crandall Christian Academy&apos;s preschool program in Crandall, Texas, provides a faith-based, nurturing environment where young minds flourish through hands-on learning and character-building activities.
+                  </p>
+                </div>
+              </div>
+            </ScrollReveal>
+
+            <ScrollReveal delay={0.1}>
+              <div className="flex gap-4">
+                <div className="flex-shrink-0">
+                  <PeopleGroupIcon className="w-20 h-20 md:w-[100px] md:h-[100px] text-[#F26656]" />
+                </div>
+                <div>
+                  <h3 className="font-coming-soon text-2xl text-cca-yellow mb-3">
+                    More Than A Preschool
+                  </h3>
+                  <p className="font-questrial text-cca-ink/70 text-sm leading-relaxed">
+                    At Crandall Christian Academy, we&apos;re more than a place for learning — we&apos;re a Christ-centered, close-knit community where children, teachers, and families build meaningful relationships.
+                  </p>
+                </div>
+              </div>
+            </ScrollReveal>
+
+            <ScrollReveal delay={0.2}>
+              <div className="flex gap-4">
+                <div className="flex-shrink-0">
+                  <PlaygroundIcon className="w-20 h-20 md:w-[100px] md:h-[100px] text-[#266040]" />
+                </div>
+                <div>
+                  <h3 className="font-coming-soon text-2xl text-cca-yellow mb-3">
+                    Play, Explore, Discover, Grow.
+                  </h3>
+                  <p className="font-questrial text-cca-ink/70 text-sm leading-relaxed">
+                    At Crandall Christian Academy, we create spaces for students to play freely, explore new ideas, and discover their unique potential through joyful, hands-on experiences.
+                  </p>
+                </div>
+              </div>
+            </ScrollReveal>
+          </div>
+        </div>
+      </section>
+
+      <WaveDivider from="#FFFFFF" to="#FAF9F5" />
+
+      {/* === 3. "Today's Learners" — cream bg, 2-column, blob-masked image === */}
+      <section className="py-20 md:py-28 px-6 bg-cca-cream">
+        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
+          <ScrollReveal>
+            <div className="relative">
+              <div className="absolute -top-8 -left-8 w-[80%] h-[80%] bg-cca-yellow/20 rounded-full blur-3xl" />
+              <div
+                className="relative"
+                style={{
+                  maskImage: BLOB_MASK,
+                  WebkitMaskImage: BLOB_MASK,
+                  maskSize: 'contain',
+                  WebkitMaskSize: 'contain',
+                  maskRepeat: 'no-repeat',
+                  WebkitMaskRepeat: 'no-repeat',
+                  maskPosition: 'center',
+                  WebkitMaskPosition: 'center',
+                }}
+              >
+                <Image
+                  src="/marketing/home/more-than-a-preschool.jpg"
+                  alt="Children learning together"
+                  width={757}
+                  height={700}
+                  className="w-full h-auto object-cover"
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                />
+              </div>
+              <div className="mt-8">
+                <Link
+                  href={APPLY_URL}
+                  className="bg-cca-blue text-white font-kollektif text-lg px-10 py-4 rounded-full hover:scale-105 transition-transform shadow-lg inline-block"
+                >
+                  Apply Now!
+                </Link>
+              </div>
+            </div>
+          </ScrollReveal>
+
+          <ScrollReveal delay={0.15}>
+            <div>
+              <p className="font-coming-soon text-base text-cca-blue mb-3">
+                Peace of Mind for Parents
+              </p>
+              <h2 className="font-kollektif text-3xl md:text-5xl text-cca-ink leading-tight mb-6">
+                Today&apos;s Learners.<br />
+                Tomorrow&apos;s Leaders.<br />
+                Together!
               </h2>
-              <p className="mt-4 text-lg text-cca-ink/70 max-w-2xl mx-auto font-questrial">
-                Crandall Christian Academy&apos;s preschool program in Crandall, Texas offers a nurturing environment where young minds grow through hands-on learning and character-building activities.
+              <p className="font-questrial text-cca-ink/70 text-lg leading-relaxed mb-8">
+                At Crandall Christian Academy, we believe in partnering with parents to create the best environment for their child&apos;s growth and success. Through open communication and collaboration, we ensure every child feels supported, nurtured, and inspired to learn.
               </p>
-            </div>
-          </ScrollReveal>
-
-          <ScrollReveal>
-            <div className="text-center">
-              <h3 className="font-coming-soon text-3xl md:text-4xl text-cca-yellow">
-                More Than A Preschool
-              </h3>
-              <p className="mt-4 text-cca-ink/70 font-questrial max-w-2xl mx-auto">
-                At Crandall Christian Academy, we&apos;re more than a place for learning — we&apos;re a loving, close-knit community where children, teachers, and families build meaningful relationships.
-              </p>
-            </div>
-          </ScrollReveal>
-
-          <ScrollReveal>
-            <div className="text-center">
-              <h3 className="font-coming-soon text-3xl md:text-4xl text-cca-yellow">
-                Play, Explore, Discover, Grow.
-              </h3>
-              <p className="mt-4 text-cca-ink/70 font-questrial max-w-2xl mx-auto">
-                At Crandall Christian Academy, we create spaces for students to play freely, explore new ideas, and discover their unique abilities.
-              </p>
-            </div>
-          </ScrollReveal>
-
-          <ScrollReveal>
-            <div className="text-center pt-8">
-              <h2 className="font-coming-soon text-4xl md:text-6xl text-cca-blue">
-                A Parent&apos;s Dream Come True
-              </h2>
+              <hr className="border-gray-200 mb-4" />
+              <div className="flex justify-end">
+                <Link href="/about" className="font-kollektif text-cca-ink flex items-center gap-2 hover:text-cca-blue transition-colors">
+                  Learn More
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </Link>
+              </div>
             </div>
           </ScrollReveal>
         </div>
       </section>
 
-      {/* === 3. "Today's Learners. Tomorrow's Leaders. Together!" — video bg, blue overlay === */}
-      <VideoBackground
-        src1080={`${VIDEO_BASE}/facility-hero-1080p.mp4`}
-        src720={`${VIDEO_BASE}/facility-hero-720p.mp4`}
-        poster="/marketing/home/facility-hero-poster.jpg"
-        className="py-28"
-        overlay="bg-cca-blue/80"
-      >
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <ScrollReveal>
-            <p className="font-coming-soon text-sm uppercase tracking-widest text-cca-yellow mb-4">
-              Peace of Mind for Parents
-            </p>
-            <h2 className="font-kollektif text-3xl md:text-6xl text-white mb-6">
-              Today&apos;s Learners.<br />Tomorrow&apos;s Leaders.<br />Together!
-            </h2>
-            <p className="font-questrial text-lg text-white/85 leading-relaxed mb-8 max-w-2xl mx-auto">
-              At Crandall Christian Academy, we believe in partnering with parents to create the best environment for their child&apos;s growth and success. Through open communication and collaboration, we ensure every child feels supported, nurtured, and inspired to learn.
-            </p>
-            <div className="flex flex-wrap gap-4 justify-center">
-              <Link
-                href={APPLY_URL}
-                className="inline-block bg-white text-cca-blue font-kollektif px-8 py-4 rounded-full hover:bg-white/90 transition-all shadow-lg hover:shadow-xl hover:scale-105"
-              >
-                Apply Now
-              </Link>
-              <Link
-                href="/about"
-                className="inline-block bg-transparent text-white font-kollektif px-8 py-4 rounded-full border-2 border-white/60 hover:bg-white/10 transition-all"
-              >
-                Learn More
-              </Link>
-            </div>
-          </ScrollReveal>
-        </div>
-      </VideoBackground>
+      <WaveDivider from="#FAF9F5" to="#FFFFFF" />
 
-      {/* === 4. Curriculum — 4 pillar cards === */}
-      <section className="py-20 px-6 bg-cca-cream">
+      {/* === 4. Curriculum — 4 circular pillar cards === */}
+      <section className="py-20 px-6 bg-white">
         <div className="max-w-7xl mx-auto">
           <ScrollReveal>
             <SectionHeader
@@ -193,14 +296,16 @@ export default function HomePage() {
       {/* === 6. Sticky: Twos / Threes === */}
       <StickyPrograms pair={1} />
 
-      {/* === 7. "Why Choose Us" — WHITE bg, pink heart icons === */}
+      {/* === 7. Why Choose Us — white bg, 2-column, pink hearts === */}
       <section className="py-24 px-6 bg-white">
         <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-start">
           <div>
-            <p className="font-coming-soon text-sm uppercase tracking-widest text-cca-green mb-2">Why Choose Us</p>
-            <h2 className="font-kollektif text-3xl md:text-4xl text-cca-ink mb-2">
-              Every Child with Love &amp; Safety
+            <h2 className="font-kollektif text-3xl md:text-5xl text-cca-ink mb-4">
+              Why Choose Us
             </h2>
+            <p className="font-kollektif text-2xl md:text-3xl text-cca-yellow mb-4">
+              Every Child with Love &amp; Safety
+            </p>
             <p className="font-questrial text-cca-ink/70 leading-relaxed mb-4">
               Crandall Christian Academy is dedicated to fostering academic excellence and Christian values in a nurturing environment.
             </p>
@@ -222,40 +327,60 @@ export default function HomePage() {
       {/* === 8. Sticky: Pre-K / Private Kinder === */}
       <StickyPrograms pair={2} />
 
-      {/* === 9. Ambient Video — classroom footage, no text === */}
-      <section className="relative h-[50vh] md:h-[60vh] overflow-hidden">
-        <VideoBackground
-          src1080={`${VIDEO_BASE}/more-than-a-preschool-1080p.mp4`}
-          src720={`${VIDEO_BASE}/more-than-a-preschool-720p.mp4`}
-          poster="/marketing/home/more-than-a-preschool.jpg"
-          className="h-full"
-          overlay="bg-black/10"
-        >
-          <span className="sr-only">Classroom video</span>
-        </VideoBackground>
+      {/* === 9. Ambient Photos — side-by-side classroom images === */}
+      <section className="grid grid-cols-2">
+        <div className="relative aspect-[4/3] overflow-hidden">
+          <Image
+            src="/marketing/home/pillar-physical-development.jpg"
+            alt="Active play at CCA"
+            fill
+            className="object-cover"
+            sizes="50vw"
+          />
+        </div>
+        <div className="relative aspect-[4/3] overflow-hidden">
+          <Image
+            src="/marketing/home/pillar-curiosity-discovery.jpg"
+            alt="Discovery and learning"
+            fill
+            className="object-cover"
+            sizes="50vw"
+          />
+        </div>
       </section>
 
-      {/* === 10. Newsletter === */}
-      <section className="py-16 px-6 bg-cca-cream">
-        <div className="max-w-xl mx-auto">
+      {/* === 10. Newsletter — blue card on white bg === */}
+      <section className="py-16 px-6 bg-white">
+        <div className="max-w-2xl mx-auto bg-cca-blue rounded-2xl p-8 md:p-12">
           <NewsletterForm />
         </div>
       </section>
 
-      {/* === 11. The Ingredients Of A Perfect Pre-School === */}
+      <WaveDivider from="#FFFFFF" to="#FAF9F5" />
+
+      {/* === 11. The Ingredients Of A Perfect Pre-School — 2×2 blue card grid === */}
       <section className="py-24 md:py-32 px-6 bg-cca-cream">
         <div className="max-w-5xl mx-auto">
           <ScrollReveal>
             <SectionHeader
               eyebrow="The CCA Difference"
               heading="The Ingredients Of A Perfect Pre-School For Your Child"
-              eyebrowColor="text-cca-green"
-              headingColor="text-cca-ink"
+              eyebrowColor="text-cca-pink"
+              headingColor="text-cca-green"
             />
           </ScrollReveal>
-          <div className="mt-16 space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-16">
             {CCA_DIFFERENCE.map((feature, i) => (
-              <FeatureRow key={feature.title} {...feature} index={i} />
+              <ScrollReveal key={feature.title} delay={i * 0.1}>
+                <div className="bg-cca-blue rounded-2xl p-8 md:p-10 h-full">
+                  <h3 className="font-kollektif text-xl md:text-2xl text-white mb-3">
+                    {feature.title}
+                  </h3>
+                  <p className="font-questrial text-white/85 text-base leading-relaxed">
+                    {feature.body}
+                  </p>
+                </div>
+              </ScrollReveal>
             ))}
           </div>
         </div>
@@ -265,8 +390,11 @@ export default function HomePage() {
       <section className="py-24 px-6 bg-cca-cream">
         <div className="max-w-4xl mx-auto text-center">
           <ScrollReveal>
-            <p className="font-coming-soon text-sm uppercase tracking-widest text-cca-coral mb-3">
-              Now Enrolling
+            <p className="font-coming-soon text-lg text-cca-coral mb-2">
+              Our Facility Is Almost Complete!
+            </p>
+            <p className="font-kollektif text-xl md:text-2xl text-cca-yellow underline underline-offset-4 decoration-cca-yellow/50 mb-6">
+              NOW ENROLLING
             </p>
             <h2 className="font-kollektif text-3xl md:text-5xl text-cca-ink mb-6">
               Crandall&apos;s New Pre-School Gem

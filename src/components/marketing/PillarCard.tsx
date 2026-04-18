@@ -10,27 +10,24 @@ interface PillarCardProps {
   index: number;
 }
 
-export function PillarCard({ title, body, imageSrc, accentColor, index }: PillarCardProps) {
+export function PillarCard({ title, body, imageSrc, index }: PillarCardProps) {
   return (
     <ScrollReveal delay={index * 0.1}>
-      <div className="group bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl hover:-translate-y-2 hover:scale-[1.02] transition-all duration-300">
-        <div className="relative aspect-[4/3] overflow-hidden">
+      <div className="flex flex-col items-center text-center">
+        <div className="relative w-40 h-40 md:w-48 md:h-48 rounded-full overflow-hidden mb-6 shadow-lg ring-4 ring-white">
           <Image
             src={imageSrc}
             alt={title}
             fill
-            className="object-cover group-hover:scale-105 transition-transform duration-500"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+            className="object-cover"
+            sizes="(max-width: 768px) 160px, 192px"
           />
-          <div className={`absolute bottom-0 left-0 right-0 h-1 ${accentColor}`} />
         </div>
-        <div className="p-6">
-          <h3 className="font-kollektif text-xl mb-3 text-cca-blue">{title}</h3>
-          <p className="font-questrial text-cca-ink/80 text-base leading-relaxed">{body}</p>
-          <Link href="/about" className="text-cca-blue font-kollektif text-sm hover:underline mt-3 inline-block">
-            Read More
-          </Link>
-        </div>
+        <h3 className="font-kollektif text-xl mb-3 text-cca-blue">{title}</h3>
+        <p className="font-questrial text-cca-ink/80 text-sm leading-relaxed">{body}</p>
+        <Link href="/about" className="text-cca-blue font-kollektif text-sm hover:underline mt-3 inline-block">
+          Read More
+        </Link>
       </div>
     </ScrollReveal>
   );
