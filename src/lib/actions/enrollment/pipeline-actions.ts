@@ -66,6 +66,15 @@ export async function runPipelineAction(input: PipelineActionInput): Promise<Act
     updates.offer_sent_at = now
   } else if (action === 'accept_offer') {
     updates.offer_accepted_at = now
+    // Upgrade applicant_parent → parent when enrolled
+    if (application.parent_user_id) {
+      await supabase
+        .from('user_tenant_memberships')
+        .update({ role: 'parent', updated_at: now })
+        .eq('user_id', application.parent_user_id)
+        .eq('tenant_id', tenantId)
+        .eq('role', 'applicant_parent')
+    }
   } else if (action === 'reject') {
     updates.triage_status = 'rejected'
   } else if (action === 'waitlist') {

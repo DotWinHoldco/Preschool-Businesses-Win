@@ -104,6 +104,7 @@ const ADMIN_STAFF_ROLES: UserRole[] = [
 ]
 const ADMIN_ROLES: UserRole[] = ['cca_owner', 'cca_admin']
 const PARENT_ROLES: UserRole[] = ['parent', 'guardian']
+const APPLICANT_ROLES: UserRole[] = ['applicant_parent']
 
 const NAV_SECTIONS: NavSection[] = [
   {
@@ -176,6 +177,13 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/portal/admin/cameras', label: 'Cameras', icon: Camera, roles: ADMIN_ROLES, featureKey: 'camera_feeds' },
       { href: '/portal/admin/emergency', label: 'Emergency', icon: AlertTriangle, roles: ADMIN_ROLES, featureKey: 'emergency_system' },
       { href: '/portal/admin/compliance', label: 'Compliance', icon: ShieldCheck, roles: ADMIN_ROLES, featureKey: 'dfps_compliance' },
+    ],
+  },
+  {
+    title: 'My Application',
+    items: [
+      { href: '/portal/applicant', label: 'Application Status', icon: ClipboardList, roles: APPLICANT_ROLES },
+      { href: '/portal/applicant#book-tour', label: 'Book Tour', icon: CalendarCheck, roles: APPLICANT_ROLES },
     ],
   },
   {

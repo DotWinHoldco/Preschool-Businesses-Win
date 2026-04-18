@@ -287,14 +287,25 @@ export function EnrollmentPageClient(props: Props) {
                 <CheckCircle2 className="h-8 w-8 text-cca-green" />
               </div>
               <h1 className="font-kollektif text-2xl md:text-3xl text-cca-ink mb-3">{thankYouTitle}</h1>
-              <p className="font-questrial text-cca-ink/70 text-base leading-relaxed mb-8 max-w-md mx-auto">{thankYouMessage}</p>
-              <a
-                href={WEBSITE_URL}
-                className="inline-flex items-center gap-2 bg-cca-blue text-white font-kollektif px-8 py-3 rounded-full hover:bg-cca-blue/90 transition-colors"
-              >
-                Return to Website
-                <ArrowUpRight className="w-4 h-4" />
-              </a>
+              <p className="font-questrial text-cca-ink/70 text-base leading-relaxed mb-4 max-w-md mx-auto">{thankYouMessage}</p>
+              <p className="font-questrial text-cca-ink/50 text-sm leading-relaxed mb-8 max-w-md mx-auto">
+                Track your application status and book your tour when invited from your portal.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <a
+                  href="/portal/login"
+                  className="inline-flex items-center justify-center gap-2 bg-cca-blue text-white font-kollektif px-8 py-3 rounded-full hover:bg-cca-blue/90 transition-colors shadow-sm"
+                >
+                  Log into Your Portal
+                  <ArrowUpRight className="w-4 h-4" />
+                </a>
+                <a
+                  href={WEBSITE_URL}
+                  className="inline-flex items-center justify-center gap-2 border border-gray-200 text-cca-ink font-kollektif px-8 py-3 rounded-full hover:bg-gray-50 transition-colors"
+                >
+                  Return to Website
+                </a>
+              </div>
             </div>
           ) : (
             <>
