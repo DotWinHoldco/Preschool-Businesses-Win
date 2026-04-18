@@ -192,30 +192,15 @@ export function EnrollmentPageClient(props: Props) {
   return (
     <>
       {/* === HEADER === */}
-      <header className="sticky top-0 z-50 bg-white shadow-sm">
-        {/* Gold utility bar */}
-        <div className="bg-cca-gold text-white text-xs font-questrial py-1.5 px-4">
-          <div className="max-w-5xl mx-auto flex items-center justify-between">
-            <a href={WEBSITE_URL} className="hover:underline flex items-center gap-1.5">
-              <ArrowLeft className="w-3 h-3" />
-              Back to Website
-            </a>
-            <div className="hidden sm:flex items-center gap-4">
-              <a href={PHONE_TEL} className="hover:underline">{PHONE}</a>
-              <a href={`mailto:${EMAIL}`} className="hover:underline">{EMAIL}</a>
-            </div>
-          </div>
-        </div>
-
-        {/* Logo + Save */}
-        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-100/80">
+        <div className="max-w-2xl mx-auto px-5 py-4 flex items-center justify-between">
           <a href={WEBSITE_URL} className="flex-shrink-0">
             <Image
               src="/marketing/shared/cca-logo-full.png"
               alt="Crandall Christian Academy"
               width={338}
               height={118}
-              className="h-14 md:h-16 w-auto"
+              className="h-12 md:h-14 w-auto"
               priority
             />
           </a>
@@ -225,7 +210,8 @@ export function EnrollmentPageClient(props: Props) {
               className="flex items-center gap-2 bg-cca-blue text-white font-kollektif text-sm px-5 py-2.5 rounded-full hover:bg-cca-blue/90 transition-colors shadow-sm"
             >
               <Save className="w-4 h-4" />
-              Save Application
+              <span className="hidden sm:inline">Save Progress</span>
+              <span className="sm:hidden">Save</span>
             </button>
           )}
         </div>
@@ -240,16 +226,16 @@ export function EnrollmentPageClient(props: Props) {
       >
         <span className="flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4" />
-          Application saved! You can come back anytime.
+          Progress saved!
         </span>
       </div>
 
       {/* === RESUME DRAFT BANNER === */}
       {hasDraft && !submitted && (
         <div className="bg-cca-blue/5 border-b border-cca-blue/10">
-          <div className="max-w-2xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="max-w-2xl mx-auto px-5 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-3">
             <p className="font-questrial text-sm text-cca-ink">
-              You have a saved application. Would you like to continue where you left off?
+              You have a saved application. Continue where you left off?
             </p>
             <div className="flex gap-2">
               <button
@@ -270,252 +256,198 @@ export function EnrollmentPageClient(props: Props) {
       )}
 
       {/* === MAIN CONTENT === */}
-      <main className="flex-1">
-        {noForm ? (
-          /* === NO FORM CONFIGURED === */
-          <div className="max-w-xl mx-auto px-6 py-20 text-center">
-            <Image
-              src="/marketing/home/mascot-girl.png"
-              alt=""
-              width={100}
-              height={121}
-              className="mx-auto mb-6 object-contain"
-            />
-            <h1 className="font-kollektif text-3xl text-cca-ink mb-3">
-              Apply to {tenantName}
-            </h1>
-            <p className="font-questrial text-cca-ink/60 text-lg leading-relaxed mb-8">
-              Our enrollment application is being set up. Please check back soon or contact us directly to get started.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <a
-                href={`mailto:${EMAIL}`}
-                className="inline-flex items-center justify-center gap-2 bg-cca-blue text-white font-kollektif px-8 py-3 rounded-full hover:bg-cca-blue/90 transition-colors"
-              >
-                Email Us
-              </a>
-              <a
-                href={PHONE_TEL}
-                className="inline-flex items-center justify-center gap-2 border border-gray-200 text-cca-ink font-kollektif px-8 py-3 rounded-full hover:bg-gray-50 transition-colors"
-              >
-                Call {PHONE}
-              </a>
-            </div>
-          </div>
-        ) : submitted ? (
-          /* === SUCCESS STATE === */
-          <div className="max-w-xl mx-auto px-6 py-20 text-center">
-            <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-cca-green/10 mb-6">
-              <CheckCircle2 className="h-10 w-10 text-cca-green" />
-            </div>
-            <h1 className="font-kollektif text-3xl md:text-4xl text-cca-ink mb-3">{thankYouTitle}</h1>
-            <p className="font-questrial text-cca-ink/70 text-lg leading-relaxed mb-8">{thankYouMessage}</p>
-            <a
-              href={WEBSITE_URL}
-              className="inline-flex items-center gap-2 bg-cca-blue text-white font-kollektif px-8 py-3 rounded-full hover:bg-cca-blue/90 transition-colors"
-            >
-              Return to Website
-              <ArrowUpRight className="w-4 h-4" />
-            </a>
-          </div>
-        ) : (
-          <>
-            {/* Hero */}
-            <section className="bg-white py-10 md:py-14 px-6 border-b border-gray-100">
-              <div className="max-w-2xl mx-auto text-center">
-                <Image
-                  src="/marketing/home/mascot-girl.png"
-                  alt=""
-                  width={80}
-                  height={97}
-                  className="mx-auto mb-4 object-contain"
-                />
-                <h1 className="font-kollektif text-3xl md:text-4xl text-cca-ink mb-3">
-                  Apply to {tenantName}
-                </h1>
-                <p className="font-questrial text-cca-ink/60 text-base md:text-lg leading-relaxed max-w-lg mx-auto">
-                  Complete the steps below to submit your application. It takes about five minutes. We&apos;ll be in touch within two business days.
-                </p>
+      <main className="flex-1 py-8 md:py-12 px-4">
+        <div className="max-w-2xl mx-auto">
+          {noForm ? (
+            <div className="text-center py-16">
+              <h1 className="font-kollektif text-2xl text-cca-ink mb-3">
+                {title}
+              </h1>
+              <p className="font-questrial text-cca-ink/60 text-base leading-relaxed mb-8">
+                Our enrollment application is being set up. Please contact us to get started.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <a
+                  href={`mailto:${EMAIL}`}
+                  className="inline-flex items-center justify-center gap-2 bg-cca-blue text-white font-kollektif px-8 py-3 rounded-full hover:bg-cca-blue/90 transition-colors"
+                >
+                  Email Us
+                </a>
+                <a
+                  href={PHONE_TEL}
+                  className="inline-flex items-center justify-center gap-2 border border-gray-200 text-cca-ink font-kollektif px-8 py-3 rounded-full hover:bg-gray-50 transition-colors"
+                >
+                  Call {PHONE}
+                </a>
               </div>
-            </section>
+            </div>
+          ) : submitted ? (
+            <div className="text-center py-16">
+              <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-cca-green/10 mb-5">
+                <CheckCircle2 className="h-8 w-8 text-cca-green" />
+              </div>
+              <h1 className="font-kollektif text-2xl md:text-3xl text-cca-ink mb-3">{thankYouTitle}</h1>
+              <p className="font-questrial text-cca-ink/70 text-base leading-relaxed mb-8 max-w-md mx-auto">{thankYouMessage}</p>
+              <a
+                href={WEBSITE_URL}
+                className="inline-flex items-center gap-2 bg-cca-blue text-white font-kollektif px-8 py-3 rounded-full hover:bg-cca-blue/90 transition-colors"
+              >
+                Return to Website
+                <ArrowUpRight className="w-4 h-4" />
+              </a>
+            </div>
+          ) : (
+            <>
+              {/* Fee notice */}
+              <WizardFeeNotice
+                feeEnabled={feeEnabled}
+                feeAmountCents={feeAmountCents}
+                feeDescription={feeDescription}
+                hideFeeNotice={hideFeeNotice}
+              />
 
-            {/* Form wizard */}
-            <section className="py-8 md:py-12 px-4">
-              <div className="max-w-2xl mx-auto">
-                {/* Fee notice */}
-                <WizardFeeNotice
-                  feeEnabled={feeEnabled}
-                  feeAmountCents={feeAmountCents}
-                  feeDescription={feeDescription}
-                  hideFeeNotice={hideFeeNotice}
-                />
-
-                {/* Step indicator */}
-                {steps.length > 1 && (
-                  <div className="mb-8">
-                    <div className="flex items-center justify-between">
-                      {steps.map((s, i) => {
-                        const isActive = i === step;
-                        const isComplete = i < step;
-                        return (
-                          <div key={s.id} className="flex-1 flex items-center">
-                            <div className="flex flex-col items-center flex-1">
-                              <div
-                                className={cn(
-                                  'w-9 h-9 rounded-full flex items-center justify-center text-sm font-kollektif transition-colors',
-                                  isComplete && 'bg-cca-green text-white',
-                                  isActive && 'bg-cca-blue text-white ring-4 ring-cca-blue/20',
-                                  !isComplete && !isActive && 'bg-gray-200 text-gray-500',
-                                )}
-                              >
-                                {isComplete ? (
-                                  <CheckCircle2 className="w-5 h-5" />
-                                ) : (
-                                  i + 1
-                                )}
-                              </div>
-                              <span
-                                className={cn(
-                                  'mt-1.5 text-[11px] font-questrial text-center leading-tight',
-                                  isActive ? 'text-cca-blue font-semibold' : 'text-cca-ink/40',
-                                )}
-                              >
-                                {s.label}
-                              </span>
-                            </div>
-                            {i < steps.length - 1 && (
-                              <div
-                                className={cn(
-                                  'h-[2px] flex-1 mx-1 -mt-5',
-                                  i < step ? 'bg-cca-green' : 'bg-gray-200',
-                                )}
-                              />
-                            )}
+              {/* Step indicator */}
+              {steps.length > 1 && (
+                <div className="mb-6">
+                  <div className="flex items-center gap-2">
+                    {steps.map((s, i) => {
+                      const isActive = i === step;
+                      const isComplete = i < step;
+                      return (
+                        <div key={s.id} className="flex-1 flex items-center gap-2">
+                          <div className="flex-1">
+                            <div
+                              className={cn(
+                                'h-1.5 rounded-full transition-colors',
+                                isComplete && 'bg-cca-green',
+                                isActive && 'bg-cca-blue',
+                                !isComplete && !isActive && 'bg-gray-200',
+                              )}
+                            />
                           </div>
-                        );
-                      })}
-                    </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                )}
+                  <p className="mt-2 font-questrial text-xs text-cca-ink/40">
+                    Step {step + 1} of {steps.length}
+                    {currentStep?.title && <span className="text-cca-ink/60"> &mdash; {currentStep.title}</span>}
+                  </p>
+                </div>
+              )}
 
-                {/* Form card */}
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_8px_24px_-8px_rgba(0,0,0,0.06)] p-6 md:p-8">
-                  {currentStep && (
-                    <>
-                      <div className="mb-6">
-                        <h2 className="font-kollektif text-2xl text-cca-ink">
-                          {currentStep.title ?? title}
-                        </h2>
-                        {currentStep.description && (
-                          <p className="mt-1 font-questrial text-sm text-cca-ink/60">
-                            {currentStep.description}
-                          </p>
-                        )}
-                      </div>
+              {/* Form card */}
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_8px_24px_-8px_rgba(0,0,0,0.06)] p-6 md:p-8">
+                {currentStep && (
+                  <>
+                    <div className="mb-6">
+                      <h2 className="font-kollektif text-xl md:text-2xl text-cca-ink">
+                        {currentStep.title ?? title}
+                      </h2>
+                      {currentStep.description && (
+                        <p className="mt-1 font-questrial text-sm text-cca-ink/60">
+                          {currentStep.description}
+                        </p>
+                      )}
+                    </div>
 
-                      <div className="space-y-5">
-                        {currentStep.iterate_over_field_key ? (
-                          <IteratedFields
-                            iterateKey={currentStep.iterate_over_field_key}
-                            values={values}
-                            setValues={setValues}
-                            fields={currentFields}
-                            isFieldVisible={isFieldVisible}
-                            tenantName={tenantName}
-                          />
-                        ) : (
-                          currentFields
-                            .filter((f) => isFieldVisible(f))
-                            .map((field) => (
-                              <FieldBlock
-                                key={field.id}
-                                field={field}
-                                value={values[field.field_key]}
-                                onChange={(v) => setValues({ ...values, [field.field_key]: v })}
-                                tenantName={tenantName}
-                              />
-                            ))
-                        )}
-
-                        {/* Honeypot */}
-                        <input
-                          type="text"
-                          tabIndex={-1}
-                          aria-hidden
-                          autoComplete="off"
-                          style={{ position: 'absolute', left: '-9999px' }}
+                    <div className="space-y-5">
+                      {currentStep.iterate_over_field_key ? (
+                        <IteratedFields
+                          iterateKey={currentStep.iterate_over_field_key}
+                          values={values}
+                          setValues={setValues}
+                          fields={currentFields}
+                          isFieldVisible={isFieldVisible}
+                          tenantName={tenantName}
                         />
+                      ) : (
+                        currentFields
+                          .filter((f) => isFieldVisible(f))
+                          .map((field) => (
+                            <FieldBlock
+                              key={field.id}
+                              field={field}
+                              value={values[field.field_key]}
+                              onChange={(v) => setValues({ ...values, [field.field_key]: v })}
+                              tenantName={tenantName}
+                            />
+                          ))
+                      )}
 
-                        {error && (
-                          <div className="rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-700 font-questrial">
-                            {error}
-                          </div>
+                      {/* Honeypot */}
+                      <input
+                        type="text"
+                        tabIndex={-1}
+                        aria-hidden
+                        autoComplete="off"
+                        style={{ position: 'absolute', left: '-9999px' }}
+                      />
+
+                      {error && (
+                        <div className="rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-700 font-questrial">
+                          {error}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Navigation */}
+                    <div className="mt-8 flex items-center justify-between">
+                      <button
+                        type="button"
+                        disabled={step === 0 || pending}
+                        onClick={() => setStep(step - 1)}
+                        className={cn(
+                          'flex items-center gap-1.5 font-kollektif text-sm text-cca-ink border border-gray-200 px-5 py-2.5 rounded-full hover:bg-gray-50 disabled:opacity-40 transition-colors',
+                          step === 0 && 'invisible',
                         )}
-                      </div>
+                      >
+                        <ArrowLeft className="h-4 w-4" />
+                        Back
+                      </button>
 
-                      {/* Navigation */}
-                      <div className="mt-8 flex items-center justify-between">
+                      {!isLast ? (
                         <button
                           type="button"
-                          disabled={step === 0 || pending}
-                          onClick={() => setStep(step - 1)}
-                          className="flex items-center gap-1.5 font-kollektif text-sm text-cca-ink border border-gray-200 px-5 py-2.5 rounded-full hover:bg-gray-50 disabled:opacity-40 transition-colors"
+                          disabled={!canAdvance()}
+                          onClick={() => setStep(step + 1)}
+                          className="flex items-center gap-1.5 font-kollektif text-sm bg-cca-blue text-white px-6 py-2.5 rounded-full hover:bg-cca-blue/90 disabled:opacity-50 transition-colors shadow-sm"
                         >
-                          <ArrowLeft className="h-4 w-4" />
-                          Back
+                          Continue
+                          <ArrowRight className="h-4 w-4" />
                         </button>
-
-                        {!isLast ? (
-                          <button
-                            type="button"
-                            disabled={!canAdvance()}
-                            onClick={() => setStep(step + 1)}
-                            className="flex items-center gap-1.5 font-kollektif text-sm bg-cca-blue text-white px-6 py-2.5 rounded-full hover:bg-cca-blue/90 disabled:opacity-50 transition-colors shadow-sm"
-                          >
-                            Continue
-                            <ArrowRight className="h-4 w-4" />
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            disabled={!canAdvance() || pending}
-                            onClick={handleSubmit}
-                            className="flex items-center gap-1.5 font-kollektif text-sm bg-cca-green text-white px-6 py-2.5 rounded-full hover:bg-cca-green/90 disabled:opacity-50 transition-colors shadow-sm"
-                          >
-                            {pending ? 'Submitting...' : 'Submit Application'}
-                            <CheckCircle2 className="h-4 w-4" />
-                          </button>
-                        )}
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                {/* Step counter */}
-                <p className="mt-4 text-center font-questrial text-xs text-cca-ink/40">
-                  Step {step + 1} of {steps.length}
-                </p>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={!canAdvance() || pending}
+                          onClick={handleSubmit}
+                          className="flex items-center gap-1.5 font-kollektif text-sm bg-cca-green text-white px-6 py-2.5 rounded-full hover:bg-cca-green/90 disabled:opacity-50 transition-colors shadow-sm"
+                        >
+                          {pending ? 'Submitting...' : 'Submit Application'}
+                          <CheckCircle2 className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
-            </section>
-          </>
-        )}
+            </>
+          )}
+        </div>
       </main>
 
       {/* === FOOTER === */}
-      <footer className="py-8 px-6 border-t border-gray-100">
-        <div className="max-w-2xl mx-auto flex flex-col items-center gap-3">
+      <footer className="py-6 px-6">
+        <div className="max-w-2xl mx-auto flex flex-col items-center gap-2">
           <Image
             src="/marketing/shared/cca-logo-full.png"
             alt="Crandall Christian Academy"
-            width={160}
-            height={56}
-            className="h-10 w-auto opacity-60"
+            width={120}
+            height={42}
+            className="h-8 w-auto opacity-40"
           />
-          <p className="font-coming-soon text-sm text-cca-ink/30">
-            Where Little Minds Shine
-          </p>
-          <p className="font-questrial text-xs text-cca-ink/30">
-            &copy; {new Date().getFullYear()} Crandall Christian Academy. All rights reserved.
+          <p className="font-questrial text-[11px] text-cca-ink/25">
+            &copy; {new Date().getFullYear()} Crandall Christian Academy
           </p>
         </div>
       </footer>
