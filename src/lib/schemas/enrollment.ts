@@ -124,7 +124,6 @@ export type StepFamilyData = z.infer<typeof StepFamilySchema>
 export const StepAgreementSchema = z.object({
   parent_signature: z.string().min(1, 'Please type your full name as your signature'),
   agree_to_contact: z.preprocess((v) => v ?? false, z.boolean().refine((v) => v === true, 'You must agree to be contacted')),
-  agree_to_policies: z.preprocess((v) => v ?? false, z.boolean().refine((v) => v === true, 'You must agree to school policies')),
   acknowledge_accuracy: z.preprocess((v) => v ?? false, z.boolean().refine((v) => v === true, 'You must acknowledge accuracy')),
   payment_intent_id: z.string().optional(),
 })
