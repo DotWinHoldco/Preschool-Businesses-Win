@@ -37,22 +37,44 @@ function evaluateCondition(condition: LogicCondition, fieldValues: Record<string
   }
 }
 
+interface ShowIfRule {
+  show_if: { field: string; equals: unknown }
+}
+
+function isShowIfRule(rule: unknown): rule is ShowIfRule {
+  return (
+    typeof rule === 'object' &&
+    rule !== null &&
+    'show_if' in rule &&
+    typeof (rule as ShowIfRule).show_if === 'object'
+  )
+}
+
 export function evaluateLogicRules(
-  rules: LogicRule[],
+  rules: unknown[],
   fieldValues: Record<string, unknown>
 ): { visible: boolean; jumpTo?: string } {
   let visible = true
   let jumpTo: string | undefined
 
   for (const rule of rules) {
-    const results = rule.conditions.map(c => evaluateCondition(c, fieldValues))
-    const passes = rule.logic === 'and'
+    if (isShowIfRule(rule)) {
+      const { field, equals } = rule.show_if
+      visible = fieldValues[field] === equals
+      continue
+    }
+
+    const typed = rule as LogicRule
+    if (!typed.conditions) continue
+
+    const results = typed.conditions.map(c => evaluateCondition(c, fieldValues))
+    const passes = typed.logic === 'and'
       ? results.every(Boolean)
       : results.some(Boolean)
 
-    if (rule.action === 'show') visible = passes
-    else if (rule.action === 'hide') visible = !passes
-    else if (rule.action === 'jump_to' && passes) jumpTo = rule.target_field_key
+    if (typed.action === 'show') visible = passes
+    else if (typed.action === 'hide') visible = !passes
+    else if (typed.action === 'jump_to' && passes) jumpTo = typed.target_field_key
   }
 
   return { visible, jumpTo }

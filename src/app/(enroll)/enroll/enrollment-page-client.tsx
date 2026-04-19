@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft, ArrowRight, CheckCircle2, Lock, Plus, Trash2, Save, ArrowUpRight } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { WizardFeeNotice } from '@/components/forms/wizard/fee-notice';
-import { evaluateLogicRules, type LogicRule } from '@/lib/forms/logic-engine';
+import { evaluateLogicRules } from '@/lib/forms/logic-engine';
 import { submitSystemEnrollment } from '@/lib/actions/enrollment/submit-system-enrollment';
 import type { SystemEnrollmentData } from '@/lib/schemas/enrollment';
 
@@ -150,7 +150,7 @@ export function EnrollmentPageClient(props: Props) {
 
   const isFieldVisible = (field: WizardField, scope: Record<string, unknown> = values): boolean => {
     if (!field.logic_rules || field.logic_rules.length === 0) return true;
-    const { visible } = evaluateLogicRules(field.logic_rules as unknown as LogicRule[], scope);
+    const { visible } = evaluateLogicRules(field.logic_rules as unknown[], scope);
     return visible;
   };
 
