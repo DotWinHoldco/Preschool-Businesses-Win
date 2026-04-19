@@ -35,10 +35,14 @@ export default function EnrollError({
           <h1 className="text-2xl font-semibold text-gray-900 mb-3">
             Something went wrong
           </h1>
-          <p className="text-sm text-gray-500 mb-8 leading-relaxed">
+          <p className="text-sm text-gray-500 mb-4 leading-relaxed">
             We ran into an issue loading the application. Please try again, or contact us
             if the problem continues.
           </p>
+          <pre className="text-left text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg p-3 mb-6 max-w-md mx-auto overflow-auto whitespace-pre-wrap break-words">
+            {error.message}
+            {error.stack && `\n\n${error.stack}`}
+          </pre>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <button
               onClick={reset}
