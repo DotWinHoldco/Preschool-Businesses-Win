@@ -146,15 +146,11 @@ export function FormBuilderClient({ form, initialFields, initialSections, initia
   }, [form.id, fields.length])
 
   const removeField = useCallback(async (fieldId: string) => {
-    const field = fields.find(f => f.id === fieldId)
-    if (field?.is_locked) {
-      alert('This is a locked system field and cannot be deleted. You can edit its label but not remove it.')
-      return
-    }
     await deleteFormField(fieldId)
     setFields(prev => prev.filter(f => f.id !== fieldId))
+    setDirtyFieldIds(prev => { const next = new Set(prev); next.delete(fieldId); return next })
     if (selectedFieldId === fieldId) setSelectedFieldId(null)
-  }, [selectedFieldId, fields])
+  }, [selectedFieldId])
 
   const saveSettings = useCallback(() => {
     setIsSaving(true)
@@ -390,19 +386,20 @@ export function FormBuilderClient({ form, initialFields, initialSections, initia
                 Key: {selectedField.field_key}<br />
                 Type: {selectedField.field_type}
               </p>
-              {!selectedField.is_locked && (
-                <button
-                  onClick={() => {
-                    if (confirm(`Delete "${selectedField.label || selectedField.field_key}"? This cannot be undone.`)) {
-                      removeField(selectedField.id)
-                    }
-                  }}
-                  className="w-full inline-flex items-center justify-center gap-1.5 rounded-[var(--radius)] border border-[var(--color-destructive)] px-3 py-1.5 text-xs font-medium text-[var(--color-destructive)] hover:bg-[var(--color-destructive)]/10 transition-colors"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  Delete field
-                </button>
-              )}
+              <button
+                onClick={() => {
+                  const warning = selectedField.is_locked
+                    ? `"${selectedField.label || selectedField.field_key}" is a system field. Deleting it may break enrollment pipelines, notifications, or billing. Delete anyway?`
+                    : `Delete "${selectedField.label || selectedField.field_key}"? This cannot be undone.`
+                  if (confirm(warning)) {
+                    removeField(selectedField.id)
+                  }
+                }}
+                className="w-full inline-flex items-center justify-center gap-1.5 rounded-[var(--radius)] border border-[var(--color-destructive)] px-3 py-1.5 text-xs font-medium text-[var(--color-destructive)] hover:bg-[var(--color-destructive)]/10 transition-colors"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Delete field
+              </button>
             </div>
           </div>
         ) : (
