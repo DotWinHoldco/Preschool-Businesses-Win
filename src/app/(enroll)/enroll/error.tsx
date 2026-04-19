@@ -36,14 +36,11 @@ export default function EnrollError({
             Something went wrong
           </h1>
           <p className="text-sm text-gray-500 mb-4 leading-relaxed">
-            We ran into an issue loading the application. Please try again, or contact us
-            if the problem continues.
+            This is usually caused by a browser extension or stale cache.
+            Try opening the page in an <strong>incognito / private window</strong>, or
+            do a hard refresh (Cmd+Shift+R / Ctrl+Shift+R).
           </p>
-          <pre className="text-left text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg p-3 mb-6 max-w-md mx-auto overflow-auto whitespace-pre-wrap break-words">
-            {error.message}
-            {error.stack && `\n\n${error.stack}`}
-          </pre>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center mb-6">
             <button
               onClick={reset}
               className="inline-flex items-center justify-center bg-[#3B70B0] text-white text-sm font-medium px-8 py-3 rounded-full hover:bg-[#3B70B0]/90 transition-colors"
@@ -57,6 +54,13 @@ export default function EnrollError({
               Contact Us
             </a>
           </div>
+          <details className="text-left text-xs text-gray-400 bg-gray-50 border border-gray-200 rounded-lg p-3 max-w-md mx-auto">
+            <summary className="cursor-pointer select-none">Error details</summary>
+            <pre className="mt-2 text-red-600 overflow-auto whitespace-pre-wrap break-words">
+              {error.message}
+              {error.stack && `\n\n${error.stack}`}
+            </pre>
+          </details>
         </div>
       </main>
     </>

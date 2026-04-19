@@ -75,8 +75,9 @@ export default async function RootLayout({
     <html
       lang="en"
       className={`${nunito.variable} ${openSans.variable} ${dancingScript.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <SkipToContent />
         <TenantThemeProvider branding={branding}>
           {tenantContextValue ? (
