@@ -120,6 +120,81 @@ export async function runPipelineAction(input: PipelineActionInput): Promise<Act
   return { ok: true }
 }
 
+export async function deleteApplication(applicationId: string): Promise<ActionResult> {
+  await assertRole('admin')
+  const tenantId = await getTenantId()
+  const actorId = await getActorId()
+  const supabase = createAdminClient()
+
+  const { data: application } = await supabase
+    .from('enrollment_applications')
+    .select('id, student_first_name, student_last_name, parent_email, parent_user_id')
+    .eq('id', applicationId)
+    .eq('tenant_id', tenantId)
+    .single()
+
+  if (!application) return { ok: false, error: 'Application not found' }
+
+  // Delete related records first (order matters for FK constraints)
+  await supabase
+    .from('appointments')
+    .delete()
+    .eq('enrollment_application_id', applicationId)
+
+  await supabase
+    .from('application_pipeline_steps')
+    .delete()
+    .eq('application_id', applicationId)
+
+  const { error: deleteError } = await supabase
+    .from('enrollment_applications')
+    .delete()
+    .eq('id', applicationId)
+    .eq('tenant_id', tenantId)
+
+  if (deleteError) return { ok: false, error: deleteError.message }
+
+  // Check if this parent has any remaining applications
+  const { count } = await supabase
+    .from('enrollment_applications')
+    .select('id', { count: 'exact', head: true })
+    .eq('parent_email', application.parent_email)
+    .eq('tenant_id', tenantId)
+
+  // If no remaining applications, clean up lead and applicant account
+  if (count === 0) {
+    await supabase
+      .from('enrollment_leads')
+      .delete()
+      .eq('parent_email', application.parent_email)
+      .eq('tenant_id', tenantId)
+
+    if (application.parent_user_id) {
+      await supabase
+        .from('user_tenant_memberships')
+        .delete()
+        .eq('user_id', application.parent_user_id)
+        .eq('tenant_id', tenantId)
+        .eq('role', 'applicant_parent')
+    }
+  }
+
+  await writeAudit(supabase, {
+    tenantId,
+    actorId,
+    action: 'enrollment.delete',
+    entityType: 'enrollment_application',
+    entityId: applicationId,
+    before: {
+      student: `${application.student_first_name} ${application.student_last_name}`,
+      parent_email: application.parent_email,
+    },
+    after: { deleted: true },
+  })
+
+  return { ok: true }
+}
+
 export async function recordInitialPipelineStep(
   applicationId: string,
   tenantId: string,

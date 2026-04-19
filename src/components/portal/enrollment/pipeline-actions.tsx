@@ -3,8 +3,8 @@
 // @anchor: cca.applications.pipeline.ui-actions
 
 import { useState, useTransition } from 'react'
-import { runPipelineAction } from '@/lib/actions/enrollment/pipeline-actions'
-import { Send, Calendar, CheckCircle2, Clock, XCircle } from 'lucide-react'
+import { runPipelineAction, deleteApplication } from '@/lib/actions/enrollment/pipeline-actions'
+import { Send, Calendar, CheckCircle2, Clock, XCircle, Trash2 } from 'lucide-react'
 
 const ACTIONS = [
   {
@@ -69,6 +69,19 @@ export function PipelineActions({ applicationId }: { applicationId: string }) {
   const [lastAction, setLastAction] = useState<string | null>(null)
   const [notesOpen, setNotesOpen] = useState<ActionKey | null>(null)
   const [notes, setNotes] = useState('')
+  const [confirmDelete, setConfirmDelete] = useState(false)
+
+  const handleDelete = () => {
+    setError(null)
+    startTransition(async () => {
+      const result = await deleteApplication(applicationId)
+      if (!result.ok) {
+        setError(result.error ?? 'Delete failed')
+      } else {
+        window.location.href = '/portal/admin/enrollment'
+      }
+    })
+  }
 
   const trigger = (action: ActionKey, noteValue?: string) => {
     setError(null)
@@ -113,6 +126,36 @@ export function PipelineActions({ applicationId }: { applicationId: string }) {
           )
         })}
       </div>
+
+      {!confirmDelete ? (
+        <button
+          disabled={pending}
+          onClick={() => setConfirmDelete(true)}
+          className="inline-flex items-center gap-1.5 rounded-[var(--radius)] border border-[var(--color-destructive)] px-3 py-1.5 text-xs font-medium text-[var(--color-destructive)] hover:bg-[var(--color-destructive)]/10 transition-colors disabled:opacity-50"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+          Delete Application
+        </button>
+      ) : (
+        <div className="flex items-center gap-2 rounded-[var(--radius)] border border-[var(--color-destructive)] bg-[var(--color-destructive)]/5 px-3 py-2">
+          <span className="text-xs text-[var(--color-destructive)]">
+            Permanently delete this application and all related data?
+          </span>
+          <button
+            disabled={pending}
+            onClick={handleDelete}
+            className="rounded-[var(--radius)] bg-[var(--color-destructive)] px-3 py-1 text-xs font-medium text-white hover:opacity-90 disabled:opacity-50"
+          >
+            {pending ? 'Deleting...' : 'Yes, delete'}
+          </button>
+          <button
+            onClick={() => setConfirmDelete(false)}
+            className="rounded-[var(--radius)] border border-[var(--color-border)] px-3 py-1 text-xs text-[var(--color-foreground)] hover:bg-[var(--color-muted)]"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
 
       {notesOpen && (
         <div className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] p-3">
