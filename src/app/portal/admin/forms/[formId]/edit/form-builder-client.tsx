@@ -2,7 +2,7 @@
 
 // @anchor: platform.form-builder.builder-ui
 
-import { useState, useCallback, useTransition } from 'react'
+import { useState, useCallback, useTransition, useRef } from 'react'
 import { createFormField, updateFormField, deleteFormField, updateForm, createFormInstance, revertSystemForm, createFormSection, updateFormSection, deleteFormSection } from '@/lib/actions/forms'
 import type { CreateFormFieldInput } from '@/lib/schemas/form'
 import { WizardFormRenderer, type WizardField, type WizardSection } from '@/components/forms/wizard/wizard-form-renderer'
@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import type { FormFieldType } from '@/lib/schemas/form'
-import { Settings, Sparkles, Copy, RotateCcw, Code2, Layers, Trash2, Plus, Repeat } from 'lucide-react'
+import { Settings, Sparkles, Copy, RotateCcw, Code2, Layers, Trash2, Plus, Repeat, Save } from 'lucide-react'
 
 interface FormDef {
   id: string; title: string; slug: string; status: string; mode: string
@@ -194,10 +194,35 @@ export function FormBuilderClient({ form, initialFields, initialSections, initia
     })
   }, [form.id, spawnDraft])
 
-  const updateFieldLocal = useCallback(async (fieldId: string, updates: Partial<FieldDef>) => {
+  const [dirtyFieldIds, setDirtyFieldIds] = useState<Set<string>>(new Set())
+
+  const updateFieldLocal = useCallback((fieldId: string, updates: Partial<FieldDef>) => {
     setFields(prev => prev.map(f => f.id === fieldId ? { ...f, ...updates } : f))
-    await updateFormField(fieldId, updates as Partial<CreateFormFieldInput>)
+    setDirtyFieldIds(prev => new Set(prev).add(fieldId))
   }, [])
+
+  const saveAllFields = useCallback(async () => {
+    if (dirtyFieldIds.size === 0) return
+    setIsSaving(true)
+    const promises = Array.from(dirtyFieldIds).map(id => {
+      const field = fields.find(f => f.id === id)
+      if (!field) return Promise.resolve()
+      return updateFormField(id, {
+        label: field.label,
+        description: field.description,
+        placeholder: field.placeholder,
+        is_required: field.is_required,
+        config: field.config,
+        validation_rules: field.validation_rules,
+        logic_rules: field.logic_rules,
+        sort_order: field.sort_order,
+        page_number: field.page_number,
+      } as Partial<CreateFormFieldInput>)
+    })
+    await Promise.all(promises)
+    setDirtyFieldIds(new Set())
+    setIsSaving(false)
+  }, [dirtyFieldIds, fields])
 
   const publishForm = useCallback(async () => {
     setIsSaving(true)
@@ -285,6 +310,10 @@ export function FormBuilderClient({ form, initialFields, initialSections, initia
                   Revert
                 </Button>
               )}
+              <Button onClick={saveAllFields} disabled={isSaving || dirtyFieldIds.size === 0} className="inline-flex items-center gap-1">
+                <Save className="h-4 w-4" />
+                {isSaving ? 'Saving...' : dirtyFieldIds.size > 0 ? `Save (${dirtyFieldIds.size})` : 'Saved'}
+              </Button>
               {formStatus === 'draft' ? (
                 <Button onClick={publishForm} disabled={isSaving || fields.length === 0}>
                   {isSaving ? 'Publishing...' : 'Publish'}
@@ -356,11 +385,24 @@ export function FormBuilderClient({ form, initialFields, initialSections, initia
                 className="rounded accent-[var(--color-primary)]" />
               <span className="text-xs font-medium">Required</span>
             </label>
-            <div className="pt-4 border-t" style={{ borderColor: 'var(--color-border)' }}>
+            <div className="pt-4 border-t space-y-3" style={{ borderColor: 'var(--color-border)' }}>
               <p className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
                 Key: {selectedField.field_key}<br />
                 Type: {selectedField.field_type}
               </p>
+              {!selectedField.is_locked && (
+                <button
+                  onClick={() => {
+                    if (confirm(`Delete "${selectedField.label || selectedField.field_key}"? This cannot be undone.`)) {
+                      removeField(selectedField.id)
+                    }
+                  }}
+                  className="w-full inline-flex items-center justify-center gap-1.5 rounded-[var(--radius)] border border-[var(--color-destructive)] px-3 py-1.5 text-xs font-medium text-[var(--color-destructive)] hover:bg-[var(--color-destructive)]/10 transition-colors"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Delete field
+                </button>
+              )}
             </div>
           </div>
         ) : (
