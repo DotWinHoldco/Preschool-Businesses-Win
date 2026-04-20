@@ -7,6 +7,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import Link from 'next/link'
 import { Search, Bell, ChevronDown, Menu } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser'
@@ -110,6 +111,11 @@ export function PortalTopbar({
             placeholder="Search students, families, classrooms..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && searchQuery.trim()) {
+                router.push(`/portal/admin/search?q=${encodeURIComponent(searchQuery.trim())}`)
+              }
+            }}
             className={cn(
               'w-full pl-9 pr-4 py-2 text-sm rounded-lg border',
               'focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30',
@@ -155,8 +161,8 @@ export function PortalTopbar({
         )}
 
         {/* Notification bell */}
-        <button
-          type="button"
+        <Link
+          href="/portal/admin/notifications"
           className="relative p-2 rounded-lg transition-colors hover:bg-[var(--color-muted)]"
           style={{ color: 'var(--color-muted-foreground)' }}
           aria-label={`Notifications${notificationCount > 0 ? ` (${notificationCount} unread)` : ''}`}
@@ -174,7 +180,7 @@ export function PortalTopbar({
               {notificationCount > 99 ? '99+' : notificationCount}
             </span>
           )}
-        </button>
+        </Link>
 
         {/* User avatar / menu */}
         <div className="relative">
@@ -257,22 +263,24 @@ export function PortalTopbar({
                   {user.email}
                 </p>
               </div>
-              <button
-                type="button"
-                className="w-full text-left px-3 py-2 text-sm transition-colors hover:bg-[var(--color-muted)]"
+              <Link
+                href="/portal/admin/profile"
+                onClick={() => setUserMenuOpen(false)}
+                className="block w-full text-left px-3 py-2 text-sm transition-colors hover:bg-[var(--color-muted)]"
                 style={{ color: 'var(--color-foreground)' }}
                 role="menuitem"
               >
                 My profile
-              </button>
-              <button
-                type="button"
-                className="w-full text-left px-3 py-2 text-sm transition-colors hover:bg-[var(--color-muted)]"
+              </Link>
+              <Link
+                href="/portal/admin/notification-preferences"
+                onClick={() => setUserMenuOpen(false)}
+                className="block w-full text-left px-3 py-2 text-sm transition-colors hover:bg-[var(--color-muted)]"
                 style={{ color: 'var(--color-foreground)' }}
                 role="menuitem"
               >
                 Notification preferences
-              </button>
+              </Link>
               <div
                 className="border-t my-1"
                 style={{ borderColor: 'var(--color-border)' }}

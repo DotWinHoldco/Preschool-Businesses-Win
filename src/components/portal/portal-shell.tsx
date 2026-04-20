@@ -5,9 +5,10 @@
 // Mobile: sidebar is a slide-over toggled from the topbar hamburger.
 // Desktop: sidebar is always visible, collapsible.
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useTransition } from 'react'
 import { PortalSidebar } from '@/components/portal/sidebar'
 import { PortalTopbar } from '@/components/portal/topbar'
+import { setActiveClassroom } from '@/lib/actions/classroom/set-active'
 import type { TenantFeature } from '@/lib/tenant/features'
 
 interface Classroom {
@@ -39,6 +40,7 @@ interface PortalShellProps {
   user: UserInfo
   features: TenantFeature[]
   classrooms?: Classroom[]
+  activeClassroomId?: string | null
   showPoweredBy?: boolean
   children: React.ReactNode
 }
@@ -50,14 +52,21 @@ export function PortalShell({
   user,
   features,
   classrooms = [],
+  activeClassroomId: initialActiveClassroomId = null,
   showPoweredBy = true,
   children,
 }: PortalShellProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [activeClassroomId, setActiveClassroomId] = useState<string | null>(null)
+  const [activeClassroomId, setActiveClassroomId] = useState<string | null>(initialActiveClassroomId)
+  const [, startTransition] = useTransition()
 
   const handleMobileMenuToggle = useCallback(() => {
     setMobileMenuOpen((prev) => !prev)
+  }, [])
+
+  const handleClassroomChange = useCallback((classroomId: string) => {
+    setActiveClassroomId(classroomId || null)
+    startTransition(() => setActiveClassroom(classroomId))
   }, [])
 
   return (
@@ -101,7 +110,7 @@ export function PortalShell({
           user={user}
           classrooms={classrooms}
           activeClassroomId={activeClassroomId}
-          onClassroomChange={setActiveClassroomId}
+          onClassroomChange={handleClassroomChange}
           notificationCount={0}
           onMobileMenuToggle={handleMobileMenuToggle}
         />

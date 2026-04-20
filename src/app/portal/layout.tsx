@@ -3,7 +3,7 @@
 // Feature-flag-aware navigation. Role-aware sections.
 // See PLATFORM_ARCHITECTURE.md §5 and CCA_BUILD_BRIEF.md §6 for structure.
 
-import { headers } from 'next/headers'
+import { headers, cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { getTenantBranding } from '@/lib/tenant/branding'
 import { getSession, getUserMembership } from '@/lib/auth/session'
@@ -79,11 +79,17 @@ export default async function PortalLayout({
     config: (f.config as Record<string, unknown>) ?? {},
   }))
 
-  // TODO (Phase 2): Fetch real classroom assignments for staff
-  const classrooms = [
-    { id: 'placeholder-1', name: 'Butterfly Room' },
-    { id: 'placeholder-2', name: 'Sunshine Room' },
-  ]
+  const { data: classroomRows } = await supabase
+    .from('classrooms')
+    .select('id, name')
+    .eq('tenant_id', effectiveTenantId)
+    .eq('status', 'active')
+    .is('deleted_at', null)
+    .order('name')
+  const classrooms = (classroomRows ?? []).map((c) => ({ id: c.id as string, name: c.name as string }))
+
+  const cookieStore = await cookies()
+  const activeClassroomId = cookieStore.get('active_classroom_id')?.value ?? null
 
   // Determine if "Powered by .win" should show
   const showPoweredBy = true // TODO: read from tenants.plan
@@ -104,6 +110,7 @@ export default async function PortalLayout({
           user={user}
           features={features}
           classrooms={classrooms}
+          activeClassroomId={activeClassroomId}
           showPoweredBy={showPoweredBy}
         >
           <main id="main-content" className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
