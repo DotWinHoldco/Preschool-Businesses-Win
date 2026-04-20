@@ -50,18 +50,17 @@ export function CarlineBoard() {
   ])
   const [releasing, setReleasing] = useState<string | null>(null)
 
-  const handleRelease = useCallback(async (entryId: string) => {
+  const handleRelease = useCallback((entryId: string) => {
     setReleasing(entryId)
-    // TODO: Call server action to release child (triggers check-out)
-    // For now, update local state
-    setTimeout(() => {
-      setEntries((prev) =>
-        prev.map((e) =>
-          e.id === entryId ? { ...e, status: 'released' as const } : e,
-        ),
-      )
-      setReleasing(null)
-    }, 500)
+    // Optimistic local state update — mark as released immediately
+    setEntries((prev) =>
+      prev.map((e) =>
+        e.id === entryId ? { ...e, status: 'released' as const } : e,
+      ),
+    )
+    // Clear the loading indicator on next tick
+    requestAnimationFrame(() => setReleasing(null))
+    // TODO: Call server action to persist release (triggers check-out)
   }, [])
 
   const handleRefresh = useCallback(() => {

@@ -1,6 +1,6 @@
 // @anchor: cca.food-program.menus-page
 import { createTenantServerClient } from '@/lib/supabase/server'
-import { MenuPlanner } from '@/components/portal/food-program/menu-planner'
+import { MenusPageClient } from './menus-page-client'
 import { Calendar } from 'lucide-react'
 
 export default async function MenusPage() {
@@ -44,7 +44,7 @@ export default async function MenusPage() {
         </p>
       </div>
 
-      <MenuPlanner weekStartDate={weekStart} initialMeals={initialMeals} />
+      <MenusPageClient weekStartDate={weekStart} initialMeals={initialMeals} />
     </div>
   )
 }

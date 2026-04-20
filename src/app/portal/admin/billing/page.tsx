@@ -3,6 +3,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { InvoiceList } from '@/components/portal/billing/invoice-list'
+import { BillingActions } from '@/components/portal/billing/billing-actions'
 import { DollarSign, TrendingUp, AlertCircle, CheckCircle2 } from 'lucide-react'
 
 export default async function BillingDashboardPage() {
@@ -26,26 +27,7 @@ export default async function BillingDashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Billing</h1>
-          <p className="text-sm text-[var(--color-muted-foreground)]">Revenue and invoice management</p>
-        </div>
-        <div className="flex gap-2">
-          <a
-            href="/portal/admin/billing/plans"
-            className="rounded-[var(--radius,0.75rem)] border border-[var(--color-border)] px-4 py-2 text-sm font-medium min-h-[44px] inline-flex items-center hover:bg-[var(--color-muted)] transition-colors"
-          >
-            Plans
-          </a>
-          <button
-            type="button"
-            className="rounded-[var(--radius,0.75rem)] bg-[var(--color-primary)] text-[var(--color-primary-foreground)] px-4 py-2 text-sm font-semibold min-h-[44px] hover:brightness-110 transition-all"
-          >
-            Generate Invoices
-          </button>
-        </div>
-      </div>
+      <BillingActions />
 
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

@@ -1,20 +1,13 @@
 // @anchor: cca.family.list-page
-// Family list with search. Server Component.
+// Family list with search. Server Component — data fetched server-side,
+// client-side filter via FamilyListClient.
 
 import Link from 'next/link'
 import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { createTenantAdminClient } from '@/lib/supabase/admin'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from '@/components/ui/table'
+import { FamilyListClient } from '@/components/portal/families/family-list-client'
 
 export default async function FamiliesPage({
   searchParams,
@@ -60,15 +53,26 @@ export default async function FamiliesPage({
         .in('family_id', familyIds)
     : { data: [] }
 
-  const memberCountMap = new Map<string, number>()
+  // Serialize count maps as plain objects for client component
+  const memberCountMap: Record<string, number> = {}
   for (const m of memberCounts ?? []) {
-    memberCountMap.set(m.family_id, (memberCountMap.get(m.family_id) ?? 0) + 1)
+    memberCountMap[m.family_id] = (memberCountMap[m.family_id] ?? 0) + 1
   }
 
-  const studentCountMap = new Map<string, number>()
+  const studentCountMap: Record<string, number> = {}
   for (const s of studentLinks ?? []) {
-    studentCountMap.set(s.family_id, (studentCountMap.get(s.family_id) ?? 0) + 1)
+    studentCountMap[s.family_id] = (studentCountMap[s.family_id] ?? 0) + 1
   }
+
+  // Serialize families for client component
+  const serializedFamilies = (families ?? []).map((f) => ({
+    id: f.id,
+    family_name: f.family_name,
+    billing_email: f.billing_email,
+    billing_phone: f.billing_phone,
+    mailing_city: f.mailing_city,
+    mailing_state: f.mailing_state,
+  }))
 
   return (
     <div className="space-y-6">
@@ -85,78 +89,13 @@ export default async function FamiliesPage({
         </Button>
       </div>
 
-      {/* Search */}
-      <form method="get">
-        <div className="relative max-w-md">
-          <svg
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-muted-foreground)]"
-            width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-          >
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          <input
-            type="search"
-            name="q"
-            defaultValue={q}
-            placeholder="Search families..."
-            className="h-10 w-full rounded-[var(--radius,0.75rem)] border border-[var(--color-border)] bg-[var(--color-background)] pl-10 pr-4 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-1"
-          />
-        </div>
-      </form>
-
-      {/* Table */}
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Family</TableHead>
-            <TableHead>Members</TableHead>
-            <TableHead>Students</TableHead>
-            <TableHead>Contact</TableHead>
-            <TableHead>Location</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {(!families || families.length === 0) ? (
-            <TableRow>
-              <TableCell colSpan={5} className="text-center text-[var(--color-muted-foreground)]">
-                {q ? `No families matching "${q}"` : 'No families found'}
-              </TableCell>
-            </TableRow>
-          ) : (
-            families.map((family) => (
-              <TableRow key={family.id}>
-                <TableCell>
-                  <Link
-                    href={`/portal/admin/families/${family.id}`}
-                    className="font-medium text-[var(--color-foreground)] hover:underline"
-                  >
-                    {family.family_name}
-                  </Link>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline" size="sm">
-                    {memberCountMap.get(family.id) ?? 0}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline" size="sm">
-                    {studentCountMap.get(family.id) ?? 0}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-sm text-[var(--color-muted-foreground)]">
-                  {family.billing_email || family.billing_phone || '—'}
-                </TableCell>
-                <TableCell className="text-sm text-[var(--color-muted-foreground)]">
-                  {family.mailing_city && family.mailing_state
-                    ? `${family.mailing_city}, ${family.mailing_state}`
-                    : '—'}
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+      {/* Client-side filter + table */}
+      <FamilyListClient
+        families={serializedFamilies}
+        memberCountMap={memberCountMap}
+        studentCountMap={studentCountMap}
+        serverQuery={q}
+      />
     </div>
   )
 }

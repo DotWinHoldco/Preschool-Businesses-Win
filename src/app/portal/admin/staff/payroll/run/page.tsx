@@ -3,6 +3,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { PayrollTable } from '@/components/portal/staff/payroll-table'
+import { PayrollActions } from '@/components/portal/staff/payroll-actions'
 
 export default async function PayrollRunPage() {
   // TODO: This would be a client-side wizard with steps
@@ -74,26 +75,7 @@ export default async function PayrollRunPage() {
       />
 
       {/* Step 3: Actions */}
-      <div className="flex gap-3 flex-wrap">
-        <button
-          type="button"
-          className="rounded-[var(--radius,0.75rem)] bg-[var(--color-primary)] text-[var(--color-primary-foreground)] px-6 py-3 text-sm font-semibold min-h-[48px] hover:brightness-110 transition-all"
-        >
-          Approve Payroll
-        </button>
-        <button
-          type="button"
-          className="rounded-[var(--radius,0.75rem)] border border-[var(--color-border)] px-6 py-3 text-sm font-semibold min-h-[48px] hover:bg-[var(--color-muted)] transition-colors"
-        >
-          Export CSV (QuickBooks)
-        </button>
-        <button
-          type="button"
-          className="rounded-[var(--radius,0.75rem)] border border-[var(--color-border)] px-6 py-3 text-sm font-semibold min-h-[48px] hover:bg-[var(--color-muted)] transition-colors"
-        >
-          Export CSV (ADP)
-        </button>
-      </div>
+      <PayrollActions />
     </div>
   )
 }

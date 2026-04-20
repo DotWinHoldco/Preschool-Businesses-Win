@@ -1,9 +1,7 @@
 // @anchor: cca.messaging.admin
 // Admin messaging center with broadcast capability.
 
-import { ConversationList } from '@/components/portal/messaging/conversation-list'
-import { BroadcastComposer } from '@/components/portal/messaging/broadcast-composer'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { MessagingPageClient } from './messaging-page-client'
 
 export default async function AdminMessagingPage() {
   // TODO: Fetch conversations and classrooms from Supabase
@@ -21,30 +19,9 @@ export default async function AdminMessagingPage() {
   ]
 
   return (
-    <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Messaging</h1>
-
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Conversations sidebar */}
-        <div className="lg:col-span-1">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Conversations</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <ConversationList conversations={conversations} />
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Broadcast composer */}
-        <div className="lg:col-span-2">
-          <BroadcastComposer
-            classrooms={classrooms}
-            senderId="admin-1"
-          />
-        </div>
-      </div>
-    </div>
+    <MessagingPageClient
+      conversations={conversations}
+      classrooms={classrooms}
+    />
   )
 }

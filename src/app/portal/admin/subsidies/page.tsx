@@ -1,8 +1,7 @@
 // @anchor: cca.subsidy.admin-page
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { SubsidyEnrollment } from '@/components/portal/subsidies/subsidy-enrollment'
-import { Shield, Plus, Building, FileText } from 'lucide-react'
-import Link from 'next/link'
+import { SubsidyActions } from '@/components/portal/subsidies/subsidy-actions'
 
 export default async function SubsidiesPage() {
   const supabase = await createTenantServerClient()
@@ -39,35 +38,7 @@ export default async function SubsidiesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Shield className="h-5 w-5 text-[var(--color-primary)]" />
-            <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Subsidies</h1>
-          </div>
-          <p className="text-sm text-[var(--color-muted-foreground)]">
-            Manage state subsidy enrollments, claims, and reconciliation
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Link
-            href="/portal/admin/subsidies/agencies"
-            className="flex items-center gap-2 rounded-[var(--radius)] border border-[var(--color-border)] px-4 py-2 text-sm text-[var(--color-foreground)] hover:bg-[var(--color-muted)] transition-colors"
-          >
-            <Building className="h-4 w-4" /> Agencies
-          </Link>
-          <Link
-            href="/portal/admin/subsidies/claims"
-            className="flex items-center gap-2 rounded-[var(--radius)] border border-[var(--color-border)] px-4 py-2 text-sm text-[var(--color-foreground)] hover:bg-[var(--color-muted)] transition-colors"
-          >
-            <FileText className="h-4 w-4" /> Claims
-          </Link>
-          <button className="flex items-center gap-2 rounded-[var(--radius)] bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-[var(--color-primary-foreground)] hover:opacity-90 transition-opacity">
-            <Plus className="h-4 w-4" /> Enroll
-          </button>
-        </div>
-      </div>
-
+      <SubsidyActions />
       <SubsidyEnrollment subsidies={mapped} />
     </div>
   )
