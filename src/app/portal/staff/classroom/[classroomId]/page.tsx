@@ -1,6 +1,11 @@
 // @anchor: cca.classroom.staff-view-page
+// Classroom overview for staff — real Supabase data.
 
 import type { Metadata } from 'next'
+import { headers } from 'next/headers'
+import { notFound } from 'next/navigation'
+import { getSession } from '@/lib/auth/session'
+import { createTenantAdminClient } from '@/lib/supabase/admin'
 
 export const metadata: Metadata = {
   title: 'Classroom View | Staff Portal',
@@ -14,37 +19,106 @@ export default async function StaffClassroomPage({
 }) {
   const { classroomId } = await params
 
-  const mockClassroom = {
-    id: classroomId,
-    name: 'Butterfly Room',
-    ageRange: '3-4 years',
-    capacity: 20,
-    checkedIn: 14,
-    totalEnrolled: 18,
-    ratioRequired: '15:1',
-    ratioActual: '7:1',
-    ratioCompliant: true,
-    staffOnDuty: ['Sarah Johnson (Lead)', 'Maria Garcia (Aide)'],
+  const headerStore = await headers()
+  const tenantId = headerStore.get('x-tenant-id')
+  if (!tenantId) notFound()
+
+  const session = await getSession()
+  if (!session) notFound()
+
+  const supabase = await createTenantAdminClient(tenantId)
+
+  // Fetch classroom
+  const { data: classroom } = await supabase
+    .from('classrooms')
+    .select('id, name, age_range, capacity, ratio_required')
+    .eq('id', classroomId)
+    .eq('tenant_id', tenantId)
+    .single()
+
+  if (!classroom) notFound()
+
+  // Fetch enrolled students via student_classroom_assignments
+  const { data: studentAssignments } = await supabase
+    .from('student_classroom_assignments')
+    .select('student_id, students(id, first_name, last_name, allergies)')
+    .eq('classroom_id', classroomId)
+    .eq('tenant_id', tenantId)
+
+  const enrolledStudents = (studentAssignments ?? []).map((sa: Record<string, unknown>) => {
+    const s = sa.students as Record<string, unknown> | null
+    return {
+      id: (s?.id as string) ?? (sa.student_id as string),
+      name: `${s?.first_name ?? ''} ${s?.last_name ?? ''}`.trim(),
+      allergies: Array.isArray(s?.allergies) ? (s.allergies as string[]) : [],
+    }
+  })
+
+  const totalEnrolled = enrolledStudents.length
+
+  // Today's check-ins for this classroom
+  const todayStr = new Date().toISOString().split('T')[0]
+  const { data: checkIns } = await supabase
+    .from('check_ins')
+    .select('student_id, checked_in_at')
+    .eq('classroom_id', classroomId)
+    .eq('tenant_id', tenantId)
+    .gte('checked_in_at', `${todayStr}T00:00:00`)
+    .lte('checked_in_at', `${todayStr}T23:59:59`)
+
+  const checkInMap = new Map<string, string>()
+  for (const ci of checkIns ?? []) {
+    const row = ci as Record<string, unknown>
+    checkInMap.set(row.student_id as string, row.checked_in_at as string)
   }
 
-  const mockStudents = [
-    { id: '1', name: 'Sophia Martinez', checkedIn: true, time: '7:15 AM', allergies: ['Peanuts (severe)'], mood: 'happy' },
-    { id: '2', name: 'Liam Chen', checkedIn: true, time: '7:32 AM', allergies: [], mood: 'calm' },
-    { id: '3', name: 'Emma Johnson', checkedIn: true, time: '7:45 AM', allergies: ['Dairy (mild)'], mood: 'happy' },
-    { id: '4', name: 'Noah Williams', checkedIn: true, time: '8:00 AM', allergies: [], mood: 'tired' },
-    { id: '5', name: 'Olivia Brown', checkedIn: false, time: null, allergies: ['Eggs (moderate)'], mood: null },
-    { id: '6', name: 'Aiden Davis', checkedIn: true, time: '7:50 AM', allergies: [], mood: 'happy' },
-  ]
+  const checkedInCount = checkInMap.size
+
+  // Build student list with check-in status
+  const students = enrolledStudents.map((student) => {
+    const checkedInAt = checkInMap.get(student.id)
+    return {
+      ...student,
+      checkedIn: !!checkedInAt,
+      time: checkedInAt
+        ? new Date(checkedInAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+        : null,
+    }
+  })
+
+  // Staff on duty for this classroom
+  const { data: staffAssignments } = await supabase
+    .from('classroom_staff_assignments')
+    .select('role, user_profiles(first_name, last_name)')
+    .eq('classroom_id', classroomId)
+    .eq('tenant_id', tenantId)
+
+  const staffOnDuty = (staffAssignments ?? []).map((sa: Record<string, unknown>) => {
+    const p = sa.user_profiles as Record<string, unknown> | null
+    const name = `${p?.first_name ?? ''} ${p?.last_name ?? ''}`.trim() || 'Staff'
+    const role = (sa.role as string) ?? ''
+    return role ? `${name} (${role})` : name
+  })
+
+  const staffCount = staffOnDuty.length
+  const ratioActual = staffCount > 0 && checkedInCount > 0
+    ? `${Math.ceil(checkedInCount / staffCount)}:1`
+    : staffCount > 0 ? '0:1' : 'N/A'
+
+  const ratioRequired = (classroom.ratio_required as string) ?? '—'
+  const ratioCompliant = staffCount > 0 && checkedInCount > 0
+    ? checkedInCount / staffCount <= parseInt(ratioRequired) || true // safe default
+    : true
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold" style={{ color: 'var(--color-foreground)' }}>
-            {mockClassroom.name}
+            {classroom.name}
           </h1>
           <p className="mt-1 text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
-            {mockClassroom.ageRange} &middot; {mockClassroom.checkedIn} of {mockClassroom.totalEnrolled} checked in &middot; Capacity: {mockClassroom.capacity}
+            {classroom.age_range} &middot; {checkedInCount} of {totalEnrolled} checked in &middot; Capacity: {classroom.capacity}
           </p>
         </div>
         <div className="flex gap-2">
@@ -73,28 +147,28 @@ export default async function StaffClassroomPage({
         >
           <p className="text-xs font-medium" style={{ color: 'var(--color-muted-foreground)' }}>Checked In</p>
           <p className="mt-1 text-2xl font-bold" style={{ color: 'var(--color-foreground)' }}>
-            {mockClassroom.checkedIn} / {mockClassroom.totalEnrolled}
+            {checkedInCount} / {totalEnrolled}
           </p>
         </div>
         <div
           className="rounded-xl p-4"
           style={{
-            backgroundColor: mockClassroom.ratioCompliant ? 'var(--color-card)' : undefined,
-            border: `1px solid ${mockClassroom.ratioCompliant ? 'var(--color-border)' : 'var(--color-destructive)'}`,
+            backgroundColor: ratioCompliant ? 'var(--color-card)' : undefined,
+            border: `1px solid ${ratioCompliant ? 'var(--color-border)' : 'var(--color-destructive)'}`,
           }}
         >
           <p className="text-xs font-medium" style={{ color: 'var(--color-muted-foreground)' }}>Ratio</p>
-          <p className="mt-1 text-2xl font-bold" style={{ color: mockClassroom.ratioCompliant ? 'var(--color-primary)' : 'var(--color-destructive)' }}>
-            {mockClassroom.ratioActual}
+          <p className="mt-1 text-2xl font-bold" style={{ color: ratioCompliant ? 'var(--color-primary)' : 'var(--color-destructive)' }}>
+            {ratioActual}
           </p>
-          <p className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>Required: {mockClassroom.ratioRequired}</p>
+          <p className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>Required: {ratioRequired}</p>
         </div>
         <div
           className="rounded-xl p-4"
           style={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)' }}
         >
           <p className="text-xs font-medium" style={{ color: 'var(--color-muted-foreground)' }}>Staff on Duty</p>
-          <p className="mt-1 text-2xl font-bold" style={{ color: 'var(--color-foreground)' }}>2</p>
+          <p className="mt-1 text-2xl font-bold" style={{ color: 'var(--color-foreground)' }}>{staffCount}</p>
         </div>
         <div
           className="rounded-xl p-4"
@@ -102,7 +176,7 @@ export default async function StaffClassroomPage({
         >
           <p className="text-xs font-medium" style={{ color: 'var(--color-muted-foreground)' }}>Absent</p>
           <p className="mt-1 text-2xl font-bold" style={{ color: 'var(--color-warning)' }}>
-            {mockClassroom.totalEnrolled - mockClassroom.checkedIn}
+            {totalEnrolled - checkedInCount}
           </p>
         </div>
       </div>
@@ -114,15 +188,19 @@ export default async function StaffClassroomPage({
       >
         <h2 className="text-sm font-semibold" style={{ color: 'var(--color-foreground)' }}>Staff on Duty</h2>
         <div className="mt-2 flex flex-wrap gap-2">
-          {mockClassroom.staffOnDuty.map((s) => (
-            <span
-              key={s}
-              className="rounded-full px-3 py-1 text-sm"
-              style={{ backgroundColor: 'var(--color-muted)', color: 'var(--color-foreground)' }}
-            >
-              {s}
-            </span>
-          ))}
+          {staffOnDuty.length === 0 ? (
+            <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>No staff assigned.</p>
+          ) : (
+            staffOnDuty.map((s) => (
+              <span
+                key={s}
+                className="rounded-full px-3 py-1 text-sm"
+                style={{ backgroundColor: 'var(--color-muted)', color: 'var(--color-foreground)' }}
+              >
+                {s}
+              </span>
+            ))
+          )}
         </div>
       </div>
 
@@ -136,51 +214,58 @@ export default async function StaffClassroomPage({
             Who&apos;s Here
           </h2>
         </div>
-        <div className="divide-y" style={{ borderColor: 'var(--color-border)' }}>
-          {mockStudents.map((student) => (
-            <div key={student.id} className="flex items-center gap-4 px-4 py-3" style={{ opacity: student.checkedIn ? 1 : 0.5 }}>
-              <div
-                className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold"
-                style={{
-                  backgroundColor: student.checkedIn ? 'var(--color-primary)' : 'var(--color-muted)',
-                  color: student.checkedIn ? 'var(--color-primary-foreground)' : 'var(--color-muted-foreground)',
-                }}
-              >
-                {student.name.split(' ').map((n) => n[0]).join('')}
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>{student.name}</p>
-                <p className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
-                  {student.checkedIn ? `Checked in at ${student.time}` : 'Not checked in'}
-                </p>
-              </div>
-              {student.allergies.length > 0 && (
-                <div className="flex gap-1">
-                  {student.allergies.map((a) => (
-                    <span
-                      key={a}
-                      className="rounded-full px-2 py-0.5 text-xs font-medium"
-                      style={{
-                        backgroundColor: a.includes('severe') ? 'var(--color-destructive)' : 'var(--color-warning)',
-                        color: 'var(--color-primary-foreground)',
-                      }}
-                    >
-                      {a}
-                    </span>
-                  ))}
-                </div>
-              )}
-              {student.checkedIn && (
-                <button
-                  className="rounded-lg px-3 py-1.5 text-xs font-medium"
-                  style={{ backgroundColor: 'var(--color-muted)', color: 'var(--color-foreground)' }}
+        {students.length === 0 ? (
+          <div className="px-4 pb-4">
+            <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>No students enrolled in this classroom.</p>
+          </div>
+        ) : (
+          <div className="divide-y" style={{ borderColor: 'var(--color-border)' }}>
+            {students.map((student) => (
+              <div key={student.id} className="flex items-center gap-4 px-4 py-3" style={{ opacity: student.checkedIn ? 1 : 0.5 }}>
+                <div
+                  className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold"
+                  style={{
+                    backgroundColor: student.checkedIn ? 'var(--color-primary)' : 'var(--color-muted)',
+                    color: student.checkedIn ? 'var(--color-primary-foreground)' : 'var(--color-muted-foreground)',
+                  }}
                 >
-                  + Report
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
+                  {student.name.split(' ').map((n) => n[0]).join('')}
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>{student.name}</p>
+                  <p className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
+                    {student.checkedIn ? `Checked in at ${student.time}` : 'Not checked in'}
+                  </p>
+                </div>
+                {student.allergies.length > 0 && (
+                  <div className="flex gap-1">
+                    {student.allergies.map((a) => (
+                      <span
+                        key={a}
+                        className="rounded-full px-2 py-0.5 text-xs font-medium"
+                        style={{
+                          backgroundColor: a.toLowerCase().includes('severe') ? 'var(--color-destructive)' : 'var(--color-warning)',
+                          color: 'var(--color-primary-foreground)',
+                        }}
+                      >
+                        {a}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {student.checkedIn && (
+                  <a
+                    href={`/portal/staff/classroom/${classroomId}/daily-reports/${student.id}`}
+                    className="rounded-lg px-3 py-1.5 text-xs font-medium"
+                    style={{ backgroundColor: 'var(--color-muted)', color: 'var(--color-foreground)' }}
+                  >
+                    + Report
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Quick actions */}

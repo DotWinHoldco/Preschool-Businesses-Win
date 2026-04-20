@@ -1,6 +1,11 @@
 // @anchor: cca.daily-report.parent-view
 // Parent view of their child's daily reports — beautiful timeline.
+// Real Supabase queries replace placeholder data.
 
+import { headers } from 'next/headers'
+import { notFound } from 'next/navigation'
+import { getSession } from '@/lib/auth/session'
+import { createTenantAdminClient } from '@/lib/supabase/admin'
 import { ReportTimeline } from '@/components/portal/daily-reports/report-timeline'
 
 export default async function ParentDailyReportsPage({
@@ -10,56 +15,78 @@ export default async function ParentDailyReportsPage({
 }) {
   const { studentId } = await params
 
-  // TODO: Fetch student info and published daily reports from Supabase
-  const student = { id: studentId, name: 'Sophia' }
-  const today = new Date().toISOString().split('T')[0]
+  const headerStore = await headers()
+  const tenantId = headerStore.get('x-tenant-id')
+  if (!tenantId) notFound()
 
-  // Sample published entries (would come from Supabase)
-  const entries = [
-    {
-      id: '1',
-      entry_type: 'meal',
-      timestamp: `${today}T08:30:00Z`,
-      data: {
-        meal_type: 'breakfast',
-        items_offered: ['Oatmeal', 'Banana', 'Milk'],
-        amount_eaten: 'all',
-      },
-    },
-    {
-      id: '2',
-      entry_type: 'activity',
-      timestamp: `${today}T09:15:00Z`,
-      data: {
-        activity_name: 'Circle Time',
-        description: 'We sang the alphabet song and counted to 20!',
-        engagement_level: 'high',
-        photo_paths: [],
-      },
-    },
-    {
-      id: '3',
-      entry_type: 'nap',
-      timestamp: `${today}T12:00:00Z`,
-      data: { started_at: `${today}T12:00:00Z`, ended_at: `${today}T14:00:00Z`, quality: 'restful' },
-    },
-    {
-      id: '4',
-      entry_type: 'mood',
-      timestamp: `${today}T15:00:00Z`,
-      data: { overall: 'happy', notes: 'Had a wonderful day!' },
-    },
-    {
-      id: '5',
-      entry_type: 'meal',
-      timestamp: `${today}T11:30:00Z`,
-      data: {
-        meal_type: 'lunch',
-        items_offered: ['Chicken nuggets', 'Green beans', 'Applesauce'],
-        amount_eaten: 'most',
-      },
-    },
-  ]
+  const session = await getSession()
+  if (!session) notFound()
+  const userId = session.user.id
+
+  const supabase = await createTenantAdminClient(tenantId)
+
+  // Verify student belongs to parent's family
+  const { data: memberships } = await supabase
+    .from('family_members')
+    .select('family_id')
+    .eq('user_id', userId)
+    .eq('tenant_id', tenantId)
+  const familyIds = memberships?.map(m => m.family_id) ?? []
+
+  if (familyIds.length === 0) notFound()
+
+  const { data: studentLink } = await supabase
+    .from('student_family_links')
+    .select('student_id')
+    .eq('student_id', studentId)
+    .in('family_id', familyIds)
+    .eq('tenant_id', tenantId)
+    .limit(1)
+    .single()
+
+  if (!studentLink) notFound()
+
+  // Fetch student name
+  const { data: student } = await supabase
+    .from('students')
+    .select('id, first_name')
+    .eq('id', studentId)
+    .eq('tenant_id', tenantId)
+    .is('deleted_at', null)
+    .single()
+
+  if (!student) notFound()
+
+  // Fetch published daily reports, most recent first
+  const { data: reports } = await supabase
+    .from('daily_reports')
+    .select('id, date, status')
+    .eq('student_id', studentId)
+    .eq('tenant_id', tenantId)
+    .eq('status', 'published')
+    .order('date', { ascending: false })
+    .limit(10)
+
+  const mostRecentReport = (reports ?? [])[0] ?? null
+  const today = new Date().toISOString().split('T')[0]
+  const reportDate = mostRecentReport?.date ?? today
+
+  // Fetch entries for the most recent report
+  let entries: { id: string; entry_type: string; timestamp: string; data: Record<string, unknown> }[] = []
+  if (mostRecentReport) {
+    const { data: reportEntries } = await supabase
+      .from('daily_report_entries')
+      .select('id, entry_type, timestamp, data')
+      .eq('report_id', mostRecentReport.id)
+      .eq('tenant_id', tenantId)
+      .order('timestamp', { ascending: true })
+    entries = (reportEntries ?? []) as typeof entries
+  }
+
+  // Past report dates (exclude the most recent one shown)
+  const pastReportDates = (reports ?? [])
+    .slice(1)
+    .map(r => new Date(r.date + 'T12:00:00'))
 
   return (
     <div className="flex flex-col gap-6 max-w-2xl mx-auto">
@@ -68,27 +95,36 @@ export default async function ParentDailyReportsPage({
           href={`/portal/parent/children/${studentId}`}
           className="text-sm text-[var(--color-primary)] hover:underline mb-2 inline-block"
         >
-          &larr; Back to {student.name}
+          &larr; Back to {student.first_name}
         </a>
       </div>
 
-      <ReportTimeline
-        studentName={student.name}
-        date={today}
-        entries={entries}
-        status="published"
-      />
+      {entries.length > 0 ? (
+        <ReportTimeline
+          studentName={student.first_name}
+          date={reportDate}
+          entries={entries}
+          status="published"
+        />
+      ) : (
+        <div className="rounded-[var(--radius,0.75rem)] border border-dashed border-[var(--color-border)] p-8 text-center">
+          <p className="text-lg font-semibold" style={{ color: 'var(--color-foreground)' }}>
+            No daily reports yet.
+          </p>
+          <p className="mt-1 text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
+            Daily reports will appear here once published by your child&apos;s teacher.
+          </p>
+        </div>
+      )}
 
       {/* Past reports navigation */}
-      <div className="border-t border-[var(--color-border)] pt-4">
-        <h3 className="text-sm font-semibold text-[var(--color-muted-foreground)] mb-3">
-          Past Reports
-        </h3>
-        <div className="flex flex-wrap gap-2">
-          {Array.from({ length: 5 }, (_, i) => {
-            const d = new Date()
-            d.setDate(d.getDate() - (i + 1))
-            return (
+      {pastReportDates.length > 0 && (
+        <div className="border-t border-[var(--color-border)] pt-4">
+          <h3 className="text-sm font-semibold text-[var(--color-muted-foreground)] mb-3">
+            Past Reports
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {pastReportDates.map((d, i) => (
               <button
                 key={i}
                 type="button"
@@ -96,10 +132,10 @@ export default async function ParentDailyReportsPage({
               >
                 {d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </button>
-            )
-          })}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

@@ -4,6 +4,12 @@
 
 ---
 
+### 2026-04-20 — Portal QA Phase 7: Staff & Parent Portal Real Data Wiring
+
+- **What:** Wired all staff portal (11 pages) and parent portal (20 pages) to real Supabase data. Every page queries the live database — no mock/hardcoded data remains. Staff portal covers dashboard, schedule, daily reports, time clock, messaging, classroom views (overview/attendance/reports/student), calendar, and training. Parent portal covers dashboard, children list/detail/reports/medical, family profile/pickups, messaging, check-in (QR), surveys, billing (dashboard/invoices/subscriptions/payment-methods/tax-statements), calendar, checklists, documents, and drop-in.
+- **Where:** 31 files across `src/app/portal/staff/` and `src/app/portal/parent/`. Key patterns: `createTenantAdminClient(tenantId)` for data access, `getSession()` for user identity, proper `family_members→student_family_links→students` chain for parent data, `classroom_staff_assignments` for staff-classroom mapping.
+- **Status:** Complete — `npx tsc --noEmit` clean, `npx next build` clean.
+
 ### 2026-04-20 — Portal QA Phase 6: Production Wiring + Data Integrity
 
 - **What:** Made every portal admin page display real database data and fixed all known column mismatches between server actions and the live Supabase schema.

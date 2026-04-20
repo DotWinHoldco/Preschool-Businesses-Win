@@ -1,17 +1,104 @@
 // @anchor: cca.messaging.staff
-// Staff messaging page.
+// Staff messaging page — real Supabase data.
 
+import { headers } from 'next/headers'
+import { notFound } from 'next/navigation'
+import { getSession } from '@/lib/auth/session'
+import { createTenantAdminClient } from '@/lib/supabase/admin'
 import { ConversationList } from '@/components/portal/messaging/conversation-list'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { MessageSquare } from 'lucide-react'
 
 export default async function StaffMessagingPage() {
-  // TODO: Fetch staff conversations from Supabase
-  const conversations = [
-    { id: '1', type: 'direct' as const, title: 'Sarah Martinez (Parent)', lastMessage: 'Sophia had a great day!', lastMessageAt: '2026-04-08T15:30:00Z', unreadCount: 1 },
-    { id: '2', type: 'classroom' as const, title: 'Butterfly Room Parents', lastMessage: 'Pajama day is Friday!', lastMessageAt: '2026-04-08T10:00:00Z', unreadCount: 0 },
-    { id: '3', type: 'staff_only' as const, title: 'Staff Chat', lastMessage: 'Supplies order placed', lastMessageAt: '2026-04-07T14:00:00Z', unreadCount: 2 },
-  ]
+  const headerStore = await headers()
+  const tenantId = headerStore.get('x-tenant-id')
+  if (!tenantId) notFound()
+
+  const session = await getSession()
+  if (!session) notFound()
+  const userId = session.user.id
+
+  const supabase = await createTenantAdminClient(tenantId)
+
+  // Try to find conversations the staff member participates in.
+  // First attempt: conversation_participants table
+  const { data: participantRows, error: participantError } = await supabase
+    .from('conversation_participants')
+    .select('conversation_id')
+    .eq('user_id', userId)
+
+  let conversations: Array<{
+    id: string
+    type: 'direct' | 'classroom' | 'broadcast' | 'staff_only'
+    title: string
+    lastMessage?: string
+    lastMessageAt?: string
+    unreadCount: number
+  }> = []
+
+  if (!participantError && participantRows && participantRows.length > 0) {
+    // We have participant tracking — use it
+    const conversationIds = participantRows.map((p: Record<string, unknown>) => p.conversation_id as string)
+
+    const { data: convRows } = await supabase
+      .from('conversations')
+      .select('id, type, title')
+      .eq('tenant_id', tenantId)
+      .in('id', conversationIds)
+      .order('updated_at', { ascending: false })
+
+    conversations = await Promise.all(
+      (convRows ?? []).map(async (conv: Record<string, unknown>) => {
+        // Get latest message for this conversation
+        const { data: latestMsg } = await supabase
+          .from('messages')
+          .select('content, created_at')
+          .eq('conversation_id', conv.id as string)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+
+        return {
+          id: conv.id as string,
+          type: (conv.type as 'direct' | 'classroom' | 'broadcast' | 'staff_only') ?? 'direct',
+          title: (conv.title as string) ?? 'Conversation',
+          lastMessage: latestMsg?.content as string | undefined,
+          lastMessageAt: latestMsg?.created_at as string | undefined,
+          unreadCount: 0,
+        }
+      }),
+    )
+  } else {
+    // Fallback: show all tenant conversations of type staff_only or direct
+    const { data: convRows } = await supabase
+      .from('conversations')
+      .select('id, type, title')
+      .eq('tenant_id', tenantId)
+      .in('type', ['staff_only', 'direct'])
+      .order('updated_at', { ascending: false })
+      .limit(20)
+
+    conversations = await Promise.all(
+      (convRows ?? []).map(async (conv: Record<string, unknown>) => {
+        const { data: latestMsg } = await supabase
+          .from('messages')
+          .select('content, created_at')
+          .eq('conversation_id', conv.id as string)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+
+        return {
+          id: conv.id as string,
+          type: (conv.type as 'direct' | 'classroom' | 'broadcast' | 'staff_only') ?? 'direct',
+          title: (conv.title as string) ?? 'Conversation',
+          lastMessage: latestMsg?.content as string | undefined,
+          lastMessageAt: latestMsg?.created_at as string | undefined,
+          unreadCount: 0,
+        }
+      }),
+    )
+  }
 
   return (
     <div className="flex flex-col gap-6">

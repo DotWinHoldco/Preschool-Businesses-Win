@@ -1,17 +1,102 @@
 // @anchor: cca.messaging.parent
 // Parent messaging page.
+// Real Supabase queries replace placeholder data.
 
+import { headers } from 'next/headers'
+import { notFound } from 'next/navigation'
+import { getSession } from '@/lib/auth/session'
+import { createTenantAdminClient } from '@/lib/supabase/admin'
 import { ConversationList } from '@/components/portal/messaging/conversation-list'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { MessageSquare } from 'lucide-react'
 
 export default async function ParentMessagingPage() {
-  // TODO: Fetch parent conversations from Supabase
-  const conversations = [
-    { id: '1', type: 'direct' as const, title: 'Ms. Smith (Lead Teacher)', lastMessage: 'Sophia had a wonderful day today!', lastMessageAt: '2026-04-08T15:30:00Z', unreadCount: 1 },
-    { id: '2', type: 'classroom' as const, title: 'Butterfly Room', lastMessage: 'Pajama day is Friday!', lastMessageAt: '2026-04-08T10:00:00Z', unreadCount: 0 },
-    { id: '3', type: 'broadcast' as const, title: 'School Announcement', lastMessage: 'Spring Break April 14-18', lastMessageAt: '2026-04-07T16:00:00Z', unreadCount: 0 },
-  ]
+  const headerStore = await headers()
+  const tenantId = headerStore.get('x-tenant-id')
+  if (!tenantId) notFound()
+
+  const session = await getSession()
+  if (!session) notFound()
+  const userId = session.user.id
+
+  const supabase = await createTenantAdminClient(tenantId)
+
+  // Get conversations where this user is a member
+  const { data: memberRows } = await supabase
+    .from('conversation_members')
+    .select('conversation_id, last_read_at')
+    .eq('user_id', userId)
+    .eq('tenant_id', tenantId)
+
+  const conversationIds = (memberRows ?? []).map(m => m.conversation_id)
+  const lastReadMap = new Map((memberRows ?? []).map(m => [m.conversation_id, m.last_read_at]))
+
+  // Fetch conversation details
+  const { data: conversationsRaw } = conversationIds.length > 0
+    ? await supabase
+        .from('conversations')
+        .select('id, type, title, updated_at')
+        .in('id', conversationIds)
+        .eq('tenant_id', tenantId)
+        .order('updated_at', { ascending: false })
+    : { data: [] }
+
+  // Get latest message per conversation
+  const conversations: {
+    id: string
+    type: 'direct' | 'classroom' | 'broadcast' | 'staff_only'
+    title: string
+    lastMessage?: string
+    lastMessageAt?: string
+    unreadCount: number
+  }[] = []
+
+  for (const conv of conversationsRaw ?? []) {
+    const { data: latestMessages } = await supabase
+      .from('messages')
+      .select('body, created_at')
+      .eq('conversation_id', conv.id)
+      .eq('tenant_id', tenantId)
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false })
+      .limit(1)
+
+    const latestMsg = (latestMessages ?? [])[0]
+    const lastReadAt = lastReadMap.get(conv.id)
+
+    // Count unread messages
+    let unreadCount = 0
+    if (lastReadAt) {
+      const { count } = await supabase
+        .from('messages')
+        .select('id', { count: 'exact', head: true })
+        .eq('conversation_id', conv.id)
+        .eq('tenant_id', tenantId)
+        .is('deleted_at', null)
+        .gt('created_at', lastReadAt)
+        .neq('sender_id', userId)
+      unreadCount = count ?? 0
+    } else if (latestMsg) {
+      // No last_read_at means all messages are unread
+      const { count } = await supabase
+        .from('messages')
+        .select('id', { count: 'exact', head: true })
+        .eq('conversation_id', conv.id)
+        .eq('tenant_id', tenantId)
+        .is('deleted_at', null)
+        .neq('sender_id', userId)
+      unreadCount = count ?? 0
+    }
+
+    conversations.push({
+      id: conv.id,
+      type: conv.type as 'direct' | 'classroom' | 'broadcast' | 'staff_only',
+      title: conv.title ?? 'Conversation',
+      lastMessage: latestMsg?.body,
+      lastMessageAt: latestMsg?.created_at,
+      unreadCount,
+    })
+  }
 
   return (
     <div className="flex flex-col gap-6">
