@@ -4,6 +4,15 @@
 
 ---
 
+### 2026-04-20 — Portal QA Phase 6: Production Wiring + Data Integrity
+
+- **What:** Made every portal admin page display real database data and fixed all known column mismatches between server actions and the live Supabase schema.
+- **Bug fixes:** (1) `audit.ts` used `before`/`after` columns — DB has `before_data`/`after_data` (silent failure on every audit write). (2) 52 direct `audit_log` inserts across 30 action files had the same `before`/`after` → `before_data`/`after_data` mismatch. (3) Newsfeed schema/action/component used `title`/`body`/`audience` — DB has `content`/`scope`/`post_type`. Scope enum `all_parents`/`staff` → `school_wide`/`classroom`. (4) `create-staff` inserted names into `staff_profiles` — names live in `user_profiles`. Rewrote to auth→user_profiles→memberships→staff_profiles. (5) `attendance_amendments` had same `before`/`after` column bug + missing `amended_by`. (6) `create-applicant-account` skipped `user_profiles` row creation.
+- **Pages wired (23):** dashboard, staff list/detail/payroll, billing, attendance, calendar, messaging, newsfeed, audit-log, analytics (main + financial/staff/compliance/reports), documents, surveys detail, cameras, emergency, compliance, checklists, training, doors (honest empty state).
+- **Seeded:** 35+ tables with exactly 1 "Test" row each, all check constraints verified against live DB.
+- **Where:** 60+ files across `src/app/portal/admin/`, `src/lib/actions/`, `src/lib/schemas/`, `src/components/portal/`
+- **Status:** Complete — `npx tsc --noEmit` clean, `npx next build` clean.
+
 ### 2026-04-20 — Portal QA Phases 3–5: CTAs, Stub Pages, Settings
 
 - **What (Phase 3):** Wired dead CTAs across 10 areas: student/family search filters, carline release, subsidies enroll/agency/claims dialogs, billing invoice generation, expenses add/export, leads add dialog, food program menu add/save with toast, messaging broadcast + conversation selection, payroll approve/export CSV.
