@@ -64,7 +64,7 @@ export async function scheduleTour(input: ScheduleTourInput): Promise<ScheduleTo
     action: 'lead.tour.scheduled',
     entity_type: 'tour',
     entity_id: tour.id,
-    after: data,
+    after_data: data,
   })
 
   return { ok: true, id: tour.id }
@@ -123,7 +123,7 @@ export async function completeTour(input: CompleteTourInput): Promise<ScheduleTo
     action: 'lead.tour.completed',
     entity_type: 'tour',
     entity_id: data.tour_id,
-    after: data,
+    after_data: data,
   })
 
   return { ok: true, id: data.tour_id }

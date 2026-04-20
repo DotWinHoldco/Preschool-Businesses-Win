@@ -66,7 +66,7 @@ export async function createFamily(input: CreateFamilyInput): Promise<CreateFami
     action: 'create',
     entity_type: 'family',
     entity_id: family.id,
-    after: data as unknown as Record<string, unknown>,
+    after_data: data as unknown as Record<string, unknown>,
   })
 
   return { ok: true, familyId: family.id }

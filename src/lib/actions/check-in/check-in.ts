@@ -156,7 +156,7 @@ export async function performCheckIn(
     action: 'check_in',
     entity_type: 'check_in',
     entity_id: checkIn.id,
-    after: {
+    after_data: {
       student_id: data.student_id,
       method: data.method,
       health_screening_passed: healthPassed,

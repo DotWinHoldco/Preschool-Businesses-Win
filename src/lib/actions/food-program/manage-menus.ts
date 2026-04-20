@@ -88,7 +88,7 @@ export async function createMealMenu(input: CreateMealMenuInput): Promise<Manage
     action: 'food_program.menu.created',
     entity_type: 'meal_menu',
     entity_id: menu.id,
-    after: data,
+    after_data: data,
   })
 
   return { ok: true, id: menu.id, warnings: warnings.length > 0 ? warnings : undefined }
@@ -131,7 +131,7 @@ export async function updateMealMenu(input: UpdateMealMenuInput): Promise<Manage
     action: 'food_program.menu.updated',
     entity_type: 'meal_menu',
     entity_id: id,
-    after: data,
+    after_data: data,
   })
 
   return { ok: true, id, warnings: warnings.length > 0 ? warnings : undefined }

@@ -73,8 +73,8 @@ export async function updateOverview(
     action: 'update',
     entity_type: 'student',
     entity_id: data.id,
-    before: before as unknown as Record<string, unknown>,
-    after: data as unknown as Record<string, unknown>,
+    before_data: before as unknown as Record<string, unknown>,
+    after_data: data as unknown as Record<string, unknown>,
   })
 
   revalidatePath(`/portal/admin/students/${data.id}`)

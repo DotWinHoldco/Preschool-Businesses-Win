@@ -60,7 +60,7 @@ export async function createFamilySubsidy(input: CreateFamilySubsidyInput): Prom
     action: 'subsidy.family.created',
     entity_type: 'family_subsidy',
     entity_id: subsidy.id,
-    after: data,
+    after_data: data,
   })
 
   return { ok: true, id: subsidy.id }
@@ -102,8 +102,8 @@ export async function updateFamilySubsidy(input: UpdateFamilySubsidyInput): Prom
     action: 'subsidy.family.updated',
     entity_type: 'family_subsidy',
     entity_id: id,
-    before,
-    after: data,
+    before_data: before,
+    after_data: data,
   })
 
   return { ok: true, id }

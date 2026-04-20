@@ -67,7 +67,7 @@ export async function sendFollowUp(input: SendFollowUpInput): Promise<SendFollow
     action: 'lead.follow_up.sent',
     entity_type: 'enrollment_lead',
     entity_id: data.lead_id,
-    after: { channel: data.channel, subject: data.subject },
+    after_data: { channel: data.channel, subject: data.subject },
   })
 
   return { ok: true }

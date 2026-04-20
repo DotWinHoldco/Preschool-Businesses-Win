@@ -68,7 +68,7 @@ export async function createClassroom(
     action: 'create',
     entity_type: 'classroom',
     entity_id: classroom.id,
-    after: data as unknown as Record<string, unknown>,
+    after_data: data as unknown as Record<string, unknown>,
   })
 
   return { ok: true, classroomId: classroom.id }

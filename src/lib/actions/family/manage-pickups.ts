@@ -74,7 +74,7 @@ export async function addAuthorizedPickup(
     action: 'create',
     entity_type: 'authorized_pickup',
     entity_id: pickup.id,
-    after: data as unknown as Record<string, unknown>,
+    after_data: data as unknown as Record<string, unknown>,
   })
 
   return { ok: true, pickupId: pickup.id }
@@ -132,8 +132,8 @@ export async function updateAuthorizedPickup(
     action: 'update',
     entity_type: 'authorized_pickup',
     entity_id: data.id,
-    before: before as unknown as Record<string, unknown>,
-    after: data as unknown as Record<string, unknown>,
+    before_data: before as unknown as Record<string, unknown>,
+    after_data: data as unknown as Record<string, unknown>,
   })
 
   return { ok: true, pickupId: data.id }
@@ -184,7 +184,7 @@ export async function removeAuthorizedPickup(
     action: 'delete',
     entity_type: 'authorized_pickup',
     entity_id: input.id,
-    before: before as unknown as Record<string, unknown>,
+    before_data: before as unknown as Record<string, unknown>,
   })
 
   return { ok: true }

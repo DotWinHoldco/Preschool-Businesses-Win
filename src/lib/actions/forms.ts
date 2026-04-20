@@ -53,7 +53,7 @@ export async function createForm(input: CreateFormInput): Promise<ActionResult> 
 
   await supabase.from('audit_log').insert({
     tenant_id: tenantId, actor_id: actorId, action: 'create',
-    entity_type: 'form', entity_id: form.id, after: parsed.data,
+    entity_type: 'form', entity_id: form.id, after_data: parsed.data,
   })
 
   return { ok: true, id: form.id, slug: form.slug }
@@ -81,7 +81,7 @@ export async function updateForm(input: UpdateFormInput): Promise<ActionResult> 
 
   await supabase.from('audit_log').insert({
     tenant_id: tenantId, actor_id: actorId, action: 'update',
-    entity_type: 'form', entity_id: id, after: updates,
+    entity_type: 'form', entity_id: id, after_data: updates,
   })
 
   return { ok: true, id }
@@ -125,7 +125,7 @@ export async function createFormSection(input: {
     action: 'form.section.create',
     entity_type: 'form_section',
     entity_id: data.id,
-    after: input,
+    after_data: input,
   })
 
   return { ok: true, id: data.id as string }
@@ -155,7 +155,7 @@ export async function updateFormSection(
     action: 'form.section.update',
     entity_type: 'form_section',
     entity_id: id,
-    after: updates,
+    after_data: updates,
   })
 
   return { ok: true, id }
@@ -203,7 +203,7 @@ export async function createFormInstance(input: SpawnFormInstanceInput): Promise
     await supabase.from('audit_log').insert({
       tenant_id: tenantId, actor_id: actorId, action: 'form.spawn_instance',
       entity_type: 'form', entity_id: result.id,
-      after: { source_form_id: parsed.data.source_form_id, instance_label: parsed.data.instance_label },
+      after_data: { source_form_id: parsed.data.source_form_id, instance_label: parsed.data.instance_label },
     })
     return { ok: true, id: result.id, slug: result.slug }
   } catch (err) {
@@ -344,7 +344,7 @@ export async function revertSystemForm(
     action: 'form.revert',
     entity_type: 'form',
     entity_id: formId,
-    after: { system_form_key: form.system_form_key, reverted_at: new Date().toISOString() },
+    after_data: { system_form_key: form.system_form_key, reverted_at: new Date().toISOString() },
   })
 
   return { ok: true, id: formId }

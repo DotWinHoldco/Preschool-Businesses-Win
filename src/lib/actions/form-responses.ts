@@ -102,7 +102,7 @@ export async function submitFormResponse(input: SubmitFormResponseInput): Promis
     action: 'form_response_submitted',
     entity_type: 'form_response',
     entity_id: response.id,
-    after: { form_id: form.id, respondent_email: parsed.data.respondent_email },
+    after_data: { form_id: form.id, respondent_email: parsed.data.respondent_email },
   })
 
   return { ok: true, responseId: response.id }

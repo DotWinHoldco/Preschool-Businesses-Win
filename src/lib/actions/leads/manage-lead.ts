@@ -60,8 +60,8 @@ export async function updateLead(input: UpdateLeadInput): Promise<ManageLeadStat
     action: 'lead.updated',
     entity_type: 'enrollment_lead',
     entity_id: id,
-    before,
-    after: data,
+    before_data: before,
+    after_data: data,
   })
 
   return { ok: true }

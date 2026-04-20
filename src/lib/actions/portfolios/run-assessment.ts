@@ -77,7 +77,7 @@ export async function runAssessment(
     action: 'portfolio.assessment.completed',
     entity_type: 'developmental_assessment',
     entity_id: assessment.id,
-    after: { student_id: data.student_id, ratings_count: data.ratings.length },
+    after_data: { student_id: data.student_id, ratings_count: data.ratings.length },
   })
 
   return { ok: true, id: assessment.id }

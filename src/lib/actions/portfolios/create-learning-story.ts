@@ -74,7 +74,7 @@ export async function createLearningStory(
     action: 'portfolio.learning_story.created',
     entity_type: 'portfolio_entry',
     entity_id: entry.id,
-    after: data,
+    after_data: data,
   })
 
   return { ok: true, id: entry.id }

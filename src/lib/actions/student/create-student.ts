@@ -86,7 +86,7 @@ export async function createStudent(input: CreateStudentInput): Promise<CreateSt
     action: 'create',
     entity_type: 'student',
     entity_id: student.id,
-    after: data as unknown as Record<string, unknown>,
+    after_data: data as unknown as Record<string, unknown>,
   })
 
   return { ok: true, studentId: student.id }

@@ -89,7 +89,7 @@ export async function bulkRecordMealService(input: BulkRecordMealServiceInput): 
     action: 'food_program.meals.bulk_recorded',
     entity_type: 'meal_service_record',
     entity_id: data.classroom_id,
-    after: { date: data.date, meal_type: data.meal_type, count: rows.length },
+    after_data: { date: data.date, meal_type: data.meal_type, count: rows.length },
   })
 
   return { ok: true, count: rows.length }

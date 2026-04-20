@@ -56,7 +56,7 @@ export async function createExpense(input: CreateExpenseInput): Promise<CreateEx
     action: 'expense.created',
     entity_type: 'expense',
     entity_id: expense.id,
-    after: { vendor: data.vendor, amount_cents: data.amount_cents, category_id: data.category_id },
+    after_data: { vendor: data.vendor, amount_cents: data.amount_cents, category_id: data.category_id },
   })
 
   return { ok: true, id: expense.id }

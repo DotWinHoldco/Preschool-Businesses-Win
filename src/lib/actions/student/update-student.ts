@@ -114,8 +114,8 @@ export async function updateStudent(input: UpdateStudentInput): Promise<UpdateSt
     action: 'update',
     entity_type: 'student',
     entity_id: data.id,
-    before: before as unknown as Record<string, unknown>,
-    after: data as unknown as Record<string, unknown>,
+    before_data: before as unknown as Record<string, unknown>,
+    after_data: data as unknown as Record<string, unknown>,
   })
 
   return { ok: true }

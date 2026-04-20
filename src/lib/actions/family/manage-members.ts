@@ -73,7 +73,7 @@ export async function addFamilyMember(input: CreateFamilyMemberInput): Promise<M
     action: 'create',
     entity_type: 'family_member',
     entity_id: member.id,
-    after: data as unknown as Record<string, unknown>,
+    after_data: data as unknown as Record<string, unknown>,
   })
 
   return { ok: true, memberId: member.id }
@@ -124,7 +124,7 @@ export async function removeFamilyMember(
     action: 'delete',
     entity_type: 'family_member',
     entity_id: input.id,
-    before: before as unknown as Record<string, unknown>,
+    before_data: before as unknown as Record<string, unknown>,
   })
 
   return { ok: true }

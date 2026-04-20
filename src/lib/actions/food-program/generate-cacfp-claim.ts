@@ -129,7 +129,7 @@ export async function generateCACFPClaim(
     action: 'food_program.cacfp_claim.generated',
     entity_type: 'cacfp_claim',
     entity_id: claim.id,
-    after: { month: data.claim_month, year: data.claim_year, total_meals: totalMealsClaimed },
+    after_data: { month: data.claim_month, year: data.claim_year, total_meals: totalMealsClaimed },
   })
 
   return {

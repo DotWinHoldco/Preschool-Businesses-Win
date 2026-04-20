@@ -141,8 +141,8 @@ export async function processApplication(
     action: `enrollment.application.${data.action}`,
     entity_type: 'enrollment_application',
     entity_id: data.application_id,
-    before: { status: application.triage_status },
-    after: { status: newStatus, notes: data.notes },
+    before_data: { status: application.triage_status },
+    after_data: { status: newStatus, notes: data.notes },
   })
 
   return { ok: true, student_id: studentId, family_id: familyId }

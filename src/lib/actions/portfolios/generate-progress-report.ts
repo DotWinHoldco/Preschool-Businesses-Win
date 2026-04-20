@@ -114,7 +114,7 @@ export async function generateProgressReport(
     action: 'portfolio.progress_report.generated',
     entity_type: 'student',
     entity_id: data.student_id,
-    after: { period_start: data.period_start, period_end: data.period_end },
+    after_data: { period_start: data.period_start, period_end: data.period_end },
   })
 
   return {

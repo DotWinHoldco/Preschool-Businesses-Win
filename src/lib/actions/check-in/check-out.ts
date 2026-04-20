@@ -64,7 +64,7 @@ export async function performCheckOut(
       action: 'unauthorized_pickup_attempt',
       entity_type: 'check_out',
       entity_id: data.student_id,
-      after: {
+      after_data: {
         student_id: data.student_id,
         pickup_person_name: data.pickup_person_name,
         pickup_person_relationship: data.pickup_person_relationship,
@@ -171,7 +171,7 @@ export async function performCheckOut(
     action: 'check_out',
     entity_type: 'check_out',
     entity_id: checkOut.id,
-    after: {
+    after_data: {
       student_id: data.student_id,
       pickup_person_name: data.pickup_person_name,
       pickup_person_relationship: data.pickup_person_relationship,

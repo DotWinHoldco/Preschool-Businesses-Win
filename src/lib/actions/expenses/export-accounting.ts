@@ -79,7 +79,7 @@ export async function exportAccounting(input: ExportAccountingInput): Promise<Ex
     action: 'expense.accounting.exported',
     entity_type: 'accounting_export',
     entity_id: exportRecord?.id ?? '',
-    after: { export_type: data.export_type, period_start: data.period_start, period_end: data.period_end, row_count: rows.length },
+    after_data: { export_type: data.export_type, period_start: data.period_start, period_end: data.period_end, row_count: rows.length },
   })
 
   return { ok: true, id: exportRecord?.id, csv, row_count: rows.length }

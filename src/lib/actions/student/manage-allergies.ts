@@ -73,7 +73,7 @@ export async function addAllergy(input: CreateAllergyInput): Promise<AllergyResu
     action: 'create',
     entity_type: 'student_allergy',
     entity_id: allergy.id,
-    after: data as unknown as Record<string, unknown>,
+    after_data: data as unknown as Record<string, unknown>,
   })
 
   return { ok: true, allergyId: allergy.id }
@@ -129,8 +129,8 @@ export async function updateAllergy(input: UpdateAllergyInput): Promise<AllergyR
     action: 'update',
     entity_type: 'student_allergy',
     entity_id: data.id,
-    before: before as unknown as Record<string, unknown>,
-    after: data as unknown as Record<string, unknown>,
+    before_data: before as unknown as Record<string, unknown>,
+    after_data: data as unknown as Record<string, unknown>,
   })
 
   return { ok: true, allergyId: data.id }
@@ -181,7 +181,7 @@ export async function removeAllergy(
     action: 'delete',
     entity_type: 'student_allergy',
     entity_id: input.id,
-    before: before as unknown as Record<string, unknown>,
+    before_data: before as unknown as Record<string, unknown>,
   })
 
   return { ok: true }

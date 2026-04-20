@@ -118,7 +118,7 @@ export async function generateSubsidyClaim(
     action: 'subsidy.claim.generated',
     entity_type: 'subsidy_claim',
     entity_id: claim.id,
-    after: { agency_id: data.agency_id, total_claimed_cents: totalClaimedCents, lines: claimLines.length },
+    after_data: { agency_id: data.agency_id, total_claimed_cents: totalClaimedCents, lines: claimLines.length },
   })
 
   return {

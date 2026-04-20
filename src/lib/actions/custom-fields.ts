@@ -70,7 +70,7 @@ export async function createCustomField(input: CreateCustomFieldInput): Promise<
     action: 'create',
     entity_type: 'custom_field',
     entity_id: field.id,
-    after: data,
+    after_data: data,
   })
 
   return { ok: true, id: field.id }
@@ -109,7 +109,7 @@ export async function updateCustomField(input: UpdateCustomFieldInput): Promise<
 
   await supabase.from('audit_log').insert({
     tenant_id: tenantId, actor_id: actorId, action: 'update',
-    entity_type: 'custom_field', entity_id: id, after: updates,
+    entity_type: 'custom_field', entity_id: id, after_data: updates,
   })
 
   return { ok: true, id }
@@ -182,7 +182,7 @@ export async function setCustomFieldValue(input: SetCustomFieldValueInput): Prom
   await supabase.from('audit_log').insert({
     tenant_id: tenantId, actor_id: actorId, action: 'set_custom_field_value',
     entity_type: parsed.data.entity_type, entity_id: parsed.data.entity_id,
-    after: { field_id: parsed.data.custom_field_id, value: v },
+    after_data: { field_id: parsed.data.custom_field_id, value: v },
   })
 
   return { ok: true }

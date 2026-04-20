@@ -95,7 +95,7 @@ export async function assignStudent(input: AssignStudentInput): Promise<RosterRe
     action: 'create',
     entity_type: 'student_classroom_assignment',
     entity_id: assignment.id,
-    after: data as unknown as Record<string, unknown>,
+    after_data: data as unknown as Record<string, unknown>,
   })
 
   return { ok: true, assignmentId: assignment.id }
@@ -147,8 +147,8 @@ export async function removeStudent(
     action: 'update',
     entity_type: 'student_classroom_assignment',
     entity_id: input.assignment_id,
-    before: before as unknown as Record<string, unknown>,
-    after: { assigned_to: new Date().toISOString() },
+    before_data: before as unknown as Record<string, unknown>,
+    after_data: { assigned_to: new Date().toISOString() },
   })
 
   return { ok: true }
@@ -200,7 +200,7 @@ export async function assignStaff(input: AssignStaffInput): Promise<RosterResult
     action: 'create',
     entity_type: 'classroom_staff_assignment',
     entity_id: assignment.id,
-    after: data as unknown as Record<string, unknown>,
+    after_data: data as unknown as Record<string, unknown>,
   })
 
   return { ok: true, assignmentId: assignment.id }
@@ -251,8 +251,8 @@ export async function removeStaff(
     action: 'update',
     entity_type: 'classroom_staff_assignment',
     entity_id: input.assignment_id,
-    before: before as unknown as Record<string, unknown>,
-    after: { assigned_to: new Date().toISOString() },
+    before_data: before as unknown as Record<string, unknown>,
+    after_data: { assigned_to: new Date().toISOString() },
   })
 
   return { ok: true }

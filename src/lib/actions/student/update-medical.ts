@@ -92,8 +92,8 @@ export async function updateMedical(
     action: 'update',
     entity_type: 'student_medical_profile',
     entity_id: data.student_id,
-    before: existing as unknown as Record<string, unknown> ?? null,
-    after: data as unknown as Record<string, unknown>,
+    before_data: existing as unknown as Record<string, unknown> ?? null,
+    after_data: data as unknown as Record<string, unknown>,
   })
 
   revalidatePath(`/portal/admin/students/${data.student_id}`)
