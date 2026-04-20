@@ -4,6 +4,14 @@
 
 ---
 
+### 2026-04-20 — Portal QA Phases 3–5: CTAs, Stub Pages, Settings
+
+- **What (Phase 3):** Wired dead CTAs across 10 areas: student/family search filters, carline release, subsidies enroll/agency/claims dialogs, billing invoice generation, expenses add/export, leads add dialog, food program menu add/save with toast, messaging broadcast + conversation selection, payroll approve/export CSV.
+- **What (Phase 4):** Built 10 stub pages into functional surfaces: Surveys (form list), Calendar (month grid + events), Documents (two-pane folder/file), Checklists (templates + runs), Training (staff × requirement matrix), Analytics (6 KPI cards + sub-routes), Doors (unlock/hold + event log), Cameras (tile grid + detail), Emergency (alert trigger + drills + contacts), Compliance (DFPS scorecard + renewals + inspections).
+- **What (Phase 5):** Replaced all hash anchors on settings index with real routes. Built 8 settings sub-pages: Profile, Notifications, Billing, Integrations, Features, Drop-in, Check-in/Kiosk, Data & Privacy. Each with working form + save confirmation. Danger zone wired with export + suspend-with-confirmation.
+- **Where:** 48 files across `src/app/portal/admin/` and `src/components/portal/`. Key new components: `calendar-client`, `documents-client`, `checklists-client`, `training-client`, `doors-client`, `cameras-client`, `emergency-client`, `compliance-client`, `danger-zone`. Settings sub-pages at `src/app/portal/admin/settings/{profile,notifications,billing,integrations,features,drop-in,check-in,privacy}/page.tsx`.
+- **Status:** Complete — `npx next build` passes, `npx tsc --noEmit` clean.
+
 ### 2026-04-20 — Portal QA Phase 2: Missing Admin CRUD Surfaces
 - **What:** Added CRUD surfaces across 7 areas: Staff (Add Staff form + server action), Student detail (edit dialog per section + server actions), Newsfeed (compose post dialog + DB migration 0055 + server action), Drop-in (3-tab layout: bookings/slots/rates with inline CRUD), Staff availability (add override form + calendar connection stubs), Curriculum (add lesson plan dialog, expandable rows), Portfolios (add entry dialog, expandable rows).
 - **Where:** `src/app/portal/admin/staff/` · `src/components/portal/students/student-edit-dialog.tsx` · `src/lib/actions/student/` · `src/components/portal/newsfeed/compose-post.tsx` · `src/lib/actions/newsfeed/create-post.ts` · `supabase/migrations/0055_newsfeed_posts.sql` · `src/components/portal/drop-in/drop-in-tabs.tsx` · `src/components/portal/appointments/availability-client.tsx` · `src/components/portal/admin-curriculum-client.tsx` · `src/components/portal/admin-portfolios-client.tsx`
