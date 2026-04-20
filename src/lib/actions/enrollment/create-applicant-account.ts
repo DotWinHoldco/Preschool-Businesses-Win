@@ -60,6 +60,13 @@ export async function createApplicantAccount(
 
   if (!userId) return {}
 
+  await supabase.from('user_profiles').upsert({
+    id: userId,
+    tenant_id: tenantId,
+    first_name: parentFirstName,
+    last_name: parentLastName,
+  }, { onConflict: 'id' })
+
   const { data: existingMembership } = await supabase
     .from('user_tenant_memberships')
     .select('id, role')
