@@ -54,19 +54,22 @@ export async function amendAttendance(
       ...(new_notes !== undefined && { notes: new_notes }),
     }
 
+    const actorId = await getActorId()
+
     // Insert amendment row
     const { data: amendment, error } = await supabase
       .from('attendance_amendments')
       .insert({
         tenant_id: tenantId,
         attendance_record_id,
+        amended_by: actorId,
         reason,
-        before: {
+        before_data: {
           status: record.status,
           hours_present: record.hours_present,
           notes: record.notes,
         },
-        after,
+        after_data: after,
         amended_at: new Date().toISOString(),
       })
       .select('id')
@@ -84,7 +87,6 @@ export async function amendAttendance(
         .eq('id', attendance_record_id)
     }
 
-    const actorId = await getActorId()
     await writeAudit(supabase, {
       tenantId,
       actorId,
