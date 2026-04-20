@@ -33,6 +33,10 @@ export interface MedicalProfileProps {
   profile: MedicalProfileData | null
   allergies: AllergyData[]
   className?: string
+  /** Optional slot for an edit button rendered next to the Allergies card title */
+  allergiesAction?: React.ReactNode
+  /** Optional slot for an edit button rendered next to the Medical Information card title */
+  medicalAction?: React.ReactNode
 }
 
 function InfoRow({
@@ -57,6 +61,8 @@ export function MedicalProfile({
   profile,
   allergies,
   className,
+  allergiesAction,
+  medicalAction,
 }: MedicalProfileProps) {
   const hasLifeThreatening = allergies.some(
     (a) => a.severity === 'life_threatening',
@@ -104,14 +110,17 @@ export function MedicalProfile({
       {/* Allergies */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            Allergies
-            {allergies.length > 0 && (
-              <Badge variant="danger" size="sm">
-                {allergies.length}
-              </Badge>
-            )}
-          </CardTitle>
+          <div className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2">
+              Allergies
+              {allergies.length > 0 && (
+                <Badge variant="danger" size="sm">
+                  {allergies.length}
+                </Badge>
+              )}
+            </CardTitle>
+            {allergiesAction}
+          </div>
         </CardHeader>
         <CardContent>
           {allergies.length === 0 ? (
@@ -165,7 +174,10 @@ export function MedicalProfile({
       {/* Medical info */}
       <Card>
         <CardHeader>
-          <CardTitle>Medical Information</CardTitle>
+          <div className="flex items-center gap-2">
+            <CardTitle>Medical Information</CardTitle>
+            {medicalAction}
+          </div>
         </CardHeader>
         <CardContent>
           {!profile ? (

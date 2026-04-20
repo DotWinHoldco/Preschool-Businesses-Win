@@ -1,9 +1,11 @@
 // @anchor: cca.staff.admin-list
 // Admin staff list with certification status.
 
+import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
 import { CertStatusBadge } from '@/components/portal/staff/cert-status-badge'
-import { Users } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Users, Plus } from 'lucide-react'
 
 export default async function AdminStaffPage() {
   // TODO: Fetch staff list with cert status from Supabase
@@ -53,12 +55,17 @@ export default async function AdminStaffPage() {
             {staffMembers.length} staff members
           </p>
         </div>
-        <a
-          href="/portal/admin/staff/payroll"
-          className="inline-flex items-center gap-2 rounded-[var(--radius,0.75rem)] bg-[var(--color-primary)] text-[var(--color-primary-foreground)] px-4 py-2 text-sm font-semibold min-h-[44px] hover:brightness-110 transition-all"
-        >
-          Payroll
-        </a>
+        <div className="flex items-center gap-3">
+          <Button asChild variant="secondary" size="sm">
+            <Link href="/portal/admin/staff/payroll">Payroll</Link>
+          </Button>
+          <Button asChild size="sm">
+            <Link href="/portal/admin/staff/new">
+              <Plus size={16} />
+              Add Staff
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="space-y-3">

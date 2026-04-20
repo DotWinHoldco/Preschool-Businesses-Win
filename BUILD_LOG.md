@@ -4,6 +4,11 @@
 
 ---
 
+### 2026-04-20 — Portal QA Phase 2: Missing Admin CRUD Surfaces
+- **What:** Added CRUD surfaces across 7 areas: Staff (Add Staff form + server action), Student detail (edit dialog per section + server actions), Newsfeed (compose post dialog + DB migration 0055 + server action), Drop-in (3-tab layout: bookings/slots/rates with inline CRUD), Staff availability (add override form + calendar connection stubs), Curriculum (add lesson plan dialog, expandable rows), Portfolios (add entry dialog, expandable rows).
+- **Where:** `src/app/portal/admin/staff/` · `src/components/portal/students/student-edit-dialog.tsx` · `src/lib/actions/student/` · `src/components/portal/newsfeed/compose-post.tsx` · `src/lib/actions/newsfeed/create-post.ts` · `supabase/migrations/0055_newsfeed_posts.sql` · `src/components/portal/drop-in/drop-in-tabs.tsx` · `src/components/portal/appointments/availability-client.tsx` · `src/components/portal/admin-curriculum-client.tsx` · `src/components/portal/admin-portfolios-client.tsx`
+- **Status:** Complete
+
 ### 2026-04-20 — Portal QA Phase 1: Shell & Nav
 - **What:** Wired topbar classroom dropdown to real DB data (removed hardcoded Butterfly/Sunshine placeholders), persists selection via cookie. Search input navigates to new search page on Enter. Bell links to new notifications page. User menu items link to new profile and notification preferences pages. Added `attendance_tracking` feature flag for CCA.
 - **Where:** `src/app/portal/layout.tsx` · `src/components/portal/topbar.tsx` · `src/components/portal/portal-shell.tsx` · `src/lib/actions/classroom/set-active.ts` · `src/app/portal/admin/search/page.tsx` · `src/app/portal/admin/notifications/` · `src/app/portal/admin/profile/` · `src/app/portal/admin/notification-preferences/page.tsx` · `src/lib/actions/notifications/mark-read.ts` · `src/lib/actions/profile/update-profile.ts` · `src/components/portal/profile/profile-form.tsx`

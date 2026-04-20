@@ -3,6 +3,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Newspaper, Heart, MessageSquare, Pin } from 'lucide-react'
+import { ComposePostButton } from '@/components/portal/newsfeed/compose-post'
 
 export default function AdminNewsfeedPage() {
   // TODO: Fetch newsfeed posts from Supabase
@@ -55,13 +56,16 @@ export default function AdminNewsfeedPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold" style={{ color: 'var(--color-foreground)' }}>
-          Newsfeed
-        </h1>
-        <p className="mt-1 text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
-          Manage school-wide and classroom announcements. Parents see posts for their child&apos;s classroom.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--color-foreground)' }}>
+            Newsfeed
+          </h1>
+          <p className="mt-1 text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
+            Manage school-wide and classroom announcements. Parents see posts for their child&apos;s classroom.
+          </p>
+        </div>
+        <ComposePostButton />
       </div>
 
       {/* Quick Stats */}

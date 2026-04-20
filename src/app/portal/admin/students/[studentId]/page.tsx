@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { MedicalProfile } from '@/components/portal/students/medical-profile'
 import { AllergyBadge } from '@/components/portal/students/allergy-badge'
+import { SectionEditButton } from '@/components/portal/students/section-edit-button'
 import type { AllergySeverity } from '@/components/portal/students/allergy-badge'
 import type { AllergyData, MedicalProfileData } from '@/components/portal/students/medical-profile'
 
@@ -105,6 +106,14 @@ export default async function StudentDetailPage({
     .eq('student_id', studentId)
     .eq('tenant_id', tenantId)
 
+  // Fetch classrooms for edit dialog
+  const { data: classrooms } = await supabase
+    .from('classrooms')
+    .select('id, name')
+    .eq('tenant_id', tenantId)
+    .eq('is_active', true)
+    .order('name')
+
   // Fetch entity notes
   const { data: notes } = await supabase
     .from('entity_notes')
@@ -126,6 +135,8 @@ export default async function StudentDetailPage({
       ? ((classroomAssignment as Record<string, unknown>).classrooms as { name: string }).name
       : null
     : null
+
+  const currentClassroomId = classroomAssignment?.classroom_id ?? null
 
   return (
     <div className="space-y-6">
@@ -205,7 +216,20 @@ export default async function StudentDetailPage({
           {/* Profile */}
           <Card>
             <CardHeader>
-              <CardTitle>Profile</CardTitle>
+              <div className="flex items-center gap-2">
+                <CardTitle>Profile</CardTitle>
+                <SectionEditButton
+                  section="overview"
+                  studentId={studentId}
+                  overview={{
+                    id: studentId,
+                    first_name: student.first_name,
+                    last_name: student.last_name,
+                    date_of_birth: student.date_of_birth,
+                    gender: student.gender ?? null,
+                  }}
+                />
+              </div>
             </CardHeader>
             <CardContent>
               <dl className="grid gap-3 sm:grid-cols-2">
@@ -259,6 +283,32 @@ export default async function StudentDetailPage({
               epipen_on_site: a.epipen_on_site ?? false,
               notes: a.notes,
             }))}
+            allergiesAction={
+              <SectionEditButton
+                section="allergies"
+                studentId={studentId}
+                allergies={(allergies ?? []).map((a) => ({
+                  id: a.id,
+                  allergen: a.allergen,
+                  severity: a.severity,
+                }))}
+              />
+            }
+            medicalAction={
+              <SectionEditButton
+                section="medical"
+                studentId={studentId}
+                medical={{
+                  student_id: studentId,
+                  blood_type: medicalProfile?.blood_type ?? null,
+                  primary_physician_name: medicalProfile?.primary_physician_name ?? null,
+                  primary_physician_phone: medicalProfile?.primary_physician_phone ?? null,
+                  insurance_provider: medicalProfile?.insurance_provider ?? null,
+                  insurance_policy_number: medicalProfile?.insurance_policy_number ?? null,
+                  special_needs_notes: medicalProfile?.special_needs_notes ?? null,
+                }}
+              />
+            }
           />
 
           {/* Immunizations */}

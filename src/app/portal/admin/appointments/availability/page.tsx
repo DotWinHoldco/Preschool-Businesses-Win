@@ -2,6 +2,7 @@
 
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { Clock } from 'lucide-react'
+import { AvailabilityClient } from '@/components/portal/appointments/availability-client'
 
 const DOW_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
@@ -32,6 +33,31 @@ export default async function AvailabilityPage() {
     byStaff.get(userId)!.push(row)
   }
 
+  const staffEntries = Array.from(byStaff.entries()).map(([userId, rows]) => ({
+    userId,
+    rows: rows.map((r) => ({
+      day: DOW_LABELS[r.day_of_week as number],
+      start: (r.start_time as string).slice(0, 5),
+      end: (r.end_time as string).slice(0, 5),
+    })),
+  }))
+
+  const overrideList = (overrides ?? []).map((o: Record<string, unknown>) => ({
+    id: o.id as string,
+    date: o.date as string,
+    isAvailable: o.is_available as boolean,
+    reason: (o.reason as string | null) ?? null,
+    userId: (o.user_id as string).slice(0, 8),
+  }))
+
+  const connectionList = (connections ?? []).map((c: Record<string, unknown>) => ({
+    id: c.id as string,
+    provider: c.provider as string,
+    calendarName: (c.calendar_name as string | null) ?? (c.calendar_id as string | null) ?? 'primary',
+    status: c.status as string,
+    lastSynced: c.last_synced_at ? new Date(c.last_synced_at as string).toLocaleString() : 'never',
+  }))
+
   return (
     <div className="space-y-6">
       <div>
@@ -44,85 +70,11 @@ export default async function AvailabilityPage() {
         </p>
       </div>
 
-      <div className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] p-6">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--color-muted-foreground)]">
-          Weekly Patterns
-        </h2>
-        {byStaff.size === 0 ? (
-          <div className="text-sm text-[var(--color-muted-foreground)]">
-            No staff availability configured yet. Use the setStaffAvailability server action to
-            define a recurring weekly schedule.
-          </div>
-        ) : (
-          <ul className="space-y-3">
-            {Array.from(byStaff.entries()).map(([userId, rows]) => (
-              <li key={userId} className="rounded-[var(--radius)] border border-[var(--color-border)] p-3">
-                <div className="mb-2 text-sm font-medium text-[var(--color-foreground)]">
-                  Staff {userId.slice(0, 8)}
-                </div>
-                <ul className="space-y-1 text-xs">
-                  {rows.map((r, i) => (
-                    <li key={i} className="text-[var(--color-muted-foreground)]">
-                      {DOW_LABELS[r.day_of_week as number]} · {(r.start_time as string).slice(0, 5)}–{(r.end_time as string).slice(0, 5)}
-                    </li>
-                  ))}
-                </ul>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      <div className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] p-6">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--color-muted-foreground)]">
-          Upcoming Overrides
-        </h2>
-        {overrides && overrides.length > 0 ? (
-          <ul className="space-y-2 text-sm">
-            {overrides.map((o: Record<string, unknown>) => (
-              <li key={o.id as string} className="flex items-center justify-between">
-                <span>
-                  {o.date as string} —{' '}
-                  {(o.is_available as boolean) ? 'Open' : 'Blocked'}
-                  {o.reason ? ` (${o.reason as string})` : ''}
-                </span>
-                <span className="text-xs text-[var(--color-muted-foreground)]">
-                  {(o.user_id as string).slice(0, 8)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div className="text-sm text-[var(--color-muted-foreground)]">
-            No overrides scheduled.
-          </div>
-        )}
-      </div>
-
-      <div className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] p-6">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--color-muted-foreground)]">
-          Calendar Connections
-        </h2>
-        {connections && connections.length > 0 ? (
-          <ul className="space-y-2 text-sm">
-            {connections.map((c: Record<string, unknown>) => (
-              <li key={c.id as string} className="flex items-center justify-between">
-                <span>
-                  {c.provider as string} — {(c.calendar_name as string | null) ?? (c.calendar_id as string | null) ?? 'primary'}
-                </span>
-                <span className="text-xs text-[var(--color-muted-foreground)]">
-                  {(c.status as string)} · last synced{' '}
-                  {c.last_synced_at ? new Date(c.last_synced_at as string).toLocaleString() : 'never'}
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div className="text-sm text-[var(--color-muted-foreground)]">
-            No calendars connected. Admins can connect Google, Outlook, or Apple CalDAV.
-          </div>
-        )}
-      </div>
+      <AvailabilityClient
+        staffEntries={staffEntries}
+        overrides={overrideList}
+        connections={connectionList}
+      />
     </div>
   )
 }
