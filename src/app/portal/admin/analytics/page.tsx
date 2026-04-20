@@ -1,6 +1,9 @@
 // @anchor: cca.analytics.admin-page
 
 import Link from 'next/link'
+import { headers } from 'next/headers'
+import { notFound } from 'next/navigation'
+import { createTenantAdminClient } from '@/lib/supabase/admin'
 import {
   Users,
   UserCheck,
@@ -20,68 +23,15 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 // ---------------------------------------------------------------------------
-// KPI data
+// KPI type
 // ---------------------------------------------------------------------------
 
 interface KPI {
   label: string
   value: string
-  trend: 'up' | 'down' | 'flat'
-  comparison: string
   icon: typeof Users
   color: string
 }
-
-const kpis: KPI[] = [
-  {
-    label: 'Enrolled Students',
-    value: '47',
-    trend: 'up',
-    comparison: '+3 vs last month',
-    icon: Users,
-    color: 'var(--color-primary)',
-  },
-  {
-    label: 'Staff Count',
-    value: '12',
-    trend: 'flat',
-    comparison: 'No change',
-    icon: UserCheck,
-    color: 'var(--color-secondary, var(--color-primary))',
-  },
-  {
-    label: 'MTD Revenue',
-    value: '$28,450',
-    trend: 'up',
-    comparison: '+12% vs last month',
-    icon: DollarSign,
-    color: 'var(--color-success)',
-  },
-  {
-    label: 'Open Invoices',
-    value: '8',
-    trend: 'down',
-    comparison: '$3,200 outstanding',
-    icon: FileText,
-    color: 'var(--color-warning)',
-  },
-  {
-    label: 'Attendance Rate (7d)',
-    value: '94.2%',
-    trend: 'up',
-    comparison: '+1.1% vs prior week',
-    icon: CalendarCheck,
-    color: 'var(--color-success)',
-  },
-  {
-    label: 'Tours Booked (7d)',
-    value: '5',
-    trend: 'up',
-    comparison: '+2 vs prior week',
-    icon: CalendarPlus,
-    color: 'var(--color-primary)',
-  },
-]
 
 // ---------------------------------------------------------------------------
 // Sub-route cards
@@ -122,33 +72,27 @@ const subRoutes: SubRoute[] = [
 ]
 
 // ---------------------------------------------------------------------------
-// Trend icon helper
-// ---------------------------------------------------------------------------
-
-function TrendIcon({ trend }: { trend: 'up' | 'down' | 'flat' }) {
-  if (trend === 'up')
-    return <TrendingUp size={16} className="text-[var(--color-success)]" />
-  if (trend === 'down')
-    return <TrendingDown size={16} className="text-[var(--color-destructive)]" />
-  return <Minus size={16} className="text-[var(--color-muted-foreground)]" />
-}
-
-// ---------------------------------------------------------------------------
 // Date range selector (server-friendly static version)
 // ---------------------------------------------------------------------------
 
 function DateRangeSelector() {
+  const today = new Date()
+  const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+    .toISOString()
+    .split('T')[0]
+  const todayStr = today.toISOString().split('T')[0]
+
   return (
     <div className="flex items-center gap-2">
       <input
         type="date"
-        defaultValue="2026-04-01"
+        defaultValue={firstOfMonth}
         className="rounded-[var(--radius,0.75rem)] border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-2 text-sm text-[var(--color-foreground)] min-h-[48px]"
       />
       <span className="text-sm text-[var(--color-muted-foreground)]">to</span>
       <input
         type="date"
-        defaultValue="2026-04-20"
+        defaultValue={todayStr}
         className="rounded-[var(--radius,0.75rem)] border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-2 text-sm text-[var(--color-foreground)] min-h-[48px]"
       />
     </div>
@@ -156,10 +100,113 @@ function DateRangeSelector() {
 }
 
 // ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function formatCurrency(cents: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(cents / 100)
+}
+
+// ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
-export default function AdminAnalyticsPage() {
+export default async function AdminAnalyticsPage() {
+  const headerStore = await headers()
+  const tenantId = headerStore.get('x-tenant-id')
+  if (!tenantId) notFound()
+  const supabase = await createTenantAdminClient(tenantId)
+
+  const today = new Date().toISOString().split('T')[0]
+  const firstOfMonth = new Date(
+    new Date().getFullYear(),
+    new Date().getMonth(),
+    1,
+  )
+    .toISOString()
+    .split('T')[0]
+
+  const [
+    studentsRes,
+    staffRes,
+    paidInvoicesRes,
+    attendanceRes,
+    toursRes,
+  ] = await Promise.all([
+    supabase
+      .from('students')
+      .select('id', { count: 'exact', head: true })
+      .eq('tenant_id', tenantId)
+      .eq('enrollment_status', 'active'),
+    supabase
+      .from('staff_profiles')
+      .select('id', { count: 'exact', head: true })
+      .eq('tenant_id', tenantId),
+    supabase
+      .from('invoices')
+      .select('total_cents')
+      .eq('tenant_id', tenantId)
+      .eq('status', 'paid'),
+    supabase
+      .from('attendance_records')
+      .select('id', { count: 'exact', head: true })
+      .eq('tenant_id', tenantId)
+      .gte('created_at', today + 'T00:00:00')
+      .lte('created_at', today + 'T23:59:59'),
+    supabase
+      .from('tours')
+      .select('id', { count: 'exact', head: true })
+      .eq('tenant_id', tenantId)
+      .gte('created_at', firstOfMonth + 'T00:00:00'),
+  ])
+
+  const studentCount = studentsRes.count ?? 0
+  const staffCount = staffRes.count ?? 0
+  const revenueCents = (paidInvoicesRes.data ?? []).reduce(
+    (sum, inv) => sum + (inv.total_cents ?? 0),
+    0,
+  )
+  const attendanceToday = attendanceRes.count ?? 0
+  const toursThisMonth = toursRes.count ?? 0
+
+  const kpis: KPI[] = [
+    {
+      label: 'Enrolled Students',
+      value: studentCount.toString(),
+      icon: Users,
+      color: 'var(--color-primary)',
+    },
+    {
+      label: 'Staff Count',
+      value: staffCount.toString(),
+      icon: UserCheck,
+      color: 'var(--color-secondary, var(--color-primary))',
+    },
+    {
+      label: 'Revenue (Paid)',
+      value: formatCurrency(revenueCents),
+      icon: DollarSign,
+      color: 'var(--color-success)',
+    },
+    {
+      label: 'Attendance Today',
+      value: attendanceToday.toString(),
+      icon: CalendarCheck,
+      color: 'var(--color-success)',
+    },
+    {
+      label: 'Tours This Month',
+      value: toursThisMonth.toString(),
+      icon: CalendarPlus,
+      color: 'var(--color-primary)',
+    },
+  ]
+
   return (
     <div className="space-y-6">
       {/* Header + date range */}
@@ -199,11 +246,7 @@ export default function AdminAnalyticsPage() {
                       </p>
                     </div>
                   </div>
-                  <TrendIcon trend={kpi.trend} />
                 </div>
-                <p className="mt-2 text-xs text-[var(--color-muted-foreground)]">
-                  {kpi.comparison}
-                </p>
               </CardContent>
             </Card>
           )

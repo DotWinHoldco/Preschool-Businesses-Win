@@ -1,8 +1,5 @@
 'use server'
 
-// @anchor: cca.newsfeed.create-post
-// Server action to create a new newsfeed post.
-
 import { revalidatePath } from 'next/cache'
 import { assertRole } from '@/lib/auth/session'
 import { createTenantServerClient } from '@/lib/supabase/server'
@@ -20,7 +17,6 @@ export async function createNewsfeedPost(
   raw: Record<string, unknown>,
 ): Promise<CreatePostState> {
   try {
-    // Require at least aide-level role (staff)
     await assertRole('aide')
 
     const parsed = CreateNewsfeedPostSchema.safeParse(raw)
@@ -28,7 +24,7 @@ export async function createNewsfeedPost(
       return { ok: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' }
     }
 
-    const { title, body, audience, pinned } = parsed.data
+    const { content, scope, post_type, pinned } = parsed.data
     const tenantId = await getTenantId()
     const actorId = await getActorId()
     const supabase = await createTenantServerClient()
@@ -38,9 +34,10 @@ export async function createNewsfeedPost(
       .insert({
         tenant_id: tenantId,
         author_id: actorId,
-        title,
-        body: body || null,
-        audience,
+        content,
+        scope,
+        post_type,
+        media_paths: [],
         pinned,
       })
       .select('id')
@@ -56,7 +53,7 @@ export async function createNewsfeedPost(
       action: 'newsfeed.create_post',
       entityType: 'newsfeed_post',
       entityId: post.id,
-      after: { title, audience, pinned },
+      after: { content, scope, post_type, pinned },
     })
 
     revalidatePath('/portal/admin/newsfeed')

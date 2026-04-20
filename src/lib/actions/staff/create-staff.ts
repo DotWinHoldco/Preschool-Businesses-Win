@@ -1,16 +1,10 @@
 'use server'
 
-// @anchor: cca.staff.create-action
-// Server action: create a staff profile with Zod validation and tenant scoping.
-
 import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getTenantId } from '@/lib/actions/get-tenant-id'
+import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { writeAudit } from '@/lib/audit'
 import { revalidatePath } from 'next/cache'
-
-// ---------------------------------------------------------------------------
-// Schema
-// ---------------------------------------------------------------------------
 
 const staffRoleEnum = z.enum([
   'owner',
@@ -34,10 +28,6 @@ const CreateStaffSchema = z.object({
 
 export type CreateStaffInput = z.infer<typeof CreateStaffSchema>
 
-// ---------------------------------------------------------------------------
-// Action
-// ---------------------------------------------------------------------------
-
 export type CreateStaffResult = {
   ok: boolean
   id?: string
@@ -45,19 +35,9 @@ export type CreateStaffResult = {
   fieldErrors?: Record<string, string>
 }
 
-const ROLE_DISPLAY: Record<StaffRole, string> = {
-  owner: 'Owner',
-  admin: 'Admin',
-  lead_teacher: 'Lead Teacher',
-  assistant_teacher: 'Assistant Teacher',
-  aide: 'Aide',
-  front_desk: 'Front Desk',
-}
-
 export async function createStaff(
   input: CreateStaffInput,
 ): Promise<CreateStaffResult> {
-  // 1. Validate
   const parsed = CreateStaffSchema.safeParse(input)
   if (!parsed.success) {
     const fieldErrors: Record<string, string> = {}
@@ -72,25 +52,63 @@ export async function createStaff(
 
   try {
     const tenantId = await getTenantId()
+    const actorId = await getActorId()
     const supabase = createAdminClient()
 
-    // 2. Insert into staff_profiles
-    const { data: staff, error } = await supabase
+    // 1. Create auth user (or find existing)
+    const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+      email: data.email,
+      email_confirm: true,
+      user_metadata: { full_name: `${data.first_name} ${data.last_name}` },
+    })
+
+    if (authError || !authUser.user) {
+      return { ok: false, error: authError?.message || 'Failed to create user account' }
+    }
+
+    const userId = authUser.user.id
+
+    // 2. Create user_profiles row
+    await supabase.from('user_profiles').upsert({
+      id: userId,
+      tenant_id: tenantId,
+      first_name: data.first_name,
+      last_name: data.last_name,
+      phone: data.phone || null,
+    }, { onConflict: 'id' })
+
+    // 3. Create user_tenant_memberships row
+    await supabase.from('user_tenant_memberships').upsert({
+      user_id: userId,
+      tenant_id: tenantId,
+      role: data.role,
+      status: 'active',
+    }, { onConflict: 'user_id,tenant_id' })
+
+    // 4. Create staff_profiles row
+    const { data: staff, error: staffError } = await supabase
       .from('staff_profiles')
       .insert({
         tenant_id: tenantId,
-        first_name: data.first_name,
-        last_name: data.last_name,
-        title: ROLE_DISPLAY[data.role],
+        user_id: userId,
         hire_date: data.hire_date || null,
         is_active: true,
       })
       .select('id')
       .single()
 
-    if (error || !staff) {
-      return { ok: false, error: error?.message || 'Failed to create staff member' }
+    if (staffError || !staff) {
+      return { ok: false, error: staffError?.message || 'Failed to create staff profile' }
     }
+
+    await writeAudit(supabase, {
+      tenantId,
+      actorId,
+      action: 'staff.create',
+      entityType: 'staff_profile',
+      entityId: staff.id,
+      after: { first_name: data.first_name, last_name: data.last_name, role: data.role },
+    })
 
     revalidatePath('/portal/admin/staff')
 

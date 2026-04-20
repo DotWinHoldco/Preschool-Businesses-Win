@@ -1,84 +1,53 @@
 // @anchor: cca.calendar.admin-page
 
+import { headers } from 'next/headers'
+import { notFound } from 'next/navigation'
+import { createTenantAdminClient } from '@/lib/supabase/admin'
 import {
   CalendarClient,
   type CalendarEvent,
 } from '@/components/portal/calendar/calendar-client'
 
-// Mock events — replace with Supabase fetch when calendar_events table exists
-function getMockEvents(): CalendarEvent[] {
+export default async function AdminCalendarPage() {
+  const headerStore = await headers()
+  const tenantId = headerStore.get('x-tenant-id')
+  if (!tenantId) notFound()
+
+  const supabase = await createTenantAdminClient(tenantId)
+
+  // Compute start/end of the current month for filtering
   const now = new Date()
-  const y = now.getFullYear()
-  const m = now.getMonth() + 1
-  const pad = (n: number) => String(n).padStart(2, '0')
-  const dateStr = (d: number) => `${y}-${pad(m)}-${pad(d)}`
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    .toISOString()
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
+    .toISOString()
 
-  return [
-    {
-      id: 'mock-1',
-      title: 'Staff Meeting',
-      date: dateStr(Math.min(3, 28)),
-      time_start: '08:00',
-      time_end: '09:00',
-      all_day: false,
-      location: 'Conference Room',
-      notes: 'Monthly all-hands staff meeting.',
-    },
-    {
-      id: 'mock-2',
-      title: 'Parent-Teacher Conference',
-      date: dateStr(Math.min(10, 28)),
-      time_start: '14:00',
-      time_end: '18:00',
-      all_day: false,
-      location: 'Classrooms',
-      notes: 'Individual 15-minute slots with families.',
-    },
-    {
-      id: 'mock-3',
-      title: 'Spring Break - No School',
-      date: dateStr(Math.min(15, 28)),
-      time_start: null,
-      time_end: null,
-      all_day: true,
-      location: null,
-      notes: null,
-    },
-    {
-      id: 'mock-4',
-      title: 'Fire Drill',
-      date: dateStr(Math.min(18, 28)),
-      time_start: '10:30',
-      time_end: '10:45',
-      all_day: false,
-      location: 'Front Parking Lot',
-      notes: 'Quarterly fire evacuation drill.',
-    },
-    {
-      id: 'mock-5',
-      title: 'Chapel Service',
-      date: dateStr(Math.min(22, 28)),
-      time_start: '09:00',
-      time_end: '09:30',
-      all_day: false,
-      location: 'Sanctuary',
-      notes: null,
-    },
-    {
-      id: 'mock-6',
-      title: 'Field Day',
-      date: dateStr(Math.min(25, 28)),
-      time_start: '09:00',
-      time_end: '12:00',
-      all_day: false,
-      location: 'Playground',
-      notes: 'Outdoor activities and games for all classes.',
-    },
-  ]
-}
+  const { data: dbEvents } = await supabase
+    .from('calendar_events')
+    .select('*')
+    .eq('tenant_id', tenantId)
+    .gte('start_at', startOfMonth)
+    .lte('start_at', endOfMonth)
+    .order('start_at')
 
-export default function AdminCalendarPage() {
-  const events = getMockEvents()
+  // Map DB rows to the CalendarEvent shape the client component expects
+  const events: CalendarEvent[] = (dbEvents ?? []).map((e) => {
+    const startDate = new Date(e.start_at)
+    const endDate = e.end_at ? new Date(e.end_at) : null
+    const pad = (n: number) => String(n).padStart(2, '0')
+    const dateStr = `${startDate.getFullYear()}-${pad(startDate.getMonth() + 1)}-${pad(startDate.getDate())}`
+
+    return {
+      id: e.id,
+      title: e.title,
+      date: dateStr,
+      time_start: e.all_day ? null : `${pad(startDate.getHours())}:${pad(startDate.getMinutes())}`,
+      time_end: e.all_day || !endDate ? null : `${pad(endDate.getHours())}:${pad(endDate.getMinutes())}`,
+      all_day: e.all_day ?? false,
+      location: e.location ?? null,
+      notes: e.notes ?? null,
+    }
+  })
 
   return (
     <div className="space-y-6">

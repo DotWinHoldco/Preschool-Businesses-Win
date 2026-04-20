@@ -1,25 +1,81 @@
 // @anchor: cca.billing.admin-dashboard
-// Billing dashboard — revenue, outstanding, overdue invoices.
+// Billing dashboard — revenue, outstanding, overdue invoices — real Supabase data.
 
+import { headers } from 'next/headers'
+import { notFound } from 'next/navigation'
+import { createTenantAdminClient } from '@/lib/supabase/admin'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { InvoiceList } from '@/components/portal/billing/invoice-list'
 import { BillingActions } from '@/components/portal/billing/billing-actions'
 import { DollarSign, TrendingUp, AlertCircle, CheckCircle2 } from 'lucide-react'
 
 export default async function BillingDashboardPage() {
-  // TODO: Fetch billing stats and invoices from Supabase
-  const stats = {
-    revenue_mtd: 4250000, // cents
-    outstanding: 1250000,
-    overdue: 350000,
-    collected_pct: 87,
-  }
+  const headerStore = await headers()
+  const tenantId = headerStore.get('x-tenant-id')
+  if (!tenantId) notFound()
 
-  const recentInvoices = [
-    { id: '1', invoice_number: 'INV-2026-001', family_name: 'Martinez Family', period_start: '2026-04-01', period_end: '2026-04-30', total_cents: 125000, status: 'sent', due_date: '2026-04-30' },
-    { id: '2', invoice_number: 'INV-2026-002', family_name: 'Johnson Family', period_start: '2026-04-01', period_end: '2026-04-30', total_cents: 95000, status: 'paid', due_date: '2026-04-30' },
-    { id: '3', invoice_number: 'INV-2026-003', family_name: 'Wilson Family', period_start: '2026-03-01', period_end: '2026-03-31', total_cents: 115000, status: 'overdue', due_date: '2026-03-31' },
-  ]
+  const supabase = await createTenantAdminClient(tenantId)
+  const today = new Date().toISOString().split('T')[0]
+  const monthStart = today.slice(0, 7) + '-01'
+
+  // Fetch all invoice data in parallel
+  const [{ data: paidInvoices }, { data: outstandingInvoices }, { count: overdueCount }, { data: recentRows }] =
+    await Promise.all([
+      // Revenue MTD: paid invoices this month
+      supabase
+        .from('invoices')
+        .select('total_cents')
+        .eq('tenant_id', tenantId)
+        .eq('status', 'paid')
+        .gte('created_at', monthStart),
+      // Outstanding: draft + sent
+      supabase
+        .from('invoices')
+        .select('total_cents')
+        .eq('tenant_id', tenantId)
+        .in('status', ['draft', 'sent']),
+      // Overdue: sent and past due
+      supabase
+        .from('invoices')
+        .select('*', { count: 'exact', head: true })
+        .eq('tenant_id', tenantId)
+        .eq('status', 'sent')
+        .lt('due_date', today),
+      // Recent invoices
+      supabase
+        .from('invoices')
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .order('created_at', { ascending: false })
+        .limit(10),
+    ])
+
+  const revenueMTD = (paidInvoices ?? []).reduce((sum, inv) => sum + (inv.total_cents ?? 0), 0)
+  const outstandingTotal = (outstandingInvoices ?? []).reduce((sum, inv) => sum + (inv.total_cents ?? 0), 0)
+  const totalOverdue = overdueCount ?? 0
+
+  // Compute collection rate: paid / (paid + outstanding)
+  const totalBilled = revenueMTD + outstandingTotal
+  const collectedPct = totalBilled > 0 ? Math.round((revenueMTD / totalBilled) * 100) : 0
+
+  // Join family names for recent invoices
+  const familyIds = (recentRows ?? []).map((inv) => inv.family_id).filter(Boolean)
+  const { data: families } = familyIds.length > 0
+    ? await supabase.from('families').select('id, family_name').eq('tenant_id', tenantId).in('id', familyIds)
+    : { data: [] as { id: string; family_name: string }[] }
+
+  const familyMap = new Map((families ?? []).map((f) => [f.id, f.family_name]))
+
+  const recentInvoices = (recentRows ?? []).map((inv) => ({
+    id: inv.id as string,
+    invoice_number: (inv.invoice_number as string) ?? '-',
+    family_name: familyMap.get(inv.family_id as string) ?? 'Unknown',
+    period_start: inv.period_start as string,
+    period_end: inv.period_end as string,
+    total_cents: (inv.total_cents as number) ?? 0,
+    status: inv.status as string,
+    due_date: inv.due_date as string,
+  }))
 
   function fmt(cents: number) {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents / 100)
@@ -37,7 +93,7 @@ export default async function BillingDashboardPage() {
               <TrendingUp size={20} className="text-[var(--color-success)]" />
             </div>
             <div>
-              <p className="text-xl font-bold text-[var(--color-foreground)]">{fmt(stats.revenue_mtd)}</p>
+              <p className="text-xl font-bold text-[var(--color-foreground)]">{fmt(revenueMTD)}</p>
               <p className="text-xs text-[var(--color-muted-foreground)]">Revenue MTD</p>
             </div>
           </CardContent>
@@ -48,7 +104,7 @@ export default async function BillingDashboardPage() {
               <DollarSign size={20} className="text-[var(--color-warning)]" />
             </div>
             <div>
-              <p className="text-xl font-bold text-[var(--color-foreground)]">{fmt(stats.outstanding)}</p>
+              <p className="text-xl font-bold text-[var(--color-foreground)]">{fmt(outstandingTotal)}</p>
               <p className="text-xs text-[var(--color-muted-foreground)]">Outstanding</p>
             </div>
           </CardContent>
@@ -59,8 +115,8 @@ export default async function BillingDashboardPage() {
               <AlertCircle size={20} className="text-[var(--color-destructive)]" />
             </div>
             <div>
-              <p className="text-xl font-bold text-[var(--color-foreground)]">{fmt(stats.overdue)}</p>
-              <p className="text-xs text-[var(--color-muted-foreground)]">Overdue</p>
+              <p className="text-xl font-bold text-[var(--color-foreground)]">{totalOverdue}</p>
+              <p className="text-xs text-[var(--color-muted-foreground)]">Overdue invoices</p>
             </div>
           </CardContent>
         </Card>
@@ -70,7 +126,7 @@ export default async function BillingDashboardPage() {
               <CheckCircle2 size={20} className="text-[var(--color-primary)]" />
             </div>
             <div>
-              <p className="text-xl font-bold text-[var(--color-foreground)]">{stats.collected_pct}%</p>
+              <p className="text-xl font-bold text-[var(--color-foreground)]">{collectedPct}%</p>
               <p className="text-xs text-[var(--color-muted-foreground)]">Collection rate</p>
             </div>
           </CardContent>
@@ -83,11 +139,15 @@ export default async function BillingDashboardPage() {
           <CardTitle>Recent Invoices</CardTitle>
         </CardHeader>
         <CardContent>
-          <InvoiceList
-            invoices={recentInvoices}
-            basePath="/portal/admin/billing/invoices"
-            showFamily
-          />
+          {recentInvoices.length === 0 ? (
+            <p className="text-sm text-[var(--color-muted-foreground)]">No invoices yet.</p>
+          ) : (
+            <InvoiceList
+              invoices={recentInvoices}
+              basePath="/portal/admin/billing/invoices"
+              showFamily
+            />
+          )}
         </CardContent>
       </Card>
     </div>

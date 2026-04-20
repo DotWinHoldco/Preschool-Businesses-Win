@@ -1,15 +1,15 @@
-// @anchor: cca.newsfeed.schema
-// Zod schemas for newsfeed posts.
-
 import { z } from 'zod'
 
-export const AudienceEnum = z.enum(['all_parents', 'classroom', 'staff'])
-export type Audience = z.infer<typeof AudienceEnum>
+export const ScopeEnum = z.enum(['school_wide', 'classroom'])
+export type Scope = z.infer<typeof ScopeEnum>
+
+export const PostTypeEnum = z.enum(['announcement', 'reminder', 'photo', 'shoutout'])
+export type PostType = z.infer<typeof PostTypeEnum>
 
 export const CreateNewsfeedPostSchema = z.object({
-  title: z.string().min(1, 'Title is required').max(200, 'Title must be 200 characters or fewer'),
-  body: z.string().max(5000).optional().default(''),
-  audience: AudienceEnum.default('all_parents'),
+  content: z.string().min(1, 'Content is required').max(5000),
+  scope: ScopeEnum.default('school_wide'),
+  post_type: PostTypeEnum.default('announcement'),
   pinned: z.boolean().default(false),
 })
 

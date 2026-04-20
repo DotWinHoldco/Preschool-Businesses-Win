@@ -29,8 +29,8 @@ export async function writeAudit(
       action: entry.action,
       entity_type: entry.entityType,
       entity_id: entry.entityId,
-      before: entry.before ?? null,
-      after: entry.after ?? null,
+      before_data: entry.before ?? null,
+      after_data: entry.after ?? null,
     })
   } catch {
     // Audit write failure should not break the parent action.

@@ -1,23 +1,50 @@
 // @anchor: cca.payroll.dashboard
-// Payroll dashboard — list of payroll runs.
+// Payroll dashboard — list of payroll runs — real Supabase data.
 
+import { headers } from 'next/headers'
+import { notFound } from 'next/navigation'
+import { createTenantAdminClient } from '@/lib/supabase/admin'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { DollarSign } from 'lucide-react'
 
 export default async function PayrollDashboardPage() {
-  // TODO: Fetch payroll runs from Supabase
-  const runs = [
-    { id: '1', period: 'Mar 24 - Apr 6, 2026', status: 'paid', total_gross: 12450.00, staff_count: 8 },
-    { id: '2', period: 'Mar 10 - Mar 23, 2026', status: 'exported', total_gross: 11980.00, staff_count: 8 },
-    { id: '3', period: 'Feb 24 - Mar 9, 2026', status: 'paid', total_gross: 12100.00, staff_count: 7 },
-  ]
+  const headerStore = await headers()
+  const tenantId = headerStore.get('x-tenant-id')
+  if (!tenantId) notFound()
+
+  const supabase = await createTenantAdminClient(tenantId)
+
+  const { data: runs } = await supabase
+    .from('payroll_runs')
+    .select('*')
+    .eq('tenant_id', tenantId)
+    .order('period_end', { ascending: false })
+    .limit(20)
+
+  const payrollRuns = runs ?? []
 
   const statusVariant = (s: string) => {
     if (s === 'paid') return 'success' as const
     if (s === 'exported') return 'default' as const
     if (s === 'approved') return 'secondary' as const
     return 'outline' as const
+  }
+
+  function formatDate(dateStr: string | null) {
+    if (!dateStr) return '-'
+    return new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    })
+  }
+
+  function formatCurrency(cents: number | null) {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format((cents ?? 0) / 100)
   }
 
   return (
@@ -36,28 +63,44 @@ export default async function PayrollDashboardPage() {
         </a>
       </div>
 
-      <div className="space-y-3">
-        {runs.map((run) => (
-          <Card key={run.id}>
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-[var(--color-foreground)]">{run.period}</p>
-                <p className="text-xs text-[var(--color-muted-foreground)]">
-                  {run.staff_count} staff members
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-bold text-[var(--color-foreground)]">
-                  ${run.total_gross.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                </span>
-                <Badge variant={statusVariant(run.status)}>
-                  {run.status}
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {payrollRuns.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-[var(--radius,0.75rem)] border border-[var(--color-border)] py-16 text-center">
+          <DollarSign size={40} className="mb-3 text-[var(--color-muted-foreground)]" />
+          <p className="text-sm font-medium text-[var(--color-muted-foreground)]">No payroll runs yet.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {payrollRuns.map((run) => (
+            <Card key={run.id}>
+              <CardContent className="p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-[var(--color-foreground)]">
+                    {formatDate(run.period_start)} &mdash; {formatDate(run.period_end)}
+                  </p>
+                  <p className="text-xs text-[var(--color-muted-foreground)]">
+                    {run.status}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <span className="text-sm font-bold text-[var(--color-foreground)]">
+                      {formatCurrency(run.total_gross)}
+                    </span>
+                    {run.total_net != null && (
+                      <p className="text-xs text-[var(--color-muted-foreground)]">
+                        Net: {formatCurrency(run.total_net)}
+                      </p>
+                    )}
+                  </div>
+                  <Badge variant={statusVariant(run.status)}>
+                    {run.status}
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

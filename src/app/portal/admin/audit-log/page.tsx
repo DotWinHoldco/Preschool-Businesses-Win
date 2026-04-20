@@ -1,23 +1,64 @@
 // @anchor: cca.audit.log-page
 
 import type { Metadata } from 'next'
+import { headers } from 'next/headers'
+import { notFound } from 'next/navigation'
+import { createTenantAdminClient } from '@/lib/supabase/admin'
 
 export const metadata: Metadata = {
   title: 'Audit Log | Admin Portal',
   description: 'Immutable record of all system actions and state changes',
 }
 
-export default function AdminAuditLogPage() {
-  const mockEntries = [
-    { id: '1', timestamp: '2026-04-08 14:32:05', actor: 'Sarah Johnson', action: 'check_in.create', entity: 'Student: Sophia Martinez', details: 'QR scan check-in, health screening passed', ip: '192.168.1.45' },
-    { id: '2', timestamp: '2026-04-08 14:28:12', actor: 'Admin (Skylar)', action: 'student.update', entity: 'Student: Liam Chen', details: 'Updated allergy: added peanut (severe)', ip: '192.168.1.10' },
-    { id: '3', timestamp: '2026-04-08 14:15:00', actor: 'System', action: 'ratio_check.run', entity: 'Classroom: Butterfly Room', details: '12 students / 2 staff = 6:1 (required 10:1) - Compliant', ip: '—' },
-    { id: '4', timestamp: '2026-04-08 13:58:44', actor: 'Emily Davis', action: 'daily_report.publish', entity: 'Classroom: Sunshine Room', details: 'Published 15 student reports', ip: '192.168.1.52' },
-    { id: '5', timestamp: '2026-04-08 13:45:30', actor: 'Admin (Skylar)', action: 'billing.invoice_create', entity: 'Family: Martinez', details: 'April tuition invoice #INV-2026-0412 - $1,200.00', ip: '192.168.1.10' },
-    { id: '6', timestamp: '2026-04-08 13:30:00', actor: 'System', action: 'cert_expiry.alert', entity: 'Staff: James Wilson', details: 'CPR certification expires in 28 days', ip: '—' },
-    { id: '7', timestamp: '2026-04-08 13:12:18', actor: 'Maria Garcia', action: 'check_out.create', entity: 'Student: Noah Williams', details: 'Authorized pickup by grandmother (ID verified)', ip: '192.168.1.48' },
-    { id: '8', timestamp: '2026-04-08 12:55:00', actor: 'Admin (Skylar)', action: 'impersonation.start', entity: 'User: Jane Martinez (parent)', details: 'Reason: Helping parent troubleshoot billing view', ip: '192.168.1.10' },
-  ]
+export default async function AdminAuditLogPage() {
+  const headerStore = await headers()
+  const tenantId = headerStore.get('x-tenant-id')
+  if (!tenantId) notFound()
+
+  const supabase = await createTenantAdminClient(tenantId)
+
+  // Fetch audit log entries
+  const { data: dbEntries } = await supabase
+    .from('audit_log')
+    .select('*')
+    .eq('tenant_id', tenantId)
+    .order('created_at', { ascending: false })
+    .limit(50)
+
+  const entries = dbEntries ?? []
+
+  // Fetch actor names from user_profiles
+  const actorIds = [...new Set(entries.map((e) => e.actor_id).filter(Boolean))]
+  let actorMap: Record<string, string> = {}
+
+  if (actorIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from('user_profiles')
+      .select('id, full_name')
+      .in('id', actorIds)
+
+    for (const profile of profiles ?? []) {
+      actorMap[profile.id] = profile.full_name ?? 'Unknown'
+    }
+  }
+
+  // Map DB rows to display shape
+  const displayEntries = entries.map((entry) => ({
+    id: entry.id,
+    timestamp: entry.created_at
+      ? new Date(entry.created_at).toISOString().replace('T', ' ').slice(0, 19)
+      : '—',
+    actor: actorMap[entry.actor_id] ?? 'System',
+    action: entry.action ?? '—',
+    entity: entry.entity_type
+      ? `${entry.entity_type}${entry.entity_id ? `: ${entry.entity_id}` : ''}`
+      : '—',
+    details: entry.after_data
+      ? (typeof entry.after_data === 'string' ? entry.after_data : JSON.stringify(entry.after_data))
+      : entry.before_data
+        ? (typeof entry.before_data === 'string' ? entry.before_data : JSON.stringify(entry.before_data))
+        : '—',
+  }))
 
   return (
     <div className="space-y-6">
@@ -54,17 +95,11 @@ export default function AdminAuditLogPage() {
           style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-background)', color: 'var(--color-foreground)' }}
         >
           <option>All Users</option>
-          <option>Sarah Johnson</option>
-          <option>Maria Garcia</option>
-          <option>Emily Davis</option>
-          <option>Admin (Skylar)</option>
-          <option>System</option>
         </select>
         <input
           type="date"
           className="rounded-lg border px-3 py-2 text-sm"
           style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-background)', color: 'var(--color-foreground)' }}
-          defaultValue="2026-04-08"
         />
         <input
           type="text"
@@ -85,52 +120,57 @@ export default function AdminAuditLogPage() {
         className="overflow-hidden rounded-xl"
         style={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)' }}
       >
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                {['Timestamp', 'Actor', 'Action', 'Entity', 'Details', 'IP'].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left font-medium" style={{ color: 'var(--color-muted-foreground)' }}>
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {mockEntries.map((entry) => (
-                <tr key={entry.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                  <td className="whitespace-nowrap px-4 py-3 font-mono text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
-                    {entry.timestamp}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 font-medium" style={{ color: 'var(--color-foreground)' }}>
-                    {entry.actor}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className="inline-flex rounded px-2 py-0.5 font-mono text-xs"
-                      style={{ backgroundColor: 'var(--color-muted)', color: 'var(--color-foreground)' }}
-                    >
-                      {entry.action}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3" style={{ color: 'var(--color-foreground)' }}>{entry.entity}</td>
-                  <td className="max-w-xs truncate px-4 py-3 text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
-                    {entry.details}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 font-mono text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
-                    {entry.ip}
-                  </td>
+        {displayEntries.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16">
+            <p className="text-sm font-medium" style={{ color: 'var(--color-muted-foreground)' }}>
+              No audit entries recorded yet.
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
+                  {['Timestamp', 'Actor', 'Action', 'Entity', 'Details'].map((h) => (
+                    <th key={h} className="px-4 py-3 text-left font-medium" style={{ color: 'var(--color-muted-foreground)' }}>
+                      {h}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {displayEntries.map((entry) => (
+                  <tr key={entry.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                    <td className="whitespace-nowrap px-4 py-3 font-mono text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
+                      {entry.timestamp}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 font-medium" style={{ color: 'var(--color-foreground)' }}>
+                      {entry.actor}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className="inline-flex rounded px-2 py-0.5 font-mono text-xs"
+                        style={{ backgroundColor: 'var(--color-muted)', color: 'var(--color-foreground)' }}
+                      >
+                        {entry.action}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3" style={{ color: 'var(--color-foreground)' }}>{entry.entity}</td>
+                    <td className="max-w-xs truncate px-4 py-3 text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
+                      {entry.details}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Pagination */}
       <div className="flex items-center justify-between">
         <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
-          Showing 1-8 of 12,847 entries
+          Showing {displayEntries.length} entries
         </p>
         <div className="flex gap-2">
           <button

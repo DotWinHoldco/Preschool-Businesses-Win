@@ -1,138 +1,73 @@
 // @anchor: cca.documents.admin-page
 
+import { headers } from 'next/headers'
+import { notFound } from 'next/navigation'
+import { createTenantAdminClient } from '@/lib/supabase/admin'
 import {
   DocumentsClient,
   type DocFolder,
   type DocFile,
 } from '@/components/portal/documents/documents-client'
 
-// Mock data — replace with Supabase fetch when documents table exists
-function getMockFolders(): DocFolder[] {
-  return [
-    { id: 'folder-general', name: 'General', parentId: null },
-    { id: 'folder-policies', name: 'Policies', parentId: null },
-    { id: 'folder-staff', name: 'Staff Records', parentId: null },
-    { id: 'folder-students', name: 'Student Records', parentId: null },
-    { id: 'folder-compliance', name: 'Compliance', parentId: null },
-  ]
+function formatFileSize(bytes: number | null): string {
+  if (!bytes) return '0 KB'
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-function getMockFiles(): DocFile[] {
-  return [
-    {
-      id: 'file-1',
-      name: 'Parent Handbook 2026',
-      type: 'PDF',
-      size: '2.4 MB',
-      folderId: 'folder-general',
-      uploaded_at: '2026-01-15T10:00:00Z',
-      uploaded_by: 'Jane Smith',
-    },
-    {
-      id: 'file-2',
-      name: 'Emergency Procedures',
-      type: 'PDF',
-      size: '1.1 MB',
-      folderId: 'folder-general',
-      uploaded_at: '2026-02-03T14:30:00Z',
-      uploaded_by: 'Jane Smith',
-    },
-    {
-      id: 'file-3',
-      name: 'Behavior Policy',
-      type: 'DOCX',
-      size: '340 KB',
-      folderId: 'folder-policies',
-      uploaded_at: '2025-11-20T09:00:00Z',
-      uploaded_by: 'Maria Garcia',
-    },
-    {
-      id: 'file-4',
-      name: 'Medication Administration Policy',
-      type: 'PDF',
-      size: '580 KB',
-      folderId: 'folder-policies',
-      uploaded_at: '2025-12-01T11:15:00Z',
-      uploaded_by: 'Jane Smith',
-    },
-    {
-      id: 'file-5',
-      name: 'Pickup Authorization Template',
-      type: 'DOCX',
-      size: '120 KB',
-      folderId: 'folder-policies',
-      uploaded_at: '2026-01-10T08:45:00Z',
-      uploaded_by: 'Jane Smith',
-    },
-    {
-      id: 'file-6',
-      name: 'CPR Certificates - Spring 2026',
-      type: 'PDF',
-      size: '4.8 MB',
-      folderId: 'folder-staff',
-      uploaded_at: '2026-03-01T16:00:00Z',
-      uploaded_by: 'Tom Wilson',
-    },
-    {
-      id: 'file-7',
-      name: 'Background Check Records',
-      type: 'PDF',
-      size: '3.2 MB',
-      folderId: 'folder-staff',
-      uploaded_at: '2026-01-25T10:30:00Z',
-      uploaded_by: 'Jane Smith',
-    },
-    {
-      id: 'file-8',
-      name: 'Enrollment Packet - Thompson',
-      type: 'PDF',
-      size: '1.8 MB',
-      folderId: 'folder-students',
-      uploaded_at: '2026-03-15T13:00:00Z',
-      uploaded_by: 'Maria Garcia',
-    },
-    {
-      id: 'file-9',
-      name: 'Immunization Records - Q1',
-      type: 'XLSX',
-      size: '890 KB',
-      folderId: 'folder-students',
-      uploaded_at: '2026-04-01T09:30:00Z',
-      uploaded_by: 'Jane Smith',
-    },
-    {
-      id: 'file-10',
-      name: 'DFPS Inspection Report - March 2026',
-      type: 'PDF',
-      size: '2.1 MB',
-      folderId: 'folder-compliance',
-      uploaded_at: '2026-03-20T15:45:00Z',
-      uploaded_by: 'Jane Smith',
-    },
-    {
-      id: 'file-11',
-      name: 'Fire Drill Log',
-      type: 'XLSX',
-      size: '45 KB',
-      folderId: 'folder-compliance',
-      uploaded_at: '2026-04-05T10:00:00Z',
-      uploaded_by: 'Tom Wilson',
-    },
-    {
-      id: 'file-12',
-      name: 'Licensing Renewal Application',
-      type: 'PDF',
-      size: '1.5 MB',
-      folderId: 'folder-compliance',
-      uploaded_at: '2026-02-28T14:00:00Z',
-      uploaded_by: 'Jane Smith',
-    },
-  ]
+function extractExtension(mime: string | null, path: string | null): string {
+  if (mime) {
+    const map: Record<string, string> = {
+      'application/pdf': 'PDF',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'DOCX',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'XLSX',
+      'image/png': 'PNG',
+      'image/jpeg': 'JPG',
+    }
+    if (map[mime]) return map[mime]
+  }
+  if (path) {
+    const ext = path.split('.').pop()?.toUpperCase()
+    if (ext) return ext
+  }
+  return 'FILE'
 }
 
-export default function AdminDocumentsPage() {
-  const folders = getMockFolders()
-  const files = getMockFiles()
+export default async function AdminDocumentsPage() {
+  const headerStore = await headers()
+  const tenantId = headerStore.get('x-tenant-id')
+  if (!tenantId) notFound()
+  const supabase = await createTenantAdminClient(tenantId)
+
+  const { data: docs } = await supabase
+    .from('documents')
+    .select('*')
+    .eq('tenant_id', tenantId)
+    .order('created_at', { ascending: false })
+
+  const allDocs = docs ?? []
+
+  // Build folders from distinct entity_type values
+  const entityTypes = [...new Set(allDocs.map((d) => d.entity_type).filter(Boolean))]
+  if (entityTypes.length === 0) entityTypes.push('General')
+
+  const folders: DocFolder[] = entityTypes.map((et) => ({
+    id: `folder-${et}`,
+    name: (et as string).charAt(0).toUpperCase() + (et as string).slice(1).replace(/_/g, ' '),
+    parentId: null,
+  }))
+
+  // Map docs to DocFile format
+  const files: DocFile[] = allDocs.map((d) => ({
+    id: d.id,
+    name: d.title ?? d.file_path?.split('/').pop() ?? 'Untitled',
+    type: extractExtension(d.mime_type, d.file_path),
+    size: formatFileSize(d.file_size_bytes),
+    folderId: `folder-${d.entity_type ?? 'General'}`,
+    uploaded_at: d.created_at ?? new Date().toISOString(),
+    uploaded_by: d.uploaded_by ?? 'Unknown',
+  }))
 
   return (
     <div className="space-y-6">
@@ -151,7 +86,21 @@ export default function AdminDocumentsPage() {
         </p>
       </div>
 
-      <DocumentsClient initialFolders={folders} initialFiles={files} />
+      {allDocs.length === 0 ? (
+        <div
+          className="rounded-xl p-12 text-center"
+          style={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)' }}
+        >
+          <p className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
+            No documents yet.
+          </p>
+          <p className="mt-1 text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
+            Upload documents to get started.
+          </p>
+        </div>
+      ) : (
+        <DocumentsClient initialFolders={folders} initialFiles={files} />
+      )}
     </div>
   )
 }

@@ -1,28 +1,43 @@
 // @anchor: cca.attendance.admin-dashboard
-// School-wide attendance dashboard for admin.
+// School-wide attendance dashboard for admin — real Supabase data.
 
+import { headers } from 'next/headers'
+import { notFound } from 'next/navigation'
+import { createTenantAdminClient } from '@/lib/supabase/admin'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Users, UserCheck, UserX, Clock } from 'lucide-react'
 
 export default async function AttendanceDashboardPage() {
-  // TODO: Fetch real attendance data from Supabase
+  const headerStore = await headers()
+  const tenantId = headerStore.get('x-tenant-id')
+  if (!tenantId) notFound()
+
+  const supabase = await createTenantAdminClient(tenantId)
   const today = new Date().toISOString().split('T')[0]
 
-  const summary = {
-    total_enrolled: 62,
-    present: 48,
-    absent: 10,
-    late: 4,
-    rate: 77,
-  }
+  // Fetch attendance records for today and active student count in parallel
+  const [{ data: attendanceRows }, { count: totalEnrolled }] = await Promise.all([
+    supabase
+      .from('attendance_records')
+      .select('id, status, student_id')
+      .eq('tenant_id', tenantId)
+      .eq('date', today),
+    supabase
+      .from('students')
+      .select('*', { count: 'exact', head: true })
+      .eq('tenant_id', tenantId)
+      .eq('enrollment_status', 'active'),
+  ])
 
-  const classrooms = [
-    { id: '1', name: 'Butterfly Room', present: 12, enrolled: 15, ratio: '6:1', compliant: true },
-    { id: '2', name: 'Sunshine Room', present: 10, enrolled: 12, ratio: '5:1', compliant: true },
-    { id: '3', name: 'Rainbow Room', present: 14, enrolled: 18, ratio: '14:1', compliant: false },
-    { id: '4', name: 'Star Room', present: 12, enrolled: 17, ratio: '6:1', compliant: true },
-  ]
+  const records = attendanceRows ?? []
+  const enrolled = totalEnrolled ?? 0
+
+  // Group by status
+  const presentCount = records.filter((r) => r.status === 'present').length
+  const absentCount = records.filter((r) => r.status === 'absent').length
+  const lateCount = records.filter((r) => r.status === 'late').length
+  const attendanceRate = enrolled > 0 ? Math.round(((presentCount + lateCount) / enrolled) * 100) : 0
 
   return (
     <div className="flex flex-col gap-6">
@@ -46,7 +61,7 @@ export default async function AttendanceDashboardPage() {
               <Users size={20} className="text-[var(--color-primary)]" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-[var(--color-foreground)]">{summary.total_enrolled}</p>
+              <p className="text-2xl font-bold text-[var(--color-foreground)]">{enrolled}</p>
               <p className="text-xs text-[var(--color-muted-foreground)]">Enrolled</p>
             </div>
           </CardContent>
@@ -57,7 +72,7 @@ export default async function AttendanceDashboardPage() {
               <UserCheck size={20} className="text-[var(--color-success)]" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-[var(--color-foreground)]">{summary.present}</p>
+              <p className="text-2xl font-bold text-[var(--color-foreground)]">{presentCount}</p>
               <p className="text-xs text-[var(--color-muted-foreground)]">Present</p>
             </div>
           </CardContent>
@@ -68,7 +83,7 @@ export default async function AttendanceDashboardPage() {
               <UserX size={20} className="text-[var(--color-destructive)]" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-[var(--color-foreground)]">{summary.absent}</p>
+              <p className="text-2xl font-bold text-[var(--color-foreground)]">{absentCount}</p>
               <p className="text-xs text-[var(--color-muted-foreground)]">Absent</p>
             </div>
           </CardContent>
@@ -79,44 +94,52 @@ export default async function AttendanceDashboardPage() {
               <Clock size={20} className="text-[var(--color-warning)]" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-[var(--color-foreground)]">{summary.rate}%</p>
+              <p className="text-2xl font-bold text-[var(--color-foreground)]">{attendanceRate}%</p>
               <p className="text-xs text-[var(--color-muted-foreground)]">Attendance rate</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Classroom breakdown */}
-      <Card>
-        <CardHeader>
-          <CardTitle>By Classroom</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {classrooms.map((cr) => (
-              <div
-                key={cr.id}
-                className="flex items-center justify-between rounded-[var(--radius,0.75rem)] border border-[var(--color-border)] p-4"
-              >
-                <div>
-                  <p className="text-sm font-semibold text-[var(--color-foreground)]">{cr.name}</p>
-                  <p className="text-xs text-[var(--color-muted-foreground)]">
-                    {cr.present} / {cr.enrolled} present
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-[var(--color-foreground)]">
-                    Ratio: {cr.ratio}
-                  </span>
-                  <Badge variant={cr.compliant ? 'success' : 'danger'}>
-                    {cr.compliant ? 'Compliant' : 'Over ratio'}
-                  </Badge>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      {/* Records or empty state */}
+      {records.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-[var(--radius,0.75rem)] border border-[var(--color-border)] py-16 text-center">
+          <UserCheck size={40} className="mb-3 text-[var(--color-muted-foreground)]" />
+          <p className="text-sm font-medium text-[var(--color-muted-foreground)]">No attendance records for today.</p>
+        </div>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Today&apos;s Summary</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {[
+                { label: 'Present', count: presentCount, variant: 'success' as const },
+                { label: 'Late', count: lateCount, variant: 'warning' as const },
+                { label: 'Absent', count: absentCount, variant: 'danger' as const },
+              ]
+                .filter((row) => row.count > 0)
+                .map((row) => (
+                  <div
+                    key={row.label}
+                    className="flex items-center justify-between rounded-[var(--radius,0.75rem)] border border-[var(--color-border)] p-4"
+                  >
+                    <div>
+                      <p className="text-sm font-semibold text-[var(--color-foreground)]">{row.label}</p>
+                      <p className="text-xs text-[var(--color-muted-foreground)]">
+                        {row.count} student{row.count !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                    <Badge variant={row.variant}>
+                      {row.count}
+                    </Badge>
+                  </div>
+                ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }
