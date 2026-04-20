@@ -1,6 +1,8 @@
 // @anchor: cca.settings.admin-page
 
 import type { Metadata } from 'next'
+import Link from 'next/link'
+import { SettingsDangerZone } from '@/components/portal/settings/danger-zone'
 
 export const metadata: Metadata = {
   title: 'Settings | Admin Portal',
@@ -12,7 +14,7 @@ export default function AdminSettingsPage() {
     {
       title: 'School Profile',
       description: 'Name, address, contact info, and timezone',
-      href: '#profile',
+      href: '/portal/admin/settings/profile',
       icon: 'Building',
     },
     {
@@ -24,43 +26,43 @@ export default function AdminSettingsPage() {
     {
       title: 'Notifications',
       description: 'Default notification channels and quiet hours',
-      href: '#notifications',
+      href: '/portal/admin/settings/notifications',
       icon: 'Bell',
     },
     {
       title: 'Billing Configuration',
       description: 'Payment methods, late fees, grace periods, and processing fee settings',
-      href: '#billing',
+      href: '/portal/admin/settings/billing',
       icon: 'CreditCard',
     },
     {
       title: 'Integrations',
       description: 'Stripe Connect, Resend, Twilio, and hardware connections',
-      href: '#integrations',
+      href: '/portal/admin/settings/integrations',
       icon: 'Plug',
     },
     {
       title: 'Feature Flags',
       description: 'Enable or disable platform features for this school',
-      href: '#features',
+      href: '/portal/admin/settings/features',
       icon: 'ToggleRight',
     },
     {
       title: 'Drop-in Settings',
       description: 'Availability rules, rates, and cancellation policies',
-      href: '#dropin',
+      href: '/portal/admin/settings/drop-in',
       icon: 'CalendarPlus',
     },
     {
       title: 'Check-in / Kiosk Mode',
       description: 'QR rotation, kiosk timeout, health screening questions',
-      href: '#checkin',
+      href: '/portal/admin/settings/check-in',
       icon: 'QrCode',
     },
     {
       title: 'Data & Privacy',
       description: 'Retention policies, data export, and COPPA compliance',
-      href: '#privacy',
+      href: '/portal/admin/settings/privacy',
       icon: 'Shield',
     },
   ]
@@ -78,7 +80,7 @@ export default function AdminSettingsPage() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {settingSections.map((section) => (
-          <a
+          <Link
             key={section.title}
             href={section.href}
             className="group rounded-xl p-5 transition-shadow hover:shadow-md"
@@ -96,36 +98,11 @@ export default function AdminSettingsPage() {
             >
               Configure &rarr;
             </span>
-          </a>
+          </Link>
         ))}
       </div>
 
-      {/* Danger zone */}
-      <div
-        className="rounded-xl p-6"
-        style={{ border: '1px solid var(--color-destructive)' }}
-      >
-        <h2 className="text-lg font-semibold" style={{ color: 'var(--color-destructive)' }}>
-          Danger Zone
-        </h2>
-        <p className="mt-1 text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
-          Actions here are irreversible. Proceed with extreme caution.
-        </p>
-        <div className="mt-4 flex gap-3">
-          <button
-            className="rounded-lg px-4 py-2 text-sm font-medium"
-            style={{ backgroundColor: 'var(--color-muted)', color: 'var(--color-foreground)' }}
-          >
-            Export All Data
-          </button>
-          <button
-            className="rounded-lg px-4 py-2 text-sm font-medium"
-            style={{ backgroundColor: 'var(--color-destructive)', color: 'var(--color-primary-foreground)' }}
-          >
-            Suspend School Account
-          </button>
-        </div>
-      </div>
+      <SettingsDangerZone />
     </div>
   )
 }
