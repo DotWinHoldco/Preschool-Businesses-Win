@@ -9,7 +9,7 @@ import { createTenantAdminClient } from '@/lib/supabase/admin'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { FamilyTreeView } from '@/components/portal/families/family-tree-view'
+import { FamilyMembersManager } from '@/components/portal/families/family-members-manager'
 import { AuthorizedPickupList } from '@/components/portal/families/authorized-pickup-list'
 
 export default async function FamilyDetailPage({
@@ -82,6 +82,8 @@ export default async function FamilyDetailPage({
     is_primary_contact: m.is_primary_contact ?? false,
     is_billing_responsible: m.is_billing_responsible ?? false,
     can_pickup_default: m.can_pickup_default ?? true,
+    lives_in_household: m.lives_in_household ?? true,
+    custody_notes: m.custody_notes,
     phone: m.phone,
     email: m.email,
   }))
@@ -147,11 +149,13 @@ export default async function FamilyDetailPage({
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Main content */}
         <div className="space-y-6 lg:col-span-2">
-          {/* Family tree view */}
-          <FamilyTreeView
+          {/* Family members + students */}
+          <FamilyMembersManager
+            familyId={familyId}
             familyName={family.family_name}
             members={mappedMembers}
             students={mappedStudents}
+            showAdminLabels
           />
 
           {/* Authorized pickups */}

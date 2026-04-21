@@ -79,6 +79,28 @@ export const CreateFamilyMemberSchema = z.object({
 export type CreateFamilyMemberInput = z.infer<typeof CreateFamilyMemberSchema>
 
 // ---------------------------------------------------------------------------
+// Update Family Member
+// ---------------------------------------------------------------------------
+
+export const UpdateFamilyMemberSchema = z.object({
+  id: z.string().uuid('Invalid member ID'),
+  family_id: z.string().uuid('Invalid family ID'),
+  first_name: z.string().min(1, 'First name is required').max(100).optional(),
+  last_name: z.string().min(1, 'Last name is required').max(100).optional(),
+  email: z.string().email('Invalid email').optional().nullable(),
+  phone: z.string().max(30).optional().nullable(),
+  relationship_type: relationshipTypeEnum.optional(),
+  relationship_label: z.string().max(100).optional().nullable(),
+  is_primary_contact: z.boolean().optional(),
+  is_billing_responsible: z.boolean().optional(),
+  can_pickup_default: z.boolean().optional(),
+  lives_in_household: z.boolean().optional(),
+  custody_notes: z.string().max(5000).optional().nullable(),
+})
+
+export type UpdateFamilyMemberInput = z.infer<typeof UpdateFamilyMemberSchema>
+
+// ---------------------------------------------------------------------------
 // Remove Family Member
 // ---------------------------------------------------------------------------
 

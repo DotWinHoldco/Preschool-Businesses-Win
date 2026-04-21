@@ -6,8 +6,10 @@
 
 import {
   CreateFamilyMemberSchema,
+  UpdateFamilyMemberSchema,
   RemoveFamilyMemberSchema,
   type CreateFamilyMemberInput,
+  type UpdateFamilyMemberInput,
 } from '@/lib/schemas/family'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
@@ -77,6 +79,63 @@ export async function addFamilyMember(input: CreateFamilyMemberInput): Promise<M
   })
 
   return { ok: true, memberId: member.id }
+}
+
+// ---------------------------------------------------------------------------
+// Update family member
+// ---------------------------------------------------------------------------
+
+export async function updateFamilyMember(input: UpdateFamilyMemberInput): Promise<MemberResult> {
+  await assertRole('admin')
+
+  const parsed = UpdateFamilyMemberSchema.safeParse(input)
+  if (!parsed.success) {
+    const fieldErrors: Record<string, string> = {}
+    for (const issue of parsed.error.issues) {
+      const key = issue.path.join('.')
+      if (key) fieldErrors[key] = issue.message
+    }
+    return { ok: false, error: 'Validation failed', fieldErrors }
+  }
+
+  const { id, family_id, ...updates } = parsed.data
+  const tenantId = await getTenantId()
+  const actorId = await getActorId()
+  const supabase = createAdminClient()
+
+  const { data: before } = await supabase
+    .from('family_members')
+    .select('*')
+    .eq('id', id)
+    .eq('family_id', family_id)
+    .eq('tenant_id', tenantId)
+    .single()
+
+  if (!before) {
+    return { ok: false, error: 'Family member not found' }
+  }
+
+  const { error } = await supabase
+    .from('family_members')
+    .update(updates)
+    .eq('id', id)
+    .eq('tenant_id', tenantId)
+
+  if (error) {
+    return { ok: false, error: error.message }
+  }
+
+  await supabase.from('audit_log').insert({
+    tenant_id: tenantId,
+    actor_id: actorId,
+    action: 'update',
+    entity_type: 'family_member',
+    entity_id: id,
+    before_data: before as unknown as Record<string, unknown>,
+    after_data: updates as unknown as Record<string, unknown>,
+  })
+
+  return { ok: true, memberId: id }
 }
 
 // ---------------------------------------------------------------------------
