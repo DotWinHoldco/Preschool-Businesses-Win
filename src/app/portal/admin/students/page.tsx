@@ -7,27 +7,31 @@ import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { createTenantAdminClient } from '@/lib/supabase/admin'
 import { Button } from '@/components/ui/button'
+import { Pagination } from '@/components/ui/pagination'
+import { parsePagination } from '@/lib/pagination'
 import { StudentListClient } from '@/components/portal/students/student-list-client'
 import type { AllergySeverity } from '@/components/portal/students/allergy-badge'
 
 export default async function StudentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; q?: string }>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
   const headerStore = await headers()
   const tenantId = headerStore.get('x-tenant-id')
   if (!tenantId) notFound()
 
-  const { status, q } = await searchParams
+  const params = await searchParams
+  const { status, q } = params as { status?: string; q?: string }
+  const { page, perPage, offset } = parsePagination(params)
   const supabase = await createTenantAdminClient(tenantId)
 
   let query = supabase
     .from('students')
-    .select('id, first_name, last_name, preferred_name, date_of_birth, enrollment_status, photo_path, created_at')
+    .select('id, first_name, last_name, preferred_name, date_of_birth, enrollment_status, photo_path, created_at', { count: 'exact', head: false })
     .eq('tenant_id', tenantId)
     .order('last_name', { ascending: true })
-    .limit(100)
+    .range(offset, offset + perPage - 1)
 
   if (status && status !== 'all') {
     query = query.eq('enrollment_status', status)
@@ -37,7 +41,7 @@ export default async function StudentsPage({
     query = query.or(`first_name.ilike.%${q}%,last_name.ilike.%${q}%`)
   }
 
-  const { data: students } = await query
+  const { data: students, count } = await query
 
   // Fetch allergies for all students
   const studentIds = students?.map((s) => s.id) ?? []
@@ -128,6 +132,8 @@ export default async function StudentsPage({
         classroomMap={classroomMap}
         serverQuery={q}
       />
+
+      <Pagination page={page} perPage={perPage} total={count ?? 0} basePath="/portal/admin/students" />
     </div>
   )
 }

@@ -5,24 +5,31 @@ import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { createTenantAdminClient } from '@/lib/supabase/admin'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Pagination } from '@/components/ui/pagination'
+import { parsePagination } from '@/lib/pagination'
 import { Newspaper, Heart, MessageSquare, Pin } from 'lucide-react'
 import { ComposePostButton } from '@/components/portal/newsfeed/compose-post'
 
-export default async function AdminNewsfeedPage() {
+export default async function AdminNewsfeedPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
   const headerStore = await headers()
   const tenantId = headerStore.get('x-tenant-id')
   if (!tenantId) notFound()
 
+  const { page, perPage, offset } = parsePagination(await searchParams)
   const supabase = await createTenantAdminClient(tenantId)
 
-  // Fetch posts
-  const { data: dbPosts } = await supabase
+  // Fetch posts (paginated)
+  const { data: dbPosts, count } = await supabase
     .from('newsfeed_posts')
-    .select('*')
+    .select('*', { count: 'exact', head: false })
     .eq('tenant_id', tenantId)
     .order('pinned', { ascending: false })
     .order('created_at', { ascending: false })
-    .limit(50)
+    .range(offset, offset + perPage - 1)
 
   const posts = dbPosts ?? []
 
@@ -202,6 +209,8 @@ export default async function AdminNewsfeedPage() {
           )}
         </CardContent>
       </Card>
+
+      <Pagination page={page} perPage={perPage} total={count ?? 0} basePath="/portal/admin/newsfeed" />
     </div>
   )
 }

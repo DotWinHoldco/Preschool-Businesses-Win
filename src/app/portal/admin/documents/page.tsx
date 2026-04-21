@@ -3,6 +3,8 @@
 import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { createTenantAdminClient } from '@/lib/supabase/admin'
+import { Pagination } from '@/components/ui/pagination'
+import { parsePagination } from '@/lib/pagination'
 import {
   DocumentsClient,
   type DocFolder,
@@ -34,17 +36,24 @@ function extractExtension(mime: string | null, path: string | null): string {
   return 'FILE'
 }
 
-export default async function AdminDocumentsPage() {
+export default async function AdminDocumentsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
   const headerStore = await headers()
   const tenantId = headerStore.get('x-tenant-id')
   if (!tenantId) notFound()
+
+  const { page, perPage, offset } = parsePagination(await searchParams)
   const supabase = await createTenantAdminClient(tenantId)
 
-  const { data: docs } = await supabase
+  const { data: docs, count } = await supabase
     .from('documents')
-    .select('*')
+    .select('*', { count: 'exact', head: false })
     .eq('tenant_id', tenantId)
     .order('created_at', { ascending: false })
+    .range(offset, offset + perPage - 1)
 
   const allDocs = docs ?? []
 
@@ -101,6 +110,8 @@ export default async function AdminDocumentsPage() {
       ) : (
         <DocumentsClient initialFolders={folders} initialFiles={files} />
       )}
+
+      <Pagination page={page} perPage={perPage} total={count ?? 0} basePath="/portal/admin/documents" />
     </div>
   )
 }

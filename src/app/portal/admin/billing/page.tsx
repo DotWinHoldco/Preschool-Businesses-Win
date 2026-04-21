@@ -7,19 +7,26 @@ import { createTenantAdminClient } from '@/lib/supabase/admin'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { InvoiceList } from '@/components/portal/billing/invoice-list'
 import { BillingActions } from '@/components/portal/billing/billing-actions'
+import { Pagination } from '@/components/ui/pagination'
+import { parsePagination } from '@/lib/pagination'
 import { DollarSign, TrendingUp, AlertCircle, CheckCircle2 } from 'lucide-react'
 
-export default async function BillingDashboardPage() {
+export default async function BillingDashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
   const headerStore = await headers()
   const tenantId = headerStore.get('x-tenant-id')
   if (!tenantId) notFound()
 
+  const { page, perPage, offset } = parsePagination(await searchParams)
   const supabase = await createTenantAdminClient(tenantId)
   const today = new Date().toISOString().split('T')[0]
   const monthStart = today.slice(0, 7) + '-01'
 
   // Fetch all invoice data in parallel
-  const [{ data: paidInvoices }, { data: outstandingInvoices }, { count: overdueCount }, { data: recentRows }] =
+  const [{ data: paidInvoices }, { data: outstandingInvoices }, { count: overdueCount }, { data: recentRows, count: invoiceCount }] =
     await Promise.all([
       // Revenue MTD: paid invoices this month
       supabase
@@ -41,13 +48,13 @@ export default async function BillingDashboardPage() {
         .eq('tenant_id', tenantId)
         .eq('status', 'sent')
         .lt('due_date', today),
-      // Recent invoices
+      // Recent invoices (paginated)
       supabase
         .from('invoices')
-        .select('*')
+        .select('*', { count: 'exact', head: false })
         .eq('tenant_id', tenantId)
         .order('created_at', { ascending: false })
-        .limit(10),
+        .range(offset, offset + perPage - 1),
     ])
 
   const revenueMTD = (paidInvoices ?? []).reduce((sum, inv) => sum + (inv.total_cents ?? 0), 0)
@@ -150,6 +157,8 @@ export default async function BillingDashboardPage() {
           )}
         </CardContent>
       </Card>
+
+      <Pagination page={page} perPage={perPage} total={invoiceCount ?? 0} basePath="/portal/admin/billing" />
     </div>
   )
 }

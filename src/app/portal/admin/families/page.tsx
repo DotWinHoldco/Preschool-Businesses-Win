@@ -7,32 +7,36 @@ import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { createTenantAdminClient } from '@/lib/supabase/admin'
 import { Button } from '@/components/ui/button'
+import { Pagination } from '@/components/ui/pagination'
+import { parsePagination } from '@/lib/pagination'
 import { FamilyListClient } from '@/components/portal/families/family-list-client'
 
 export default async function FamiliesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
   const headerStore = await headers()
   const tenantId = headerStore.get('x-tenant-id')
   if (!tenantId) notFound()
 
-  const { q } = await searchParams
+  const params = await searchParams
+  const { q } = params as { q?: string }
+  const { page, perPage, offset } = parsePagination(params)
   const supabase = await createTenantAdminClient(tenantId)
 
   let query = supabase
     .from('families')
-    .select('id, family_name, billing_email, billing_phone, mailing_city, mailing_state, created_at')
+    .select('id, family_name, billing_email, billing_phone, mailing_city, mailing_state, created_at', { count: 'exact', head: false })
     .eq('tenant_id', tenantId)
     .order('family_name', { ascending: true })
-    .limit(100)
+    .range(offset, offset + perPage - 1)
 
   if (q) {
     query = query.or(`family_name.ilike.%${q}%,billing_email.ilike.%${q}%`)
   }
 
-  const { data: families } = await query
+  const { data: families, count } = await query
 
   // Fetch member counts and student counts for each family
   const familyIds = families?.map((f) => f.id) ?? []
@@ -96,6 +100,8 @@ export default async function FamiliesPage({
         studentCountMap={studentCountMap}
         serverQuery={q}
       />
+
+      <Pagination page={page} perPage={perPage} total={count ?? 0} basePath="/portal/admin/families" />
     </div>
   )
 }

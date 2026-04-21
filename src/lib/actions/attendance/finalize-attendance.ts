@@ -53,16 +53,14 @@ export async function finalizeAttendance(
 
     const tenantId = await getTenantId()
     const actorId = await getActorId()
-    for (const rec of records ?? []) {
-      await writeAudit(supabase, {
-        tenantId,
-        actorId,
-        action: 'attendance.finalize',
-        entityType: 'attendance_record',
-        entityId: rec.id,
-        after: { classroom_id, date, finalized_at: new Date().toISOString() },
-      })
-    }
+    await writeAudit(supabase, {
+      tenantId,
+      actorId,
+      action: 'attendance.batch_finalize',
+      entityType: 'attendance_records',
+      entityId: classroom_id,
+      after: { date, count: records?.length ?? 0, finalized_at: new Date().toISOString() },
+    })
 
     return { ok: true, count: records?.length ?? 0 }
   } catch (err) {

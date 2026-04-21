@@ -8,21 +8,29 @@ import { createTenantAdminClient } from '@/lib/supabase/admin'
 import { Card, CardContent } from '@/components/ui/card'
 import { CertStatusBadge } from '@/components/portal/staff/cert-status-badge'
 import { Button } from '@/components/ui/button'
+import { Pagination } from '@/components/ui/pagination'
+import { parsePagination } from '@/lib/pagination'
 import { Users, Plus } from 'lucide-react'
 
-export default async function AdminStaffPage() {
+export default async function AdminStaffPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
   const headerStore = await headers()
   const tenantId = headerStore.get('x-tenant-id')
   if (!tenantId) notFound()
 
+  const { page, perPage, offset } = parsePagination(await searchParams)
   const supabase = await createTenantAdminClient(tenantId)
 
   // Fetch staff profiles
-  const { data: staff } = await supabase
+  const { data: staff, count } = await supabase
     .from('staff_profiles')
-    .select('*')
+    .select('*', { count: 'exact', head: false })
     .eq('tenant_id', tenantId)
     .order('created_at', { ascending: false })
+    .range(offset, offset + perPage - 1)
 
   const staffList = staff ?? []
   const userIds = staffList.map((s) => s.user_id).filter(Boolean)
@@ -126,6 +134,8 @@ export default async function AdminStaffPage() {
           ))}
         </div>
       )}
+
+      <Pagination page={page} perPage={perPage} total={count ?? 0} basePath="/portal/admin/staff" />
     </div>
   )
 }

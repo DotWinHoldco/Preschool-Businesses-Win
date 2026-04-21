@@ -4,26 +4,33 @@ import type { Metadata } from 'next'
 import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { createTenantAdminClient } from '@/lib/supabase/admin'
+import { Pagination } from '@/components/ui/pagination'
+import { parsePagination } from '@/lib/pagination'
 
 export const metadata: Metadata = {
   title: 'Audit Log | Admin Portal',
   description: 'Immutable record of all system actions and state changes',
 }
 
-export default async function AdminAuditLogPage() {
+export default async function AdminAuditLogPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
   const headerStore = await headers()
   const tenantId = headerStore.get('x-tenant-id')
   if (!tenantId) notFound()
 
+  const { page, perPage, offset } = parsePagination(await searchParams)
   const supabase = await createTenantAdminClient(tenantId)
 
-  // Fetch audit log entries
-  const { data: dbEntries } = await supabase
+  // Fetch audit log entries (paginated)
+  const { data: dbEntries, count } = await supabase
     .from('audit_log')
-    .select('*')
+    .select('*', { count: 'exact', head: false })
     .eq('tenant_id', tenantId)
     .order('created_at', { ascending: false })
-    .limit(50)
+    .range(offset, offset + perPage - 1)
 
   const entries = dbEntries ?? []
 
@@ -167,26 +174,7 @@ export default async function AdminAuditLogPage() {
         )}
       </div>
 
-      {/* Pagination */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
-          Showing {displayEntries.length} entries
-        </p>
-        <div className="flex gap-2">
-          <button
-            className="rounded-lg px-3 py-1.5 text-sm"
-            style={{ backgroundColor: 'var(--color-muted)', color: 'var(--color-foreground)' }}
-          >
-            Previous
-          </button>
-          <button
-            className="rounded-lg px-3 py-1.5 text-sm"
-            style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-primary-foreground)' }}
-          >
-            Next
-          </button>
-        </div>
-      </div>
+      <Pagination page={page} perPage={perPage} total={count ?? 0} basePath="/portal/admin/audit-log" />
     </div>
   )
 }
