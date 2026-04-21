@@ -4,6 +4,20 @@
 
 ---
 
+### 2026-04-20 — Enterprise Hardening: 8 Phases Complete
+
+- **What:** Closed all 14 enterprise-readiness gaps identified in full platform audit.
+- **Phase 1 (Security & Observability):** Sentry wired (instrumentation.ts + global-error.tsx + next.config.ts), in-memory rate limiting on 4 public API routes, tenant header validation (throw on missing x-tenant-id), file upload MIME validation + path traversal prevention, marketing APIs multi-tenanted, /api/health endpoint.
+- **Phase 2 (Notifications):** sendNotification() now inserts into notifications table for in_app channel, email channel wired to Resend, 10 notification templates.
+- **Phase 3 (Cron Jobs):** All 8 cron jobs implemented with real business logic: ratio-check, late-pickup-alert, cert-expiry, attendance-finalize, document-expiry-check, scheduled-messages, email-digest, billing-run. Shared helpers in src/lib/cron/.
+- **Phase 4 (Billing):** /api/billing/pay route creates Stripe PaymentIntents, Stripe Elements (PaymentElement) integrated in payment form, webhook handler enhanced with notifications + audit logging.
+- **Phase 5 (Performance):** Pagination helper + UI component, 7 admin list pages paginated, N+1 audit loop fix in attendance finalize.
+- **Phase 6 (Compliance):** consent_records + access_log tables (migrations 0056-0057), compliance schemas, privacy settings backend (save/load to tenant_settings), consent tracking CRUD, full data export as CSV, family anonymization with confirmation, data retention cron job, privacy page wired to real backend.
+- **Phase 7 (Testing):** Vitest configured, 86 tests across 4 test files (billing schemas, check-in schemas, compliance schemas, permissions). All passing.
+- **Phase 8 (CI/CD):** GitHub Actions workflow (type-check + lint + test on PR/push to main).
+- **Where:** 70+ files across src/, supabase/migrations/, .github/workflows/, vercel.json, package.json
+- **Status:** Complete — `npx tsc --noEmit` clean, `npx next build` clean, 86/86 tests passing.
+
 ### 2026-04-20 — Portal QA Phase 7: Staff & Parent Portal Real Data Wiring
 
 - **What:** Wired all staff portal (11 pages) and parent portal (20 pages) to real Supabase data. Every page queries the live database — no mock/hardcoded data remains. Staff portal covers dashboard, schedule, daily reports, time clock, messaging, classroom views (overview/attendance/reports/student), calendar, and training. Parent portal covers dashboard, children list/detail/reports/medical, family profile/pickups, messaging, check-in (QR), surveys, billing (dashboard/invoices/subscriptions/payment-methods/tax-statements), calendar, checklists, documents, and drop-in.
