@@ -23,7 +23,7 @@ export default async function StaffMessagingPage() {
   // Try to find conversations the staff member participates in.
   // First attempt: conversation_participants table
   const { data: participantRows, error: participantError } = await supabase
-    .from('conversation_participants')
+    .from('conversation_members')
     .select('conversation_id')
     .eq('user_id', userId)
 
