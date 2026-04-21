@@ -10,7 +10,7 @@ import { Select } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Dialog, DialogOverlay, DialogContent, DialogClose } from '@/components/ui/dialog'
 import { addFamilyMember, updateFamilyMember, removeFamilyMember } from '@/lib/actions/family/manage-members'
-import type { LinkedStudentData } from './family-tree-view'
+import { FamilyStudentLinks, type LinkData, type SearchOption } from './student-family-linker'
 
 interface FamilyMemberData {
   id: string
@@ -74,7 +74,8 @@ interface FamilyMembersManagerProps {
   familyId: string
   familyName: string
   members: FamilyMemberData[]
-  students: LinkedStudentData[]
+  studentLinks: LinkData[]
+  availableStudents: SearchOption[]
   showAdminLabels?: boolean
   className?: string
 }
@@ -83,7 +84,8 @@ export function FamilyMembersManager({
   familyId,
   familyName,
   members,
-  students,
+  studentLinks,
+  availableStudents,
   showAdminLabels = false,
   className,
 }: FamilyMembersManagerProps) {
@@ -284,51 +286,19 @@ export function FamilyMembersManager({
             </div>
 
             {/* Connecting line */}
-            {members.length > 0 && students.length > 0 && (
+            {members.length > 0 && studentLinks.length > 0 && (
               <div className="flex justify-center">
                 <div className="h-6 w-px bg-[var(--color-border)]" />
               </div>
             )}
 
-            {/* Children */}
+            {/* Children — interactive link management */}
             <div>
-              <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-foreground)]">
-                Children
-              </h4>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {students.map((student) => (
-                  <a
-                    key={student.id}
-                    href={`/portal/admin/students/${student.id}`}
-                    className="flex items-start gap-3 rounded-lg border border-[var(--color-border)] p-3 transition-colors hover:bg-[var(--color-muted)]/50"
-                  >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)]/10 text-sm font-semibold text-[var(--color-primary)]">
-                      {student.first_name[0]}{student.last_name[0]}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-[var(--color-foreground)]">
-                        {student.first_name} {student.last_name}
-                      </p>
-                      <div className="mt-0.5 flex items-center gap-2 text-xs text-[var(--color-muted-foreground)]">
-                        <Badge variant={student.enrollment_status === 'active' ? 'success' : 'outline'} size="sm">
-                          {student.enrollment_status}
-                        </Badge>
-                        {student.billing_split_pct != null && student.billing_split_pct < 100 && (
-                          <span>{student.billing_split_pct}% billing</span>
-                        )}
-                        {student.is_primary_family && (
-                          <Badge variant="default" size="sm">Primary</Badge>
-                        )}
-                      </div>
-                    </div>
-                  </a>
-                ))}
-                {students.length === 0 && (
-                  <p className="text-sm text-[var(--color-muted-foreground)] col-span-2">
-                    No students linked to this family yet
-                  </p>
-                )}
-              </div>
+              <FamilyStudentLinks
+                familyId={familyId}
+                links={studentLinks}
+                availableStudents={availableStudents}
+              />
             </div>
           </div>
         </CardContent>

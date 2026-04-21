@@ -40,6 +40,7 @@ export interface SectionEditButtonProps {
   overview?: StudentOverviewData
   classrooms?: ClassroomOption[]
   currentClassroomId?: string | null
+  currentAssignmentId?: string | null
   medical?: MedicalData
   allergies?: AllergyItem[]
 }
@@ -50,6 +51,7 @@ export function SectionEditButton({
   overview,
   classrooms,
   currentClassroomId,
+  currentAssignmentId,
   medical,
   allergies,
 }: SectionEditButtonProps) {
@@ -74,6 +76,7 @@ export function SectionEditButton({
         overview={overview}
         classrooms={classrooms}
         currentClassroomId={currentClassroomId}
+        currentAssignmentId={currentAssignmentId}
         medical={medical}
         allergies={allergies}
       />

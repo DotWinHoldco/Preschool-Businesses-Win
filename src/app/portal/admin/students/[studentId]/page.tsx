@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { MedicalProfile } from '@/components/portal/students/medical-profile'
 import { AllergyBadge } from '@/components/portal/students/allergy-badge'
 import { SectionEditButton } from '@/components/portal/students/section-edit-button'
+import { StudentFamilyLinks } from '@/components/portal/families/student-family-linker'
 import type { AllergySeverity } from '@/components/portal/students/allergy-badge'
 import type { AllergyData, MedicalProfileData } from '@/components/portal/students/medical-profile'
 
@@ -113,6 +114,13 @@ export default async function StudentDetailPage({
     .eq('tenant_id', tenantId)
     .eq('is_active', true)
     .order('name')
+
+  // Fetch all families for link dropdown
+  const { data: allFamilies } = await supabase
+    .from('families')
+    .select('id, family_name')
+    .eq('tenant_id', tenantId)
+    .order('family_name')
 
   // Fetch entity notes
   const { data: notes } = await supabase
@@ -345,45 +353,62 @@ export default async function StudentDetailPage({
 
         {/* Sidebar - 1 column */}
         <div className="space-y-6">
-          {/* Family links */}
+          {/* Classroom assignment */}
           <Card>
             <CardHeader>
-              <CardTitle>Family</CardTitle>
+              <div className="flex items-center gap-2">
+                <CardTitle>Classroom</CardTitle>
+                <SectionEditButton
+                  section="classroom"
+                  studentId={studentId}
+                  classrooms={(classrooms ?? []).map((c) => ({ id: c.id, name: c.name }))}
+                  currentClassroomId={currentClassroomId}
+                  currentAssignmentId={classroomAssignment?.id ?? null}
+                />
+              </div>
             </CardHeader>
             <CardContent>
-              {(!familyLinks || familyLinks.length === 0) ? (
-                <p className="text-sm text-[var(--color-muted-foreground)]">Not linked to any family</p>
+              {classroomName ? (
+                <a
+                  href={`/portal/admin/classrooms/${currentClassroomId}`}
+                  className="flex items-center justify-between rounded-lg border border-[var(--color-border)] p-3 transition-colors hover:bg-[var(--color-muted)]/50"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-[var(--color-foreground)]">{classroomName}</p>
+                    <p className="text-xs text-[var(--color-muted-foreground)] capitalize">
+                      {classroomAssignment?.program_type?.replace(/_/g, ' ') ?? 'full day'}
+                    </p>
+                  </div>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--color-muted-foreground)]">
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </a>
               ) : (
-                <div className="space-y-2">
-                  {familyLinks.map((link) => {
-                    const family = (link as Record<string, unknown>).families as { id: string; family_name: string } | null
-                    return (
-                      <a
-                        key={link.id}
-                        href={family ? `/portal/admin/families/${family.id}` : '#'}
-                        className="flex items-center justify-between rounded-lg border border-[var(--color-border)] p-3 transition-colors hover:bg-[var(--color-muted)]/50"
-                      >
-                        <div>
-                          <p className="text-sm font-medium text-[var(--color-foreground)]">
-                            {family?.family_name ?? 'Unknown'}
-                          </p>
-                          <div className="flex items-center gap-2 text-xs text-[var(--color-muted-foreground)]">
-                            {link.is_primary_family && <span>Primary</span>}
-                            {link.billing_split_pct != null && link.billing_split_pct < 100 && (
-                              <span>{link.billing_split_pct}% billing</span>
-                            )}
-                          </div>
-                        </div>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--color-muted-foreground)]">
-                          <polyline points="9 18 15 12 9 6" />
-                        </svg>
-                      </a>
-                    )
-                  })}
-                </div>
+                <p className="text-sm text-[var(--color-muted-foreground)]">Not assigned to a classroom</p>
               )}
             </CardContent>
           </Card>
+
+          {/* Family links */}
+          <StudentFamilyLinks
+            studentId={studentId}
+            links={(familyLinks ?? []).map((link) => {
+              const family = (link as Record<string, unknown>).families as { id: string; family_name: string } | null
+              return {
+                id: link.id,
+                student_id: studentId,
+                family_id: family?.id ?? link.family_id,
+                billing_split_pct: link.billing_split_pct ?? 100,
+                is_primary_family: link.is_primary_family ?? false,
+                notes: link.notes,
+                family_name: family?.family_name ?? 'Unknown',
+              }
+            })}
+            availableFamilies={(allFamilies ?? []).map((f) => ({
+              id: f.id,
+              label: `${f.family_name} Family`,
+            }))}
+          />
 
           {/* Emergency Contacts */}
           <Card>

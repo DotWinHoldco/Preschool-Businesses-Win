@@ -62,6 +62,14 @@ export default async function FamilyDetailPage({
         .eq('tenant_id', tenantId)
     : { data: [] }
 
+  // Fetch all students for link dropdown
+  const { data: allStudents } = await supabase
+    .from('students')
+    .select('id, first_name, last_name, enrollment_status')
+    .eq('tenant_id', tenantId)
+    .in('enrollment_status', ['active', 'enrolled', 'applied', 'waitlisted'])
+    .order('last_name')
+
   // Fetch entity notes
   const { data: notes } = await supabase
     .from('entity_notes')
@@ -88,7 +96,7 @@ export default async function FamilyDetailPage({
     email: m.email,
   }))
 
-  const mappedStudents = (studentLinks ?? []).map((sl) => {
+  const mappedStudentLinks = (studentLinks ?? []).map((sl) => {
     const student = (sl as Record<string, unknown>).students as {
       id: string
       first_name: string
@@ -97,13 +105,13 @@ export default async function FamilyDetailPage({
       enrollment_status: string
     } | null
     return {
-      id: student?.id ?? '',
-      first_name: student?.first_name ?? '',
-      last_name: student?.last_name ?? '',
-      date_of_birth: student?.date_of_birth ?? '',
-      enrollment_status: student?.enrollment_status ?? 'unknown',
-      billing_split_pct: sl.billing_split_pct,
-      is_primary_family: sl.is_primary_family,
+      id: sl.id,
+      student_id: student?.id ?? '',
+      family_id: familyId,
+      billing_split_pct: sl.billing_split_pct ?? 100,
+      is_primary_family: sl.is_primary_family ?? false,
+      notes: sl.notes as string | null,
+      student_name: student ? `${student.first_name} ${student.last_name}` : 'Unknown',
     }
   })
 
@@ -154,7 +162,12 @@ export default async function FamilyDetailPage({
             familyId={familyId}
             familyName={family.family_name}
             members={mappedMembers}
-            students={mappedStudents}
+            studentLinks={mappedStudentLinks}
+            availableStudents={(allStudents ?? []).map((s) => ({
+              id: s.id,
+              label: `${s.first_name} ${s.last_name}`,
+              sublabel: s.enrollment_status,
+            }))}
             showAdminLabels
           />
 
@@ -163,8 +176,8 @@ export default async function FamilyDetailPage({
             <AuthorizedPickupList
               pickups={mappedPickups}
               studentName={
-                mappedStudents.length === 1
-                  ? `${mappedStudents[0].first_name}`
+                mappedStudentLinks.length === 1
+                  ? mappedStudentLinks[0].student_name
                   : 'children'
               }
             />

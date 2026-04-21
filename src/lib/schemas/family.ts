@@ -110,6 +110,35 @@ export const RemoveFamilyMemberSchema = z.object({
 })
 
 // ---------------------------------------------------------------------------
+// Student–Family Link
+// ---------------------------------------------------------------------------
+
+export const LinkStudentFamilySchema = z.object({
+  student_id: z.string().uuid('Invalid student ID'),
+  family_id: z.string().uuid('Invalid family ID'),
+  billing_split_pct: z.number().min(0).max(100).optional(),
+  is_primary_family: z.boolean().optional(),
+  custody_schedule: z.record(z.string(), z.unknown()).optional(),
+  notes: z.string().max(5000).optional(),
+})
+
+export type LinkStudentFamilyInput = z.infer<typeof LinkStudentFamilySchema>
+
+export const UpdateStudentFamilyLinkSchema = z.object({
+  id: z.string().uuid('Invalid link ID'),
+  billing_split_pct: z.number().min(0).max(100).optional(),
+  is_primary_family: z.boolean().optional(),
+  custody_schedule: z.record(z.string(), z.unknown()).optional(),
+  notes: z.string().max(5000).optional().nullable(),
+})
+
+export type UpdateStudentFamilyLinkInput = z.infer<typeof UpdateStudentFamilyLinkSchema>
+
+export const UnlinkStudentFamilySchema = z.object({
+  id: z.string().uuid('Invalid link ID'),
+})
+
+// ---------------------------------------------------------------------------
 // Authorized Pickup
 // ---------------------------------------------------------------------------
 

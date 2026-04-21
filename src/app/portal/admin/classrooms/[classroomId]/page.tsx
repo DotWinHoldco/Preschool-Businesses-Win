@@ -11,7 +11,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CapacityGauge } from '@/components/portal/classrooms/capacity-gauge'
 import { RatioBadge } from '@/components/portal/classrooms/ratio-badge'
-import { AllergyBadge, type AllergySeverity } from '@/components/portal/students/allergy-badge'
+import { ClassroomRosterManager } from '@/components/portal/classrooms/classroom-roster-manager'
+import { type AllergySeverity } from '@/components/portal/students/allergy-badge'
 
 function formatAgeRange(minMonths: number, maxMonths: number): string {
   const formatAge = (months: number): string => {
@@ -82,12 +83,37 @@ export default async function ClassroomDetailPage({
         .in('student_id', studentIds)
     : { data: [] }
 
+  // Fetch all active students for assignment dropdown
+  const { data: allStudents } = await supabase
+    .from('students')
+    .select('id, first_name, last_name, date_of_birth')
+    .eq('tenant_id', tenantId)
+    .in('enrollment_status', ['active', 'enrolled'])
+    .order('last_name')
+
   const allergyMap = new Map<string, Array<{ allergen: string; severity: AllergySeverity }>>()
   for (const a of allergies ?? []) {
     const list = allergyMap.get(a.student_id) ?? []
     list.push({ allergen: a.allergen, severity: a.severity as AllergySeverity })
     allergyMap.set(a.student_id, list)
   }
+
+  const rosterData = (studentAssignments ?? []).map((sa) => {
+    const student = (sa as Record<string, unknown>).students as {
+      id: string; first_name: string; last_name: string; date_of_birth: string; photo_path: string | null; enrollment_status: string
+    } | null
+    return {
+      assignmentId: sa.id,
+      studentId: student?.id ?? '',
+      firstName: student?.first_name ?? '',
+      lastName: student?.last_name ?? '',
+      dateOfBirth: student?.date_of_birth ?? '',
+      photoPath: student?.photo_path ?? null,
+      enrollmentStatus: student?.enrollment_status ?? '',
+      programType: sa.program_type ?? 'full_day',
+      allergies: student ? (allergyMap.get(student.id) ?? []) : [],
+    }
+  })
 
   const rosterCount = studentAssignments?.length ?? 0
   const staffCount = staffAssignments?.length ?? 0
@@ -155,67 +181,17 @@ export default async function ClassroomDetailPage({
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Roster */}
         <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                Student Roster
-                <Badge variant="outline" size="sm">{rosterCount}</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {rosterCount === 0 ? (
-                <p className="text-sm text-[var(--color-muted-foreground)]">
-                  No students assigned to this classroom
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {(studentAssignments ?? []).map((sa) => {
-                    const student = (sa as Record<string, unknown>).students as {
-                      id: string
-                      first_name: string
-                      last_name: string
-                      date_of_birth: string
-                      photo_path: string | null
-                      enrollment_status: string
-                    } | null
-                    if (!student) return null
-                    const studentAllergies = allergyMap.get(student.id) ?? []
-                    const initials = `${student.first_name[0]}${student.last_name[0]}`.toUpperCase()
-                    return (
-                      <a
-                        key={sa.id}
-                        href={`/portal/admin/students/${student.id}`}
-                        className="flex items-center gap-3 rounded-lg border border-[var(--color-border)] p-3 transition-colors hover:bg-[var(--color-muted)]/50"
-                      >
-                        {student.photo_path ? (
-                          <img src={student.photo_path} alt="" className="h-8 w-8 rounded-full object-cover" />
-                        ) : (
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-muted)] text-xs font-semibold text-[var(--color-muted-foreground)]">
-                            {initials}
-                          </div>
-                        )}
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium text-[var(--color-foreground)]">
-                            {student.first_name} {student.last_name}
-                          </p>
-                          <p className="text-xs text-[var(--color-muted-foreground)]">
-                            {calculateAge(student.date_of_birth)} · {sa.program_type?.replace(/_/g, ' ') ?? 'full day'}
-                          </p>
-                        </div>
-                        {studentAllergies.length > 0 && (
-                          <div className="flex flex-wrap gap-1">
-                            {studentAllergies.map((a) => (
-                              <AllergyBadge key={a.allergen} allergen={a.allergen} severity={a.severity} />
-                            ))}
-                          </div>
-                        )}
-                      </a>
-                    )
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <ClassroomRosterManager
+            classroomId={classroomId}
+            roster={rosterData}
+            availableStudents={(allStudents ?? []).map((s) => ({
+              id: s.id,
+              firstName: s.first_name,
+              lastName: s.last_name,
+              dateOfBirth: s.date_of_birth,
+            }))}
+            calculateAge={calculateAge}
+          />
         </div>
 
         {/* Staff & details sidebar */}

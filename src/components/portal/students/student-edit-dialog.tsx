@@ -19,6 +19,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { updateOverview } from '@/lib/actions/student/update-overview'
 import { updateMedical } from '@/lib/actions/student/update-medical'
 import { addAllergy, removeAllergy } from '@/lib/actions/student/manage-allergies'
+import { assignStudent, removeStudent } from '@/lib/actions/classroom/manage-roster'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -63,6 +64,7 @@ export interface StudentEditDialogProps {
   overview?: StudentOverviewData
   classrooms?: ClassroomOption[]
   currentClassroomId?: string | null
+  currentAssignmentId?: string | null
   medical?: MedicalData
   allergies?: AllergyItem[]
 }
@@ -200,21 +202,61 @@ function OverviewForm({
 }
 
 // ---------------------------------------------------------------------------
-// Classroom form (placeholder — no server action for classroom reassignment yet)
+// Classroom form
 // ---------------------------------------------------------------------------
 
 function ClassroomForm({
+  studentId,
   classrooms,
   currentClassroomId,
+  currentAssignmentId,
+  onSuccess,
 }: {
+  studentId: string
   classrooms: ClassroomOption[]
   currentClassroomId: string | null
+  currentAssignmentId: string | null
   onSuccess: () => void
 }) {
   const [selected, setSelected] = useState(currentClassroomId ?? '')
+  const [programType, setProgramType] = useState<string>('full_day')
+  const [error, setError] = useState('')
+  const [isPending, startTransition] = useTransition()
+
+  const hasChanged = selected !== (currentClassroomId ?? '')
+
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault()
+    if (!hasChanged) return
+    setError('')
+    startTransition(async () => {
+      if (currentAssignmentId && currentClassroomId) {
+        const removeResult = await removeStudent({
+          assignment_id: currentAssignmentId,
+          classroom_id: currentClassroomId,
+        })
+        if (!removeResult.ok) {
+          setError(removeResult.error ?? 'Failed to remove from current classroom')
+          return
+        }
+      }
+      if (selected) {
+        const assignResult = await assignStudent({
+          student_id: studentId,
+          classroom_id: selected,
+          program_type: programType as 'full_day' | 'half_day_am' | 'half_day_pm' | 'before_care' | 'after_care' | 'summer',
+        })
+        if (!assignResult.ok) {
+          setError(assignResult.error ?? 'Failed to assign to classroom')
+          return
+        }
+      }
+      onSuccess()
+    })
+  }
 
   return (
-    <form className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-1.5">
         <Label htmlFor="edit-classroom">Classroom</Label>
         <Select
@@ -230,9 +272,31 @@ function ClassroomForm({
           ))}
         </Select>
       </div>
-      <p className="text-xs text-[var(--color-muted-foreground)]">
-        Classroom reassignment via the roster manager is coming soon.
-      </p>
+      {selected && (
+        <div className="space-y-1.5">
+          <Label htmlFor="edit-program-type">Program Type</Label>
+          <Select
+            id="edit-program-type"
+            value={programType}
+            onChange={(e) => setProgramType(e.target.value)}
+          >
+            <option value="full_day">Full Day</option>
+            <option value="half_day_am">Half Day (AM)</option>
+            <option value="half_day_pm">Half Day (PM)</option>
+            <option value="before_care">Before Care</option>
+            <option value="after_care">After Care</option>
+            <option value="summer">Summer</option>
+          </Select>
+        </div>
+      )}
+      {error && (
+        <p className="text-sm text-[var(--color-destructive)]">{error}</p>
+      )}
+      <div className="flex justify-end gap-2 pt-2">
+        <Button type="submit" size="sm" loading={isPending} disabled={!hasChanged}>
+          {selected ? 'Assign Classroom' : 'Remove Assignment'}
+        </Button>
+      </div>
     </form>
   )
 }
@@ -520,6 +584,7 @@ export function StudentEditDialog({
   overview,
   classrooms = [],
   currentClassroomId = null,
+  currentAssignmentId = null,
   medical,
   allergies = [],
 }: StudentEditDialogProps) {
@@ -542,8 +607,10 @@ export function StudentEditDialog({
 
         {section === 'classroom' && (
           <ClassroomForm
+            studentId={studentId}
             classrooms={classrooms}
             currentClassroomId={currentClassroomId}
+            currentAssignmentId={currentAssignmentId}
             onSuccess={handleSuccess}
           />
         )}
