@@ -34,11 +34,14 @@ export async function createTenantServerClient() {
     }
   )
 
-  // Set tenant context for RLS
   const tenantId = headerStore.get('x-tenant-id')
-  if (tenantId) {
-    await client.rpc('set_tenant_context', { p_tenant_id: tenantId })
+  if (!tenantId) {
+    throw new Error(
+      'createTenantServerClient() called without tenant context. ' +
+      'The x-tenant-id header is not set. Use createServerClientWithoutTenant() for platform-level operations.'
+    )
   }
+  await client.rpc('set_tenant_context', { p_tenant_id: tenantId })
 
   return client
 }

@@ -3,13 +3,23 @@
 
 import { NextResponse } from 'next/server'
 import { verifyCronAuth } from '@/lib/cron-auth'
+import { runScheduledMessagesForAllTenants } from '@/lib/cron/scheduled-messages'
 
 export async function GET(request: Request) {
   const authError = verifyCronAuth(request)
   if (authError) return authError
 
-  // TODO: Query message_schedules where scheduled_for <= now() and status = 'scheduled'
-  // Send each message, update status to 'sent'
-  console.log('[Cron] Scheduled messages')
-  return NextResponse.json({ success: true })
+  try {
+    console.log('[Cron] Scheduled messages started')
+    const summary = await runScheduledMessagesForAllTenants()
+
+    return NextResponse.json({
+      success: true,
+      message: 'Scheduled messages processed',
+      ...summary,
+    })
+  } catch (error) {
+    console.error('[Cron] Scheduled messages error:', error)
+    return NextResponse.json({ error: 'Scheduled messages failed' }, { status: 500 })
+  }
 }

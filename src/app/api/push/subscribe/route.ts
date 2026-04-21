@@ -2,8 +2,12 @@
 // Web Push subscription endpoint
 
 import { NextRequest, NextResponse } from 'next/server'
+import { rateLimitGuard } from '@/lib/rate-limit-guard'
 
 export async function POST(request: NextRequest) {
+  const blocked = rateLimitGuard(request, 10)
+  if (blocked) return blocked
+
   try {
     const subscription = await request.json()
 
@@ -11,7 +15,7 @@ export async function POST(request: NextRequest) {
     // Link to user_id and tenant_id
     // Update notification_preferences
 
-    console.log('[Push] New subscription registered')
+    console.log('[Push] New subscription registered', subscription)
 
     return NextResponse.json({ success: true })
   } catch (error) {

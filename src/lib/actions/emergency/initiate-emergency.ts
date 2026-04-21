@@ -118,6 +118,7 @@ export async function initiateEmergency(input: InitiateEmergencyInput) {
   // Notify all staff and parents in the tenant
   // In production, this would query all user IDs in the tenant
   await sendNotification({
+    tenantId,
     to: actorId, // Placeholder — would be all users in tenant
     template: 'emergency_lockdown',
     payload: {

@@ -3,14 +3,21 @@
 
 import { NextResponse } from 'next/server'
 import { verifyCronAuth } from '@/lib/cron-auth'
+import { runEmailDigestForAllTenants } from '@/lib/cron/email-digest'
 
 export async function GET(request: Request) {
   const authError = verifyCronAuth(request)
   if (authError) return authError
 
-  // TODO: For parents with unread notifications/messages:
-  // Compile daily digest email
-  // Send via Resend
-  console.log('[Cron] Email digest')
-  return NextResponse.json({ success: true })
+  try {
+    console.log('[Cron] Email digest started')
+
+    const summary = await runEmailDigestForAllTenants()
+
+    console.log('[Cron] Email digest complete:', summary)
+    return NextResponse.json({ success: true, ...summary })
+  } catch (error) {
+    console.error('[Cron] Email digest error:', error)
+    return NextResponse.json({ error: 'Email digest failed' }, { status: 500 })
+  }
 }

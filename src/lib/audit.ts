@@ -3,6 +3,7 @@
 // Every state-changing action must call writeAudit() after its primary mutation.
 
 import type { SupabaseClient } from '@supabase/supabase-js'
+import * as Sentry from '@sentry/nextjs'
 
 export interface AuditEntry {
   tenantId: string
@@ -32,8 +33,7 @@ export async function writeAudit(
       before_data: entry.before ?? null,
       after_data: entry.after ?? null,
     })
-  } catch {
-    // Audit write failure should not break the parent action.
-    // In production, this should report to Sentry.
+  } catch (err) {
+    Sentry.captureException(err, { tags: { subsystem: 'audit' } })
   }
 }

@@ -75,6 +75,7 @@ export async function resolveEmergency(input: z.infer<typeof ResolveEmergencySch
 
   // Send all-clear notification
   await sendNotification({
+    tenantId,
     to: actorId, // Placeholder — would be all users in tenant
     template: 'emergency_all_clear',
     payload: {

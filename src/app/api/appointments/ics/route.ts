@@ -3,8 +3,12 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { generateICS } from '@/lib/calendar/ics-generator'
+import { rateLimitGuard } from '@/lib/rate-limit-guard'
 
 export async function GET(request: NextRequest) {
+  const blocked = rateLimitGuard(request, 30)
+  if (blocked) return blocked
+
   const params = request.nextUrl.searchParams
   const start = params.get('start')
   const end = params.get('end')

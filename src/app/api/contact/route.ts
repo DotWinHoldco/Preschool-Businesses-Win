@@ -1,28 +1,32 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
-const TENANT_ID = 'a0a0a0a0-cca0-4000-8000-000000000001';
+import { NextRequest, NextResponse } from 'next/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { rateLimitGuard } from '@/lib/rate-limit-guard'
 
 export async function POST(request: NextRequest) {
+  const blocked = rateLimitGuard(request, 5)
+  if (blocked) return blocked
+
   try {
-    const body = await request.json();
-    const { firstName, lastName, email, message } = body;
+    const tenantId = request.headers.get('x-tenant-id')
+    if (!tenantId) {
+      return NextResponse.json({ error: 'Missing tenant context' }, { status: 400 })
+    }
+
+    const body = await request.json()
+    const { firstName, lastName, email, message } = body
 
     if (body.company) {
-      return NextResponse.json({ success: true });
+      return NextResponse.json({ success: true })
     }
 
     if (!email || !email.includes('@') || !message) {
-      return NextResponse.json({ error: 'Email and message are required' }, { status: 400 });
+      return NextResponse.json({ error: 'Email and message are required' }, { status: 400 })
     }
 
+    const supabase = createAdminClient()
+
     const { error } = await supabase.from('enrollment_leads').insert({
-      tenant_id: TENANT_ID,
+      tenant_id: tenantId,
       parent_first_name: firstName || null,
       parent_last_name: lastName || null,
       parent_email: email.toLowerCase().trim(),
@@ -31,16 +35,16 @@ export async function POST(request: NextRequest) {
       source_detail: '/contact',
       status: 'new',
       priority: 'medium',
-    });
+    })
 
     if (error) {
-      console.error('Contact form error:', error);
-      return NextResponse.json({ error: 'Failed to submit' }, { status: 500 });
+      console.error('Contact form error:', error)
+      return NextResponse.json({ error: 'Failed to submit' }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true })
   } catch (err) {
-    console.error('Contact route error:', err);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Contact route error:', err)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

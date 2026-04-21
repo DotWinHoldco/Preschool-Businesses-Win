@@ -1,26 +1,24 @@
 // @anchor: cca.notify
 
+import { createAdminClient } from '@/lib/supabase/admin'
+import { sendEmail } from '@/lib/email/resend'
+import { getNotificationText } from './templates'
+import * as Sentry from '@sentry/nextjs'
+
 export type NotificationChannel = 'in_app' | 'push' | 'email' | 'sms'
 export type NotificationUrgency = 'normal' | 'high' | 'critical'
 
 export interface SendNotificationParams {
-  /** User ID or array of user IDs to notify */
+  tenantId: string
   to: string | string[]
-  /** Template key (e.g., 'checkin_confirmed', 'daily_report_ready') */
   template: string
-  /** Dynamic data merged into the template */
   payload: Record<string, unknown>
-  /** Which channels to dispatch on */
   channels: NotificationChannel[]
-  /** Urgency level — affects delivery priority and visual treatment */
   urgency?: NotificationUrgency
 }
 
-/**
- * Dispatch a notification across the requested channels.
- * Stub implementation — logs to console until real providers are wired.
- */
 export async function sendNotification({
+  tenantId,
   to,
   template,
   payload,
@@ -28,40 +26,66 @@ export async function sendNotification({
   urgency = 'normal',
 }: SendNotificationParams): Promise<void> {
   const recipients = Array.isArray(to) ? to : [to]
+  const { title, body } = getNotificationText(template, payload)
 
   for (const channel of channels) {
-    switch (channel) {
-      case 'in_app':
-        // TODO: Insert into notifications table via Supabase
-        console.log(
-          `[notify:in_app] template=${template} urgency=${urgency} to=${recipients.join(',')}`,
-          payload
-        )
-        break
+    try {
+      switch (channel) {
+        case 'in_app': {
+          const supabase = createAdminClient()
+          const rows = recipients.map((userId) => ({
+            tenant_id: tenantId,
+            user_id: userId,
+            title,
+            body,
+            template,
+            urgency,
+            data: payload,
+            read: false,
+          }))
+          const { error } = await supabase.from('notifications').insert(rows)
+          if (error) {
+            console.error('[notify:in_app] Insert failed:', error.message)
+            Sentry.captureException(error, { tags: { subsystem: 'notification', channel: 'in_app' } })
+          }
+          break
+        }
 
-      case 'push':
-        // TODO: Send via FCM / APNs
-        console.log(
-          `[notify:push] template=${template} urgency=${urgency} to=${recipients.join(',')}`,
-          payload
-        )
-        break
+        case 'email': {
+          const supabase = createAdminClient()
+          const { data: profiles } = await supabase
+            .from('user_profiles')
+            .select('id, email, first_name')
+            .in('id', recipients)
 
-      case 'email':
-        // TODO: Send via Resend / Postmark
-        console.log(
-          `[notify:email] template=${template} urgency=${urgency} to=${recipients.join(',')}`,
-          payload
-        )
-        break
+          for (const profile of profiles ?? []) {
+            if (!profile.email) continue
+            await sendEmail({
+              to: profile.email,
+              subject: title,
+              html: `
+                <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 520px; margin: 0 auto; padding: 32px 24px;">
+                  <h2 style="font-size: 18px; color: #1a1a1a; margin: 0 0 12px;">${title}</h2>
+                  <p style="font-size: 15px; color: #555; line-height: 1.6;">${body}</p>
+                </div>
+              `,
+            })
+          }
+          break
+        }
 
-      case 'sms':
-        // TODO: Send via Twilio
-        console.log(
-          `[notify:sms] template=${template} urgency=${urgency} to=${recipients.join(',')}`,
-          payload
-        )
-        break
+        case 'push':
+          // TODO: Send via web-push / FCM
+          console.log(`[notify:push] template=${template} urgency=${urgency} to=${recipients.join(',')}`)
+          break
+
+        case 'sms':
+          // TODO: Send via Twilio
+          console.log(`[notify:sms] template=${template} urgency=${urgency} to=${recipients.join(',')}`)
+          break
+      }
+    } catch (err) {
+      Sentry.captureException(err, { tags: { subsystem: 'notification', channel } })
     }
   }
 }

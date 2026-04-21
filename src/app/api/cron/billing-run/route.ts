@@ -4,25 +4,19 @@
 
 import { NextResponse } from 'next/server'
 import { verifyCronAuth } from '@/lib/cron-auth'
+import { runBillingForAllTenants } from '@/lib/cron/billing-run'
 
 export async function GET(request: Request) {
   const authError = verifyCronAuth(request)
   if (authError) return authError
 
   try {
-    // TODO: For each active tenant with billing enabled:
-    // 1. Get all family_billing_enrollments with status = 'active'
-    // 2. Calculate billing period
-    // 3. Apply discounts (sibling, staff, military, church)
-    // 4. Handle split billing (custody billing_split_pct)
-    // 5. Generate invoice with line items
-    // 6. Create Stripe invoice
-    // 7. Send notification to family
-    // 8. Check for overdue invoices → apply late fees after grace period
-
     console.log('[Cron] Billing run started')
 
-    return NextResponse.json({ success: true })
+    const summary = await runBillingForAllTenants()
+
+    console.log('[Cron] Billing run complete:', summary)
+    return NextResponse.json({ success: true, ...summary })
   } catch (error) {
     console.error('[Cron] Billing run error:', error)
     return NextResponse.json({ error: 'Billing run failed' }, { status: 500 })
