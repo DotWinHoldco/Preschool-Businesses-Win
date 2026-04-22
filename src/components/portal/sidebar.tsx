@@ -261,57 +261,67 @@ export function PortalSidebar({
     >
       {/* Logo area */}
       <div
-        className={cn(
-          'flex items-center justify-between border-b shrink-0 px-4',
-          logoUrl && !collapsed ? 'py-4' : 'h-16',
-        )}
+        className="shrink-0 border-b"
         style={{ borderColor: 'var(--color-border)' }}
       >
         {collapsed ? (
-          logoIconUrl && (
-            <Link href="/portal" className="flex items-center justify-center">
-              <Image
-                src={logoIconUrl}
-                alt={schoolName}
-                width={32}
-                height={32}
-                className="h-8 w-8 object-contain"
-              />
-            </Link>
-          )
-        ) : (
-          <Link href="/portal" className="flex items-center gap-2 min-w-0">
-            {logoUrl ? (
-              <Image
-                src={logoUrl}
-                alt={schoolName}
-                width={200}
-                height={100}
-                className="h-auto w-full max-w-[180px] object-contain"
-                priority
-              />
-            ) : (
-              <span
-                className="text-sm font-bold truncate"
-                style={{
-                  fontFamily: 'var(--font-heading)',
-                  color: 'var(--color-foreground)',
-                }}
-              >
-                {schoolName}
-              </span>
+          <div className="flex flex-col items-center gap-2 py-3">
+            {logoIconUrl && (
+              <Link href="/portal" className="flex items-center justify-center">
+                <Image
+                  src={logoIconUrl}
+                  alt={schoolName}
+                  width={40}
+                  height={40}
+                  className="h-10 w-10 object-contain"
+                />
+              </Link>
             )}
-          </Link>
+            <button
+              type="button"
+              onClick={() => setCollapsed(!collapsed)}
+              className="p-1.5 rounded-md transition-colors hover:bg-[var(--color-muted)]"
+              style={{ color: 'var(--color-muted-foreground)' }}
+              aria-label="Expand sidebar"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between px-4 py-4">
+            <Link href="/portal" className="flex items-center gap-2 min-w-0">
+              {logoUrl ? (
+                <Image
+                  src={logoUrl}
+                  alt={schoolName}
+                  width={200}
+                  height={100}
+                  className="h-auto w-full max-w-[180px] object-contain"
+                  priority
+                />
+              ) : (
+                <span
+                  className="text-sm font-bold truncate"
+                  style={{
+                    fontFamily: 'var(--font-heading)',
+                    color: 'var(--color-foreground)',
+                  }}
+                >
+                  {schoolName}
+                </span>
+              )}
+            </Link>
+            <button
+              type="button"
+              onClick={() => setCollapsed(!collapsed)}
+              className="p-1.5 rounded-md transition-colors hover:bg-[var(--color-muted)]"
+              style={{ color: 'var(--color-muted-foreground)' }}
+              aria-label="Collapse sidebar"
+            >
+              <ChevronLeft size={16} />
+            </button>
+          </div>
         )}
-        <button
-          type="button"
-          onClick={() => setCollapsed(!collapsed)}
-          className="p-1.5 rounded-md transition-colors hover:bg-[var(--color-muted)]"
-          style={{ color: 'var(--color-muted-foreground)' }}
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        >
-          {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-        </button>
       </div>
 
       {/* Navigation */}

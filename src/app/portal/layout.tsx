@@ -121,7 +121,7 @@ export default async function PortalLayout({
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/cca-assets/little-sunshine-nbg.png"
+                src="/cca-assets/crandall-sunshine.png"
                 alt=""
                 className="h-[420px] w-[420px] object-contain opacity-[0.06]"
               />
