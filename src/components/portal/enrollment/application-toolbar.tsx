@@ -17,7 +17,7 @@ export function ApplicationToolbar({ applicationId }: { applicationId: string })
 
   function handlePrint() {
     window.open(
-      `/portal/admin/enrollment/${applicationId}/print`,
+      `/api/enrollment/print/${applicationId}`,
       '_blank',
       'noopener',
     )

@@ -33,15 +33,17 @@ export function PipelineProgress({
 
   return (
     <div className={cn('space-y-3', className)}>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center">
         {MAIN_STAGES.map((stage, idx) => {
           const isCompleted = !isBranch && currentIdx > idx
           const isCurrent = !isBranch && currentIdx === idx
           const isPast = isBranch && idx === 0
+          const isLast = idx === MAIN_STAGES.length - 1
+          const connectorFilled = (isCompleted || isPast) && (stageIndex(MAIN_STAGES[idx + 1]) <= currentIdx || isPast)
 
           return (
-            <div key={stage} className="flex flex-1 items-center">
-              <div className="flex flex-1 flex-col items-center gap-1">
+            <div key={stage} className={cn('flex items-center', isLast ? 'shrink-0' : 'flex-1')}>
+              <div className="flex shrink-0 flex-col items-center gap-1">
                 <div
                   className={cn(
                     'flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-colors',
@@ -64,7 +66,7 @@ export function PipelineProgress({
                 </div>
                 <span
                   className={cn(
-                    'text-[10px] leading-tight text-center max-w-[72px]',
+                    'text-[10px] leading-tight text-center w-[72px]',
                     isCurrent
                       ? 'font-semibold text-[var(--color-foreground)]'
                       : 'text-[var(--color-muted-foreground)]',
@@ -73,11 +75,11 @@ export function PipelineProgress({
                   {PIPELINE_STAGE_LABELS[stage]}
                 </span>
               </div>
-              {idx < MAIN_STAGES.length - 1 && (
+              {!isLast && (
                 <div
                   className={cn(
                     'mt-[-18px] h-0.5 flex-1 min-w-2',
-                    (isCompleted || isPast) && (stageIndex(MAIN_STAGES[idx + 1]) <= currentIdx || isPast)
+                    connectorFilled
                       ? 'bg-[var(--color-primary)]'
                       : 'bg-[var(--color-border)]',
                   )}
