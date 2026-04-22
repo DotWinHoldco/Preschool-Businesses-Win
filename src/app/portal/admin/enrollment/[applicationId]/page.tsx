@@ -1,9 +1,9 @@
 // @anchor: cca.enrollment.admin.application-detail
 
-import { createTenantServerClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { headers } from 'next/headers'
+import { createTenantAdminClient } from '@/lib/supabase/admin'
 import { PipelineTimeline, type PipelineStep } from '@/components/portal/enrollment/pipeline-timeline'
-import { PipelineStageBadge, PIPELINE_STAGE_LABELS } from '@/components/portal/enrollment/pipeline-stage-badge'
+import { PipelineStageBadge } from '@/components/portal/enrollment/pipeline-stage-badge'
 import { PipelineActions } from '@/components/portal/enrollment/pipeline-actions'
 import { PipelineProgress } from '@/components/portal/enrollment/pipeline-progress'
 import { ApplicationFormView } from '@/components/portal/enrollment/application-form-view'
@@ -19,13 +19,18 @@ export default async function ApplicationDetailPage({
 }: {
   params: Promise<{ applicationId: string }>
 }) {
+  const headerStore = await headers()
+  const tenantId = headerStore.get('x-tenant-id')
+  if (!tenantId) notFound()
+
   const { applicationId } = await params
-  const supabase = await createTenantServerClient()
+  const supabase = await createTenantAdminClient(tenantId)
 
   const { data: application } = await supabase
     .from('enrollment_applications')
     .select('*')
     .eq('id', applicationId)
+    .eq('tenant_id', tenantId)
     .single()
 
   if (!application) notFound()
@@ -48,8 +53,7 @@ export default async function ApplicationDetailPage({
   )]
   let actorMap = new Map<string, string>()
   if (actorIds.length > 0) {
-    const adminClient = createAdminClient()
-    const { data: profiles } = await adminClient
+    const { data: profiles } = await supabase
       .from('user_profiles')
       .select('user_id, first_name, last_name')
       .in('user_id', actorIds)
@@ -121,19 +125,7 @@ export default async function ApplicationDetailPage({
                 )}
               </div>
             </div>
-            <ApplicationToolbar
-              summary={{
-                studentName: `${application.student_first_name} ${application.student_last_name}`,
-                parentName: `${application.parent_first_name} ${application.parent_last_name}`,
-                parentEmail: application.parent_email,
-                dob: application.student_dob,
-                program: application.program_type,
-                stage,
-                triageScore: application.triage_score,
-                appliedDate: application.created_at,
-                howHeard: application.how_heard,
-              }}
-            />
+            <ApplicationToolbar applicationId={applicationId} />
           </div>
         </CardContent>
       </Card>
