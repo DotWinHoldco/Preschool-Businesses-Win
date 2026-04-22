@@ -104,7 +104,8 @@ export default async function PortalLayout({
       )}
       <div style={impersonation ? { paddingTop: '2.5rem' } : undefined}>
         <PortalShell
-          logoUrl={branding?.logo_icon_url ?? branding?.logo_url ?? null}
+          logoUrl={branding?.logo_url ?? null}
+          logoIconUrl={branding?.favicon_url ?? branding?.logo_icon_url ?? null}
           schoolName={branding?.tagline ?? 'Preschool'}
           userRole={userRole}
           user={user}
@@ -122,7 +123,7 @@ export default async function PortalLayout({
               <img
                 src="/cca-assets/little-sunshine-nbg.png"
                 alt=""
-                className="h-[420px] w-[420px] object-contain opacity-[0.04]"
+                className="h-[420px] w-[420px] object-contain opacity-[0.06]"
               />
             </div>
             <div className="relative z-10">

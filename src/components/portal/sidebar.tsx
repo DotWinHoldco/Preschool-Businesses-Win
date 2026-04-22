@@ -83,8 +83,10 @@ interface NavSection {
 }
 
 interface SidebarProps {
-  /** Tenant logo URL from branding */
+  /** Tenant logo URL from branding (full logo for expanded) */
   logoUrl?: string | null
+  /** Icon/mark URL for collapsed sidebar */
+  logoIconUrl?: string | null
   /** School name for text fallback */
   schoolName?: string
   /** Current user's role in this tenant */
@@ -213,6 +215,7 @@ const NAV_SECTIONS: NavSection[] = [
 
 export function PortalSidebar({
   logoUrl,
+  logoIconUrl,
   schoolName = 'Preschool',
   userRole,
   features,
@@ -264,15 +267,27 @@ export function PortalSidebar({
         )}
         style={{ borderColor: 'var(--color-border)' }}
       >
-        {!collapsed && (
+        {collapsed ? (
+          logoIconUrl && (
+            <Link href="/portal" className="flex items-center justify-center">
+              <Image
+                src={logoIconUrl}
+                alt={schoolName}
+                width={32}
+                height={32}
+                className="h-8 w-8 object-contain"
+              />
+            </Link>
+          )
+        ) : (
           <Link href="/portal" className="flex items-center gap-2 min-w-0">
             {logoUrl ? (
               <Image
                 src={logoUrl}
                 alt={schoolName}
-                width={160}
-                height={160}
-                className="h-auto w-full max-w-[140px] object-contain"
+                width={200}
+                height={100}
+                className="h-auto w-full max-w-[180px] object-contain"
                 priority
               />
             ) : (

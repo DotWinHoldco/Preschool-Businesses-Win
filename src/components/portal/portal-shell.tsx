@@ -35,6 +35,7 @@ type UserRole =
 
 interface PortalShellProps {
   logoUrl?: string | null
+  logoIconUrl?: string | null
   schoolName?: string
   userRole: UserRole
   user: UserInfo
@@ -47,6 +48,7 @@ interface PortalShellProps {
 
 export function PortalShell({
   logoUrl,
+  logoIconUrl,
   schoolName,
   userRole,
   user,
@@ -75,6 +77,7 @@ export function PortalShell({
       <div className="hidden md:flex">
         <PortalSidebar
           logoUrl={logoUrl}
+          logoIconUrl={logoIconUrl}
           schoolName={schoolName}
           userRole={userRole}
           features={features}
