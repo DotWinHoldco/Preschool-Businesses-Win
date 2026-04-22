@@ -62,7 +62,14 @@ export async function getTenantBranding(
     return null
   }
 
-  const branding = data as TenantBranding
+  const row = data as Record<string, unknown>
+  const branding: TenantBranding = {
+    ...(row as unknown as TenantBranding),
+    logo_url: (row.logo_path ?? row.logo_url ?? null) as string | null,
+    logo_icon_url: (row.logo_icon_path ?? row.logo_icon_url ?? null) as string | null,
+    favicon_url: (row.favicon_path ?? row.favicon_url ?? null) as string | null,
+    og_image_url: (row.og_image_url ?? null) as string | null,
+  }
   cache.set(tenantId, { data: branding, expiresAt: Date.now() + CACHE_TTL_MS })
   return branding
 }

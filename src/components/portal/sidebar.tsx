@@ -258,7 +258,10 @@ export function PortalSidebar({
     >
       {/* Logo area */}
       <div
-        className="flex items-center justify-between h-16 px-4 border-b shrink-0"
+        className={cn(
+          'flex items-center justify-between border-b shrink-0 px-4',
+          logoUrl && !collapsed ? 'py-4' : 'h-16',
+        )}
         style={{ borderColor: 'var(--color-border)' }}
       >
         {!collapsed && (
@@ -267,9 +270,10 @@ export function PortalSidebar({
               <Image
                 src={logoUrl}
                 alt={schoolName}
-                width={120}
-                height={36}
-                className="h-8 w-auto object-contain"
+                width={160}
+                height={160}
+                className="h-auto w-full max-w-[140px] object-contain"
+                priority
               />
             ) : (
               <span

@@ -104,8 +104,8 @@ export default async function PortalLayout({
       )}
       <div style={impersonation ? { paddingTop: '2.5rem' } : undefined}>
         <PortalShell
-          logoUrl={branding?.logo_url ?? null}
-          schoolName={branding?.tagline?.split(' — ')[0] ?? 'Preschool'}
+          logoUrl={branding?.logo_icon_url ?? branding?.logo_url ?? null}
+          schoolName={branding?.tagline ?? 'Preschool'}
           userRole={userRole}
           user={user}
           features={features}
@@ -113,8 +113,21 @@ export default async function PortalLayout({
           activeClassroomId={activeClassroomId}
           showPoweredBy={showPoweredBy}
         >
-          <main id="main-content" className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-            {children}
+          <main id="main-content" className="relative flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+            <div
+              className="pointer-events-none fixed inset-0 z-0 flex items-center justify-center print:hidden"
+              aria-hidden="true"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/cca-assets/little-sunshine-nbg.png"
+                alt=""
+                className="h-[420px] w-[420px] object-contain opacity-[0.04]"
+              />
+            </div>
+            <div className="relative z-10">
+              {children}
+            </div>
           </main>
         </PortalShell>
       </div>
