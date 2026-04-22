@@ -77,7 +77,7 @@ export function PortfoliosClient({
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [entryMode, setEntryMode] = useState<'observation' | 'learning_story'>('observation')
+  const [entryMode, setEntryMode] = useState<'observation' | 'learning_story' | 'milestone'>('observation')
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [filterType, setFilterType] = useState<string>('all')
@@ -129,14 +129,14 @@ export function PortfoliosClient({
         })
       } else {
         if (!narrative.trim()) {
-          setError('Please describe what you observed')
+          setError(entryMode === 'milestone' ? 'Please describe the milestone' : 'Please describe what you observed')
           return
         }
         result = await createObservation({
           student_id: studentId,
           title: title.trim(),
           narrative: narrative.trim(),
-          entry_type: 'observation',
+          entry_type: entryMode === 'milestone' ? 'milestone' : 'observation',
           learning_domain_ids: selectedDomains,
           visibility,
           media: [],
@@ -418,43 +418,39 @@ export function PortfoliosClient({
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogOverlay onClick={() => setDialogOpen(false)} />
         <DialogContent
-          title={entryMode === 'learning_story' ? 'Add Learning Story' : 'Add Observation'}
+          title={entryMode === 'learning_story' ? 'Add Learning Story' : entryMode === 'milestone' ? 'Record Milestone' : 'Add Observation'}
           description={
             entryMode === 'learning_story'
               ? 'Document a child\'s learning journey with a three-part narrative: what happened, what learning occurred, and what\'s next.'
-              : 'Log a developmental observation for a student.'
+              : entryMode === 'milestone'
+                ? 'Record a significant developmental achievement — first steps, first words, a new skill mastered.'
+                : 'Log a developmental observation for a student.'
           }
         >
           <DialogClose onClick={() => setDialogOpen(false)} />
           <div className="space-y-4">
             {/* Entry type toggle */}
             <div className="flex gap-1 rounded-lg p-1" style={{ backgroundColor: 'var(--color-muted)' }}>
-              <button
-                type="button"
-                className="flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors"
-                style={{
-                  backgroundColor: entryMode === 'observation' ? 'var(--color-card)' : 'transparent',
-                  color: 'var(--color-foreground)',
-                  boxShadow: entryMode === 'observation' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
-                }}
-                onClick={() => setEntryMode('observation')}
-              >
-                <Camera size={14} className="inline mr-1" />
-                Observation
-              </button>
-              <button
-                type="button"
-                className="flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors"
-                style={{
-                  backgroundColor: entryMode === 'learning_story' ? 'var(--color-card)' : 'transparent',
-                  color: 'var(--color-foreground)',
-                  boxShadow: entryMode === 'learning_story' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
-                }}
-                onClick={() => setEntryMode('learning_story')}
-              >
-                <BookOpen size={14} className="inline mr-1" />
-                Learning Story
-              </button>
+              {([
+                { key: 'observation' as const, label: 'Observation', Icon: Camera },
+                { key: 'learning_story' as const, label: 'Learning Story', Icon: BookOpen },
+                { key: 'milestone' as const, label: 'Milestone', Icon: GraduationCap },
+              ]).map(({ key, label, Icon }) => (
+                <button
+                  key={key}
+                  type="button"
+                  className="flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors"
+                  style={{
+                    backgroundColor: entryMode === key ? 'var(--color-card)' : 'transparent',
+                    color: 'var(--color-foreground)',
+                    boxShadow: entryMode === key ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
+                  }}
+                  onClick={() => setEntryMode(key)}
+                >
+                  <Icon size={14} className="inline mr-1" />
+                  {label}
+                </button>
+              ))}
             </div>
 
             {/* Student */}
@@ -478,22 +474,24 @@ export function PortfoliosClient({
               <Input
                 id="pe-title"
                 inputSize="sm"
-                placeholder={entryMode === 'learning_story' ? 'e.g. The Block Tower Collaboration' : 'e.g. Building with blocks — spatial reasoning'}
+                placeholder={entryMode === 'learning_story' ? 'e.g. The Block Tower Collaboration' : entryMode === 'milestone' ? 'e.g. First time writing full name' : 'e.g. Building with blocks — spatial reasoning'}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
               />
             </div>
 
-            {/* Observation: narrative */}
-            {entryMode === 'observation' && (
+            {/* Observation / Milestone: narrative */}
+            {(entryMode === 'observation' || entryMode === 'milestone') && (
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="pe-narrative" className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
-                  What did you observe? <span style={{ color: 'var(--color-destructive)' }}>*</span>
+                  {entryMode === 'milestone' ? 'Describe the milestone' : 'What did you observe?'} <span style={{ color: 'var(--color-destructive)' }}>*</span>
                 </label>
                 <Textarea
                   id="pe-narrative"
-                  placeholder="Describe the behavior, interaction, or milestone you observed..."
+                  placeholder={entryMode === 'milestone'
+                    ? 'e.g. First time writing their full name independently...'
+                    : 'Describe the behavior, interaction, or milestone you observed...'}
                   value={narrative}
                   onChange={(e) => setNarrative(e.target.value)}
                   className="min-h-[100px]"
@@ -623,7 +621,7 @@ export function PortfoliosClient({
                 Cancel
               </Button>
               <Button size="sm" onClick={handleSubmit} loading={isPending} disabled={!studentId || !title.trim()}>
-                {entryMode === 'learning_story' ? 'Save Learning Story' : 'Save Observation'}
+                {entryMode === 'learning_story' ? 'Save Learning Story' : entryMode === 'milestone' ? 'Save Milestone' : 'Save Observation'}
               </Button>
             </div>
           </div>
