@@ -122,6 +122,15 @@ export default async function StudentDetailPage({
     .eq('tenant_id', tenantId)
     .order('family_name')
 
+  // Fetch portfolio entries for this student
+  const { data: portfolioEntries } = await supabase
+    .from('portfolio_entries')
+    .select('id, entry_type, title, narrative, visibility, learning_domains, created_at')
+    .eq('student_id', studentId)
+    .eq('tenant_id', tenantId)
+    .order('created_at', { ascending: false })
+    .limit(10)
+
   // Fetch entity notes
   const { data: notes } = await supabase
     .from('entity_notes')
@@ -318,6 +327,53 @@ export default async function StudentDetailPage({
               />
             }
           />
+
+          {/* Portfolio / Observations */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Portfolio &amp; Observations</CardTitle>
+                <Button variant="secondary" size="sm" asChild>
+                  <Link href="/portal/admin/portfolios">View All</Link>
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {(!portfolioEntries || portfolioEntries.length === 0) ? (
+                <p className="text-sm text-[var(--color-muted-foreground)]">No observations or portfolio entries yet</p>
+              ) : (
+                <div className="space-y-3">
+                  {portfolioEntries.map((entry) => {
+                    const typeLabels: Record<string, string> = {
+                      observation: 'Observation',
+                      learning_story: 'Learning Story',
+                      work_sample: 'Work Sample',
+                      photo: 'Photo',
+                      video: 'Video',
+                      milestone: 'Milestone',
+                    }
+                    return (
+                      <div key={entry.id} className="border-l-2 border-[var(--color-primary)] pl-3">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium text-[var(--color-foreground)]">{entry.title}</p>
+                          <Badge variant="outline" size="sm">{typeLabels[entry.entry_type] ?? entry.entry_type}</Badge>
+                          {entry.visibility === 'staff_only' && (
+                            <Badge variant="warning" size="sm">Staff only</Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-[var(--color-muted-foreground)] mt-0.5">
+                          {new Date(entry.created_at).toLocaleDateString()}
+                        </p>
+                        {entry.narrative && (
+                          <p className="text-sm text-[var(--color-foreground)] mt-1 line-clamp-2">{entry.narrative}</p>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Immunizations */}
           <Card>

@@ -1,110 +1,189 @@
 'use client'
 
-import { useState, type FormEvent } from 'react'
+import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogOverlay, DialogContent, DialogClose } from '@/components/ui/dialog'
-import { GraduationCap, Camera, FileText, BarChart3, Plus, ChevronDown, ChevronUp } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import {
+  Camera, FileText, BarChart3, GraduationCap, Plus,
+  ChevronDown, ChevronUp, BookOpen, Eye, EyeOff, ExternalLink,
+} from 'lucide-react'
+import { createObservation } from '@/lib/actions/portfolios/create-observation'
+import { createLearningStory } from '@/lib/actions/portfolios/create-learning-story'
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-interface Observation {
+interface Student {
   id: string
-  student: string
-  title: string
-  domain: string
-  date: string
-  teacher: string
-  notes: string
+  name: string
 }
 
-// ---------------------------------------------------------------------------
-// Initial mock data
-// ---------------------------------------------------------------------------
+interface Domain {
+  id: string
+  framework: string
+  domain_name: string
+  subdomain_name: string | null
+}
 
-const initialObservations: Observation[] = [
-  { id: '1', student: 'Sophia Martinez', title: 'Building with blocks — spatial reasoning', domain: 'Math & Logic', date: '2026-04-08', teacher: 'Mrs. Johnson', notes: '' },
-  { id: '2', student: 'Liam Chen', title: 'First time sharing toys unprompted', domain: 'Social-Emotional', date: '2026-04-08', teacher: 'Ms. Davis', notes: '' },
-  { id: '3', student: 'Emma Wilson', title: 'Recognizing all letters in her name', domain: 'Literacy', date: '2026-04-07', teacher: 'Mrs. Johnson', notes: '' },
-  { id: '4', student: 'Noah Brown', title: 'Counting to 20 independently', domain: 'Math & Logic', date: '2026-04-07', teacher: 'Ms. Davis', notes: '' },
-]
+interface PortfolioEntry {
+  id: string
+  student_id: string
+  student_name: string
+  entry_type: string
+  title: string
+  narrative: string
+  visibility: string
+  learning_domain_ids: string[]
+  created_at: string
+}
 
-const students = [
-  'Sophia Martinez',
-  'Liam Chen',
-  'Emma Wilson',
-  'Noah Brown',
-  'Ava Johnson',
-  'Oliver Davis',
-]
+interface Stats {
+  observations: number
+  learningStories: number
+  assessmentsDue: number
+  studentsWithPortfolios: number
+}
 
-const domains = [
-  'Math & Logic',
-  'Social-Emotional',
-  'Literacy',
-  'Physical Development',
-  'Creative Arts',
-  'Science & Nature',
-]
+interface PortfoliosClientProps {
+  students: Student[]
+  domains: Domain[]
+  entries: PortfolioEntry[]
+  stats: Stats
+  quarterLabel: string
+  quarterEnd: string
+}
 
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
+const ENTRY_TYPE_CONFIG: Record<string, { label: string; color: string }> = {
+  observation: { label: 'Observation', color: 'var(--color-primary)' },
+  learning_story: { label: 'Learning Story', color: 'var(--color-accent, #8b5cf6)' },
+  work_sample: { label: 'Work Sample', color: 'var(--color-secondary)' },
+  photo: { label: 'Photo', color: 'var(--color-success)' },
+  video: { label: 'Video', color: 'var(--color-warning)' },
+  milestone: { label: 'Milestone', color: 'var(--color-success)' },
+}
 
-export default function AdminPortfoliosClient() {
-  const [observations, setObservations] = useState<Observation[]>(initialObservations)
+export function PortfoliosClient({
+  students,
+  domains,
+  entries,
+  stats,
+  quarterLabel,
+  quarterEnd,
+}: PortfoliosClientProps) {
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [entryMode, setEntryMode] = useState<'observation' | 'learning_story'>('observation')
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [filterType, setFilterType] = useState<string>('all')
 
   // Form state
-  const [student, setStudent] = useState('')
+  const [studentId, setStudentId] = useState('')
   const [title, setTitle] = useState('')
-  const [domain, setDomain] = useState('')
-  const [date, setDate] = useState('')
-  const [notes, setNotes] = useState('')
-
-  const stats = [
-    { label: 'Total Observations', value: String(observations.length), icon: Camera },
-    { label: 'Learning Stories', value: '42', icon: FileText },
-    { label: 'Assessments Due', value: '12', icon: BarChart3 },
-    { label: 'Students with Portfolios', value: '58', icon: GraduationCap },
-  ]
+  const [narrative, setNarrative] = useState('')
+  const [selectedDomains, setSelectedDomains] = useState<string[]>([])
+  const [visibility, setVisibility] = useState<'parent' | 'staff_only'>('parent')
+  // Learning story fields
+  const [whatHappened, setWhatHappened] = useState('')
+  const [whatLearning, setWhatLearning] = useState('')
+  const [whatNext, setWhatNext] = useState('')
 
   function resetForm() {
-    setStudent('')
+    setStudentId('')
     setTitle('')
-    setDomain('')
-    setDate('')
-    setNotes('')
+    setNarrative('')
+    setSelectedDomains([])
+    setVisibility('parent')
+    setWhatHappened('')
+    setWhatLearning('')
+    setWhatNext('')
+    setError(null)
   }
 
-  function handleSubmit(e: FormEvent) {
-    e.preventDefault()
-    if (!title.trim() || !student) return
+  function handleSubmit() {
+    if (!studentId || !title.trim()) return
+    setError(null)
 
-    const newObs: Observation = {
-      id: String(Date.now()),
-      student: student,
-      title: title.trim(),
-      domain: domain || 'General',
-      date: date || new Date().toISOString().slice(0, 10),
-      teacher: 'Current User',
-      notes: notes.trim(),
-    }
+    startTransition(async () => {
+      let result: { ok: boolean; error?: string }
 
-    setObservations(prev => [newObs, ...prev])
-    resetForm()
-    setDialogOpen(false)
+      if (entryMode === 'learning_story') {
+        if (!whatHappened.trim() || !whatLearning.trim()) {
+          setError('Please fill in "What Happened" and "What Learning Occurred"')
+          return
+        }
+        result = await createLearningStory({
+          student_id: studentId,
+          title: title.trim(),
+          what_happened: whatHappened.trim(),
+          what_learning_occurred: whatLearning.trim(),
+          what_next: whatNext.trim() || undefined,
+          learning_domain_ids: selectedDomains,
+          visibility,
+          media: [],
+        })
+      } else {
+        if (!narrative.trim()) {
+          setError('Please describe what you observed')
+          return
+        }
+        result = await createObservation({
+          student_id: studentId,
+          title: title.trim(),
+          narrative: narrative.trim(),
+          entry_type: 'observation',
+          learning_domain_ids: selectedDomains,
+          visibility,
+          media: [],
+        })
+      }
+
+      if (!result.ok) {
+        setError(result.error ?? 'Failed to save entry')
+        return
+      }
+
+      resetForm()
+      setDialogOpen(false)
+      router.refresh()
+    })
   }
+
+  const domainMap = new Map(domains.map((d) => [d.id, d]))
+
+  function getDomainLabel(id: string): string {
+    const d = domainMap.get(id)
+    if (!d) return ''
+    return d.subdomain_name ? `${d.domain_name} › ${d.subdomain_name}` : d.domain_name
+  }
+
+  const filteredEntries = filterType === 'all'
+    ? entries
+    : entries.filter((e) => e.entry_type === filterType)
+
+  const statCards = [
+    { label: 'Total Observations', value: stats.observations, icon: Camera },
+    { label: 'Learning Stories', value: stats.learningStories, icon: BookOpen },
+    { label: 'Assessments Due', value: stats.assessmentsDue, icon: BarChart3 },
+    { label: 'Students with Portfolios', value: stats.studentsWithPortfolios, icon: GraduationCap },
+  ]
+
+  // Group domains by domain_name for picker
+  const domainGroups = domains.reduce<Record<string, Domain[]>>((acc, d) => {
+    const key = d.domain_name
+    if (!acc[key]) acc[key] = []
+    acc[key].push(d)
+    return acc
+  }, {})
 
   return (
     <div className="space-y-6">
-      {/* Header with Add button */}
+      {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold" style={{ color: 'var(--color-foreground)' }}>
@@ -114,7 +193,7 @@ export default function AdminPortfoliosClient() {
             Track child development through observations, learning stories, and formal assessments aligned to learning domains.
           </p>
         </div>
-        <Button size="sm" onClick={() => setDialogOpen(true)}>
+        <Button size="sm" onClick={() => { resetForm(); setDialogOpen(true) }}>
           <Plus size={16} />
           Add Entry
         </Button>
@@ -122,7 +201,7 @@ export default function AdminPortfoliosClient() {
 
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => {
+        {statCards.map((stat) => {
           const Icon = stat.icon
           return (
             <Card key={stat.label}>
@@ -147,84 +226,158 @@ export default function AdminPortfoliosClient() {
         })}
       </div>
 
-      {/* Recent Observations */}
+      {/* Filter bar */}
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-medium" style={{ color: 'var(--color-muted-foreground)' }}>Show:</span>
+        {[
+          { value: 'all', label: 'All' },
+          { value: 'observation', label: 'Observations' },
+          { value: 'learning_story', label: 'Learning Stories' },
+          { value: 'milestone', label: 'Milestones' },
+        ].map((f) => (
+          <button
+            key={f.value}
+            type="button"
+            onClick={() => setFilterType(f.value)}
+            className="rounded-full px-3 py-1 text-xs font-medium transition-colors"
+            style={{
+              backgroundColor: filterType === f.value ? 'var(--color-primary)' : 'var(--color-muted)',
+              color: filterType === f.value ? 'var(--color-primary-foreground)' : 'var(--color-muted-foreground)',
+            }}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Recent Entries */}
       <Card>
         <CardHeader>
-          <CardTitle>Recent Observations</CardTitle>
-          <CardDescription>Latest developmental observations logged by teachers.</CardDescription>
+          <CardTitle>Recent Entries</CardTitle>
+          <CardDescription>
+            {filteredEntries.length === 0
+              ? 'No entries yet. Click "+ Add Entry" to log an observation or learning story.'
+              : `${filteredEntries.length} ${filterType === 'all' ? 'entries' : filterType.replace('_', ' ') + 's'}`}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="divide-y" style={{ borderColor: 'var(--color-border)' }}>
-            {observations.map((obs) => (
-              <div key={obs.id} className="py-3 first:pt-0 last:pb-0">
-                <button
-                  type="button"
-                  className="flex w-full items-center justify-between text-left transition-colors rounded-lg px-2 py-1 -mx-2 hover:bg-[var(--color-muted)]"
-                  onClick={() => setExpandedId(expandedId === obs.id ? null : obs.id)}
-                >
-                  <div className="min-w-0">
-                    <p className="font-medium text-sm" style={{ color: 'var(--color-foreground)' }}>
-                      {obs.title}
-                    </p>
-                    <p className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
-                      {obs.student} &middot; {obs.teacher} &middot; {obs.date}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span
-                      className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
-                      style={{ backgroundColor: 'var(--color-muted)', color: 'var(--color-muted-foreground)' }}
-                    >
-                      {obs.domain}
-                    </span>
-                    {expandedId === obs.id ? (
-                      <ChevronUp size={16} style={{ color: 'var(--color-muted-foreground)' }} />
-                    ) : (
-                      <ChevronDown size={16} style={{ color: 'var(--color-muted-foreground)' }} />
-                    )}
-                  </div>
-                </button>
-
-                {/* Expanded detail */}
-                {expandedId === obs.id && (
-                  <div
-                    className="mt-2 rounded-lg p-4 text-sm"
-                    style={{ backgroundColor: 'var(--color-muted)' }}
+            {filteredEntries.map((entry) => {
+              const config = ENTRY_TYPE_CONFIG[entry.entry_type] ?? { label: entry.entry_type, color: 'var(--color-muted-foreground)' }
+              const isExpanded = expandedId === entry.id
+              return (
+                <div key={entry.id} className="py-3 first:pt-0 last:pb-0">
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-between text-left transition-colors rounded-lg px-2 py-1.5 -mx-2 hover:bg-[var(--color-muted)]"
+                    onClick={() => setExpandedId(isExpanded ? null : entry.id)}
                   >
-                    <div className="grid gap-2 sm:grid-cols-3">
-                      <div>
-                        <p className="text-xs font-medium" style={{ color: 'var(--color-muted-foreground)' }}>Student</p>
-                        <p style={{ color: 'var(--color-foreground)' }}>{obs.student}</p>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="inline-block h-2 w-2 rounded-full shrink-0"
+                          style={{ backgroundColor: config.color }}
+                        />
+                        <p className="font-medium text-sm truncate" style={{ color: 'var(--color-foreground)' }}>
+                          {entry.title}
+                        </p>
                       </div>
-                      <div>
-                        <p className="text-xs font-medium" style={{ color: 'var(--color-muted-foreground)' }}>Domain</p>
-                        <p style={{ color: 'var(--color-foreground)' }}>{obs.domain}</p>
+                      <p className="text-xs mt-0.5 pl-4" style={{ color: 'var(--color-muted-foreground)' }}>
+                        <Link
+                          href={`/portal/admin/students/${entry.student_id}`}
+                          className="hover:underline"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {entry.student_name}
+                        </Link>
+                        {' · '}
+                        {new Date(entry.created_at).toLocaleDateString()}
+                        {entry.visibility === 'staff_only' && (
+                          <span className="ml-1.5 inline-flex items-center gap-0.5 text-[10px] opacity-70">
+                            <EyeOff size={10} /> Staff only
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0 ml-2">
+                      <Badge variant="outline" size="sm">{config.label}</Badge>
+                      {isExpanded ? (
+                        <ChevronUp size={16} style={{ color: 'var(--color-muted-foreground)' }} />
+                      ) : (
+                        <ChevronDown size={16} style={{ color: 'var(--color-muted-foreground)' }} />
+                      )}
+                    </div>
+                  </button>
+
+                  {isExpanded && (
+                    <div className="mt-2 rounded-lg p-4 text-sm space-y-3" style={{ backgroundColor: 'var(--color-muted)' }}>
+                      <div className="grid gap-2 sm:grid-cols-3">
+                        <div>
+                          <p className="text-xs font-medium" style={{ color: 'var(--color-muted-foreground)' }}>Student</p>
+                          <Link
+                            href={`/portal/admin/students/${entry.student_id}`}
+                            className="text-[var(--color-primary)] hover:underline"
+                          >
+                            {entry.student_name}
+                          </Link>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium" style={{ color: 'var(--color-muted-foreground)' }}>Type</p>
+                          <p style={{ color: 'var(--color-foreground)' }}>{config.label}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium" style={{ color: 'var(--color-muted-foreground)' }}>Visibility</p>
+                          <p className="flex items-center gap-1" style={{ color: 'var(--color-foreground)' }}>
+                            {entry.visibility === 'parent' ? <><Eye size={12} /> Visible to parents</> : <><EyeOff size={12} /> Staff only</>}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-xs font-medium" style={{ color: 'var(--color-muted-foreground)' }}>Teacher</p>
-                        <p style={{ color: 'var(--color-foreground)' }}>{obs.teacher}</p>
+
+                      {entry.learning_domain_ids.length > 0 && (
+                        <div>
+                          <p className="text-xs font-medium mb-1" style={{ color: 'var(--color-muted-foreground)' }}>Learning Domains</p>
+                          <div className="flex flex-wrap gap-1">
+                            {entry.learning_domain_ids.map((id) => (
+                              <span
+                                key={id}
+                                className="inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium"
+                                style={{ backgroundColor: 'var(--color-card)', color: 'var(--color-foreground)', border: '1px solid var(--color-border)' }}
+                              >
+                                {getDomainLabel(id)}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {entry.narrative && (
+                        <div>
+                          <p className="text-xs font-medium mb-1" style={{ color: 'var(--color-muted-foreground)' }}>
+                            {entry.entry_type === 'learning_story' ? 'Story' : 'Notes'}
+                          </p>
+                          <p className="whitespace-pre-wrap" style={{ color: 'var(--color-foreground)' }}>{entry.narrative}</p>
+                        </div>
+                      )}
+
+                      <div className="flex justify-end">
+                        <Button variant="secondary" size="sm" asChild>
+                          <Link href={`/portal/admin/students/${entry.student_id}`}>
+                            <ExternalLink size={12} className="mr-1" />
+                            View Student Profile
+                          </Link>
+                        </Button>
                       </div>
                     </div>
-                    {obs.notes ? (
-                      <div className="mt-3">
-                        <p className="text-xs font-medium" style={{ color: 'var(--color-muted-foreground)' }}>Notes</p>
-                        <p className="mt-1" style={{ color: 'var(--color-foreground)' }}>{obs.notes}</p>
-                      </div>
-                    ) : (
-                      <p className="mt-3 text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
-                        Detailed observation notes, photos, and developmental milestones will be available when connected to the database.
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
+                  )}
+                </div>
+              )
+            })}
 
-            {observations.length === 0 && (
+            {filteredEntries.length === 0 && (
               <div className="py-8 text-center">
                 <Camera className="mx-auto mb-2" size={32} style={{ color: 'var(--color-muted-foreground)' }} />
                 <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
-                  No observations yet. Click &ldquo;+ Add Entry&rdquo; to log one.
+                  No entries yet. Click &ldquo;+ Add Entry&rdquo; to log one.
                 </p>
               </div>
             )}
@@ -232,45 +385,87 @@ export default function AdminPortfoliosClient() {
         </CardContent>
       </Card>
 
-      {/* Upcoming Assessments */}
+      {/* Assessments Due */}
       <Card>
         <CardHeader>
-          <CardTitle>Upcoming Assessments</CardTitle>
-          <CardDescription>Quarterly developmental assessments scheduled for completion.</CardDescription>
+          <CardTitle>Assessments Due</CardTitle>
+          <CardDescription>Students needing developmental assessments this quarter.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="rounded-lg p-8 text-center" style={{ backgroundColor: 'var(--color-muted)' }}>
-            <BarChart3 className="mx-auto mb-2" size={32} style={{ color: 'var(--color-muted-foreground)' }} />
-            <p className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
-              Q2 2026 Assessments
-            </p>
-            <p className="mt-1 text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
-              12 students due for quarterly assessment by April 30, 2026.
-            </p>
-          </div>
+          {stats.assessmentsDue === 0 ? (
+            <div className="rounded-lg p-6 text-center" style={{ backgroundColor: 'var(--color-muted)' }}>
+              <BarChart3 className="mx-auto mb-2" size={28} style={{ color: 'var(--color-success)' }} />
+              <p className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>All caught up!</p>
+              <p className="mt-1 text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
+                All students have been assessed for {quarterLabel}.
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-lg p-6 text-center" style={{ backgroundColor: 'var(--color-muted)' }}>
+              <BarChart3 className="mx-auto mb-2" size={28} style={{ color: 'var(--color-warning)' }} />
+              <p className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
+                {quarterLabel} Assessments
+              </p>
+              <p className="mt-1 text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
+                {stats.assessmentsDue} student{stats.assessmentsDue !== 1 ? 's' : ''} due for assessment by {quarterEnd}.
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
       {/* Add Entry Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogOverlay onClick={() => setDialogOpen(false)} />
-        <DialogContent title="Add Portfolio Entry" description="Log a new developmental observation for a student.">
+        <DialogContent
+          title={entryMode === 'learning_story' ? 'Add Learning Story' : 'Add Observation'}
+          description={
+            entryMode === 'learning_story'
+              ? 'Document a child\'s learning journey with a three-part narrative: what happened, what learning occurred, and what\'s next.'
+              : 'Log a developmental observation for a student.'
+          }
+        >
           <DialogClose onClick={() => setDialogOpen(false)} />
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-4">
+            {/* Entry type toggle */}
+            <div className="flex gap-1 rounded-lg p-1" style={{ backgroundColor: 'var(--color-muted)' }}>
+              <button
+                type="button"
+                className="flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors"
+                style={{
+                  backgroundColor: entryMode === 'observation' ? 'var(--color-card)' : 'transparent',
+                  color: 'var(--color-foreground)',
+                  boxShadow: entryMode === 'observation' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
+                }}
+                onClick={() => setEntryMode('observation')}
+              >
+                <Camera size={14} className="inline mr-1" />
+                Observation
+              </button>
+              <button
+                type="button"
+                className="flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors"
+                style={{
+                  backgroundColor: entryMode === 'learning_story' ? 'var(--color-card)' : 'transparent',
+                  color: 'var(--color-foreground)',
+                  boxShadow: entryMode === 'learning_story' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
+                }}
+                onClick={() => setEntryMode('learning_story')}
+              >
+                <BookOpen size={14} className="inline mr-1" />
+                Learning Story
+              </button>
+            </div>
+
             {/* Student */}
             <div className="flex flex-col gap-1.5">
               <label htmlFor="pe-student" className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
-                Student <span style={{ color: 'var(--color-destructive)' }} aria-hidden="true">*</span>
+                Student <span style={{ color: 'var(--color-destructive)' }}>*</span>
               </label>
-              <Select
-                id="pe-student"
-                value={student}
-                onChange={(e) => setStudent(e.target.value)}
-                required
-              >
+              <Select id="pe-student" value={studentId} onChange={(e) => setStudentId(e.target.value)} required>
                 <option value="">Select student...</option>
                 {students.map((s) => (
-                  <option key={s} value={s}>{s}</option>
+                  <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
               </Select>
             </div>
@@ -278,62 +473,144 @@ export default function AdminPortfoliosClient() {
             {/* Title */}
             <div className="flex flex-col gap-1.5">
               <label htmlFor="pe-title" className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
-                Title <span style={{ color: 'var(--color-destructive)' }} aria-hidden="true">*</span>
+                Title <span style={{ color: 'var(--color-destructive)' }}>*</span>
               </label>
               <Input
                 id="pe-title"
                 inputSize="sm"
-                placeholder="e.g. Building with blocks — spatial reasoning"
+                placeholder={entryMode === 'learning_story' ? 'e.g. The Block Tower Collaboration' : 'e.g. Building with blocks — spatial reasoning'}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
               />
             </div>
 
-            {/* Domain */}
+            {/* Observation: narrative */}
+            {entryMode === 'observation' && (
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="pe-narrative" className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
+                  What did you observe? <span style={{ color: 'var(--color-destructive)' }}>*</span>
+                </label>
+                <Textarea
+                  id="pe-narrative"
+                  placeholder="Describe the behavior, interaction, or milestone you observed..."
+                  value={narrative}
+                  onChange={(e) => setNarrative(e.target.value)}
+                  className="min-h-[100px]"
+                />
+              </div>
+            )}
+
+            {/* Learning Story: three-part narrative */}
+            {entryMode === 'learning_story' && (
+              <>
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="pe-what-happened" className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
+                    What Happened? <span style={{ color: 'var(--color-destructive)' }}>*</span>
+                  </label>
+                  <Textarea
+                    id="pe-what-happened"
+                    placeholder="Describe the event, activity, or interaction..."
+                    value={whatHappened}
+                    onChange={(e) => setWhatHappened(e.target.value)}
+                    className="min-h-[80px]"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="pe-what-learning" className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
+                    What Learning Occurred? <span style={{ color: 'var(--color-destructive)' }}>*</span>
+                  </label>
+                  <Textarea
+                    id="pe-what-learning"
+                    placeholder="What developmental skills, knowledge, or dispositions were demonstrated?"
+                    value={whatLearning}
+                    onChange={(e) => setWhatLearning(e.target.value)}
+                    className="min-h-[80px]"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="pe-what-next" className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
+                    What&apos;s Next?
+                  </label>
+                  <Textarea
+                    id="pe-what-next"
+                    placeholder="How will you extend or support this learning?"
+                    value={whatNext}
+                    onChange={(e) => setWhatNext(e.target.value)}
+                    className="min-h-[60px]"
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Learning Domains */}
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="pe-domain" className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
-                Learning Domain
+              <label className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
+                Learning Domains
               </label>
-              <Select
-                id="pe-domain"
-                value={domain}
-                onChange={(e) => setDomain(e.target.value)}
-              >
-                <option value="">Select domain...</option>
-                {domains.map((d) => (
-                  <option key={d} value={d}>{d}</option>
+              <div className="max-h-[180px] overflow-y-auto rounded-lg border p-2 space-y-2" style={{ borderColor: 'var(--color-border)' }}>
+                {Object.entries(domainGroups).map(([groupName, groupDomains]) => (
+                  <div key={groupName}>
+                    <p className="text-xs font-semibold mb-1" style={{ color: 'var(--color-muted-foreground)' }}>
+                      {groupName}
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {groupDomains.map((d) => {
+                        const isSelected = selectedDomains.includes(d.id)
+                        return (
+                          <button
+                            key={d.id}
+                            type="button"
+                            onClick={() =>
+                              setSelectedDomains((prev) =>
+                                isSelected ? prev.filter((x) => x !== d.id) : [...prev, d.id]
+                              )
+                            }
+                            className="rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors border"
+                            style={{
+                              backgroundColor: isSelected ? 'var(--color-primary)' : 'transparent',
+                              color: isSelected ? 'var(--color-primary-foreground)' : 'var(--color-foreground)',
+                              borderColor: isSelected ? 'var(--color-primary)' : 'var(--color-border)',
+                            }}
+                          >
+                            {d.subdomain_name ?? d.domain_name}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
                 ))}
-              </Select>
+              </div>
             </div>
 
-            {/* Date */}
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="pe-date" className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
-                Date
+            {/* Visibility */}
+            <div className="flex items-center gap-4">
+              <label className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
+                Visibility:
               </label>
-              <Input
-                id="pe-date"
-                inputSize="sm"
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-              />
+              <label className="flex items-center gap-1.5 text-sm cursor-pointer">
+                <input
+                  type="radio"
+                  name="visibility"
+                  checked={visibility === 'parent'}
+                  onChange={() => setVisibility('parent')}
+                />
+                <Eye size={14} /> Visible to parents
+              </label>
+              <label className="flex items-center gap-1.5 text-sm cursor-pointer">
+                <input
+                  type="radio"
+                  name="visibility"
+                  checked={visibility === 'staff_only'}
+                  onChange={() => setVisibility('staff_only')}
+                />
+                <EyeOff size={14} /> Staff only
+              </label>
             </div>
 
-            {/* Notes */}
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="pe-notes" className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
-                Notes
-              </label>
-              <Textarea
-                id="pe-notes"
-                placeholder="Describe what you observed..."
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                className="min-h-[80px]"
-              />
-            </div>
+            {error && (
+              <p className="text-xs" style={{ color: 'var(--color-destructive)' }}>{error}</p>
+            )}
 
             {/* Actions */}
             <div className="flex justify-end gap-3 pt-2">
@@ -345,11 +622,11 @@ export default function AdminPortfoliosClient() {
               >
                 Cancel
               </Button>
-              <Button type="submit" size="sm">
-                Add Entry
+              <Button size="sm" onClick={handleSubmit} loading={isPending} disabled={!studentId || !title.trim()}>
+                {entryMode === 'learning_story' ? 'Save Learning Story' : 'Save Observation'}
               </Button>
             </div>
-          </form>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

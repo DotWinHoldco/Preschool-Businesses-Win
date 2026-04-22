@@ -3,7 +3,7 @@
 
 import { assertRole } from '@/lib/auth/session'
 import { RunAssessmentSchema, type RunAssessmentInput } from '@/lib/schemas/portfolio'
-import { createTenantServerClient } from '@/lib/supabase/server'
+import { createTenantAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
 
 export type RunAssessmentState = {
@@ -24,7 +24,7 @@ export async function runAssessment(
   const data = parsed.data
   const tenantId = await getTenantId()
   const actorId = await getActorId()
-  const supabase = await createTenantServerClient()
+  const supabase = await createTenantAdminClient(tenantId)
 
   // Create assessment record
   const { data: assessment, error: assessmentError } = await supabase

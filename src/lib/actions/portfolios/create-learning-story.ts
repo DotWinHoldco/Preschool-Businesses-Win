@@ -3,7 +3,7 @@
 
 import { assertRole } from '@/lib/auth/session'
 import { CreateLearningStorySchema, type CreateLearningStoryInput } from '@/lib/schemas/portfolio'
-import { createTenantServerClient } from '@/lib/supabase/server'
+import { createTenantAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
 
 export type CreateLearningStoryState = {
@@ -24,7 +24,7 @@ export async function createLearningStory(
   const data = parsed.data
   const tenantId = await getTenantId()
   const actorId = await getActorId()
-  const supabase = await createTenantServerClient()
+  const supabase = await createTenantAdminClient(tenantId)
 
   // Compose narrative from the three-part learning story format
   const narrative = [

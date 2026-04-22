@@ -3,7 +3,7 @@
 
 import { assertRole } from '@/lib/auth/session'
 import { CreateObservationSchema, type CreateObservationInput } from '@/lib/schemas/portfolio'
-import { createTenantServerClient } from '@/lib/supabase/server'
+import { createTenantAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
 
 export type CreateObservationState = {
@@ -25,7 +25,7 @@ export async function createObservation(
   const data = parsed.data
   const tenantId = await getTenantId()
   const actorId = await getActorId()
-  const supabase = await createTenantServerClient()
+  const supabase = await createTenantAdminClient(tenantId)
 
   // Build narrative for learning stories (combine fields) or use plain narrative
   const narrative = data.narrative

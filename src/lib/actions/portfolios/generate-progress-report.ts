@@ -3,7 +3,7 @@
 
 import { assertRole } from '@/lib/auth/session'
 import { GenerateProgressReportSchema, type GenerateProgressReportInput } from '@/lib/schemas/portfolio'
-import { createTenantServerClient } from '@/lib/supabase/server'
+import { createTenantAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
 
 export type ProgressReportData = {
@@ -43,7 +43,7 @@ export async function generateProgressReport(
   const data = parsed.data
   const tenantId = await getTenantId()
   const actorId = await getActorId()
-  const supabase = await createTenantServerClient()
+  const supabase = await createTenantAdminClient(tenantId)
 
   // Fetch student
   const { data: student, error: studentError } = await supabase
