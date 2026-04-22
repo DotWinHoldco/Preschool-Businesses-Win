@@ -152,3 +152,27 @@ export const GenerateProgressReportSchema = z.object({
 })
 
 export type GenerateProgressReportInput = z.infer<typeof GenerateProgressReportSchema>
+
+// ---------------------------------------------------------------------------
+// Update Portfolio Entry
+// ---------------------------------------------------------------------------
+
+export const UpdatePortfolioEntrySchema = z.object({
+  id: z.string().uuid('Invalid entry ID'),
+  title: z.string().min(1, 'Title is required').max(300),
+  narrative: z.string().min(1, 'Narrative is required').max(10000),
+  learning_domain_ids: z.array(z.string().uuid()).default([]),
+  visibility: visibilityEnum,
+})
+
+export type UpdatePortfolioEntryInput = z.infer<typeof UpdatePortfolioEntrySchema>
+
+// ---------------------------------------------------------------------------
+// Delete Portfolio Entry
+// ---------------------------------------------------------------------------
+
+export const DeletePortfolioEntrySchema = z.object({
+  id: z.string().uuid('Invalid entry ID'),
+})
+
+export type DeletePortfolioEntryInput = z.infer<typeof DeletePortfolioEntrySchema>

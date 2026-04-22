@@ -98,12 +98,12 @@ export default async function AdminPortfoliosPage() {
   const assessedStudentIds = new Set(
     (completedAssessments ?? []).map((a) => a.student_id)
   )
-  const assessmentsDue = students.filter((s) => !assessedStudentIds.has(s.id)).length
+  const studentsNeedingAssessment = students.filter((s) => !assessedStudentIds.has(s.id))
 
   const stats = {
     observations: observationCount ?? 0,
     learningStories: learningStoryCount ?? 0,
-    assessmentsDue,
+    assessmentsDue: studentsNeedingAssessment.length,
     studentsWithPortfolios: uniqueStudentsWithPortfolios,
   }
 
@@ -117,7 +117,9 @@ export default async function AdminPortfoliosPage() {
       entries={entries}
       stats={stats}
       quarterLabel={quarterLabel}
+      quarterStart={quarterStart}
       quarterEnd={quarterEnd}
+      studentsNeedingAssessment={studentsNeedingAssessment}
     />
   )
 }

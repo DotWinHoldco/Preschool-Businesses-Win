@@ -13,9 +13,13 @@ import { Badge } from '@/components/ui/badge'
 import {
   Camera, FileText, BarChart3, GraduationCap, Plus,
   ChevronDown, ChevronUp, BookOpen, Eye, EyeOff, ExternalLink,
+  Pencil, Trash2, AlertTriangle, ClipboardCheck,
 } from 'lucide-react'
 import { createObservation } from '@/lib/actions/portfolios/create-observation'
 import { createLearningStory } from '@/lib/actions/portfolios/create-learning-story'
+import { updatePortfolioEntry } from '@/lib/actions/portfolios/update-entry'
+import { deletePortfolioEntry } from '@/lib/actions/portfolios/delete-entry'
+import { runAssessment } from '@/lib/actions/portfolios/run-assessment'
 
 interface Student {
   id: string
@@ -54,7 +58,9 @@ interface PortfoliosClientProps {
   entries: PortfolioEntry[]
   stats: Stats
   quarterLabel: string
+  quarterStart: string
   quarterEnd: string
+  studentsNeedingAssessment: Student[]
 }
 
 const ENTRY_TYPE_CONFIG: Record<string, { label: string; color: string }> = {
@@ -66,13 +72,23 @@ const ENTRY_TYPE_CONFIG: Record<string, { label: string; color: string }> = {
   milestone: { label: 'Milestone', color: 'var(--color-success)' },
 }
 
+const RATING_OPTIONS = [
+  { value: 'not_yet', label: 'Not Yet', color: '#94a3b8' },
+  { value: 'emerging', label: 'Emerging', color: '#f59e0b' },
+  { value: 'developing', label: 'Developing', color: '#3b82f6' },
+  { value: 'proficient', label: 'Proficient', color: '#22c55e' },
+  { value: 'exceeding', label: 'Exceeding', color: '#8b5cf6' },
+] as const
+
 export function PortfoliosClient({
   students,
   domains,
   entries,
   stats,
   quarterLabel,
+  quarterStart,
   quarterEnd,
+  studentsNeedingAssessment,
 }: PortfoliosClientProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -82,13 +98,32 @@ export function PortfoliosClient({
   const [error, setError] = useState<string | null>(null)
   const [filterType, setFilterType] = useState<string>('all')
 
+  // Edit state
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [editingEntry, setEditingEntry] = useState<PortfolioEntry | null>(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [editNarrative, setEditNarrative] = useState('')
+  const [editDomains, setEditDomains] = useState<string[]>([])
+  const [editVisibility, setEditVisibility] = useState<'parent' | 'staff_only'>('parent')
+  const [editError, setEditError] = useState<string | null>(null)
+
+  // Delete state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [deletingEntry, setDeletingEntry] = useState<PortfolioEntry | null>(null)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+
+  // Assessment state
+  const [assessDialogOpen, setAssessDialogOpen] = useState(false)
+  const [assessStudentId, setAssessStudentId] = useState('')
+  const [assessRatings, setAssessRatings] = useState<Record<string, { rating: string; notes: string }>>({})
+  const [assessError, setAssessError] = useState<string | null>(null)
+
   // Form state
   const [studentId, setStudentId] = useState('')
   const [title, setTitle] = useState('')
   const [narrative, setNarrative] = useState('')
   const [selectedDomains, setSelectedDomains] = useState<string[]>([])
   const [visibility, setVisibility] = useState<'parent' | 'staff_only'>('parent')
-  // Learning story fields
   const [whatHappened, setWhatHappened] = useState('')
   const [whatLearning, setWhatLearning] = useState('')
   const [whatNext, setWhatNext] = useState('')
@@ -154,6 +189,106 @@ export function PortfoliosClient({
     })
   }
 
+  function openEditDialog(entry: PortfolioEntry) {
+    setEditingEntry(entry)
+    setEditTitle(entry.title)
+    setEditNarrative(entry.narrative)
+    setEditDomains([...entry.learning_domain_ids])
+    setEditVisibility(entry.visibility as 'parent' | 'staff_only')
+    setEditError(null)
+    setEditDialogOpen(true)
+  }
+
+  function handleEditSubmit() {
+    if (!editingEntry || !editTitle.trim() || !editNarrative.trim()) return
+    setEditError(null)
+
+    startTransition(async () => {
+      const result = await updatePortfolioEntry({
+        id: editingEntry!.id,
+        title: editTitle.trim(),
+        narrative: editNarrative.trim(),
+        learning_domain_ids: editDomains,
+        visibility: editVisibility,
+      })
+
+      if (!result.ok) {
+        setEditError(result.error ?? 'Failed to update entry')
+        return
+      }
+
+      setEditDialogOpen(false)
+      setEditingEntry(null)
+      router.refresh()
+    })
+  }
+
+  function openDeleteDialog(entry: PortfolioEntry) {
+    setDeletingEntry(entry)
+    setDeleteError(null)
+    setDeleteDialogOpen(true)
+  }
+
+  function handleDeleteConfirm() {
+    if (!deletingEntry) return
+    setDeleteError(null)
+
+    startTransition(async () => {
+      const result = await deletePortfolioEntry({ id: deletingEntry!.id })
+
+      if (!result.ok) {
+        setDeleteError(result.error ?? 'Failed to delete entry')
+        return
+      }
+
+      setDeleteDialogOpen(false)
+      setDeletingEntry(null)
+      setExpandedId(null)
+      router.refresh()
+    })
+  }
+
+  function openAssessDialog(studentId: string) {
+    setAssessStudentId(studentId)
+    const initialRatings: Record<string, { rating: string; notes: string }> = {}
+    for (const d of domains) {
+      initialRatings[d.id] = { rating: 'not_yet', notes: '' }
+    }
+    setAssessRatings(initialRatings)
+    setAssessError(null)
+    setAssessDialogOpen(true)
+  }
+
+  function handleAssessSubmit() {
+    if (!assessStudentId) return
+    setAssessError(null)
+
+    const ratings = Object.entries(assessRatings).map(([domainId, val]) => ({
+      learning_domain_id: domainId,
+      rating: val.rating as 'not_yet' | 'emerging' | 'developing' | 'proficient' | 'exceeding',
+      evidence_notes: val.notes || undefined,
+      linked_portfolio_entry_ids: [],
+    }))
+
+    startTransition(async () => {
+      const result = await runAssessment({
+        student_id: assessStudentId,
+        assessment_period_start: quarterStart,
+        assessment_period_end: quarterEnd,
+        ratings,
+      })
+
+      if (!result.ok) {
+        setAssessError(result.error ?? 'Failed to save assessment')
+        return
+      }
+
+      setAssessDialogOpen(false)
+      setAssessStudentId('')
+      router.refresh()
+    })
+  }
+
   const domainMap = new Map(domains.map((d) => [d.id, d]))
 
   function getDomainLabel(id: string): string {
@@ -173,13 +308,14 @@ export function PortfoliosClient({
     { label: 'Students with Portfolios', value: stats.studentsWithPortfolios, icon: GraduationCap },
   ]
 
-  // Group domains by domain_name for picker
   const domainGroups = domains.reduce<Record<string, Domain[]>>((acc, d) => {
     const key = d.domain_name
     if (!acc[key]) acc[key] = []
     acc[key].push(d)
     return acc
   }, {})
+
+  const assessStudentName = students.find((s) => s.id === assessStudentId)?.name ?? ''
 
   return (
     <div className="space-y-6">
@@ -359,7 +495,26 @@ export function PortfoliosClient({
                         </div>
                       )}
 
-                      <div className="flex justify-end">
+                      <div className="flex items-center justify-between pt-1">
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={(e) => { e.stopPropagation(); openEditDialog(entry) }}
+                          >
+                            <Pencil size={12} className="mr-1" />
+                            Edit
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={(e) => { e.stopPropagation(); openDeleteDialog(entry) }}
+                            className="text-[var(--color-destructive)] hover:bg-[var(--color-destructive)] hover:text-white"
+                          >
+                            <Trash2 size={12} className="mr-1" />
+                            Delete
+                          </Button>
+                        </div>
                         <Button variant="secondary" size="sm" asChild>
                           <Link href={`/portal/admin/students/${entry.student_id}`}>
                             <ExternalLink size={12} className="mr-1" />
@@ -389,10 +544,12 @@ export function PortfoliosClient({
       <Card>
         <CardHeader>
           <CardTitle>Assessments Due</CardTitle>
-          <CardDescription>Students needing developmental assessments this quarter.</CardDescription>
+          <CardDescription>
+            {quarterLabel} developmental assessments — rate each student across all learning domains.
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          {stats.assessmentsDue === 0 ? (
+          {studentsNeedingAssessment.length === 0 ? (
             <div className="rounded-lg p-6 text-center" style={{ backgroundColor: 'var(--color-muted)' }}>
               <BarChart3 className="mx-auto mb-2" size={28} style={{ color: 'var(--color-success)' }} />
               <p className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>All caught up!</p>
@@ -401,14 +558,35 @@ export function PortfoliosClient({
               </p>
             </div>
           ) : (
-            <div className="rounded-lg p-6 text-center" style={{ backgroundColor: 'var(--color-muted)' }}>
-              <BarChart3 className="mx-auto mb-2" size={28} style={{ color: 'var(--color-warning)' }} />
-              <p className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
-                {quarterLabel} Assessments
-              </p>
-              <p className="mt-1 text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
-                {stats.assessmentsDue} student{stats.assessmentsDue !== 1 ? 's' : ''} due for assessment by {quarterEnd}.
-              </p>
+            <div className="space-y-2">
+              {studentsNeedingAssessment.map((student) => (
+                <div
+                  key={student.id}
+                  className="flex items-center justify-between rounded-lg border px-4 py-3"
+                  style={{ borderColor: 'var(--color-border)' }}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold"
+                      style={{ backgroundColor: 'var(--color-warning)', color: 'white' }}
+                    >
+                      {student.name.split(' ').map((n) => n[0]).join('')}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
+                        {student.name}
+                      </p>
+                      <p className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
+                        Due by {quarterEnd}
+                      </p>
+                    </div>
+                  </div>
+                  <Button size="sm" onClick={() => openAssessDialog(student.id)}>
+                    <ClipboardCheck size={14} className="mr-1" />
+                    Assess
+                  </Button>
+                </div>
+              ))}
             </div>
           )}
         </CardContent>
@@ -429,7 +607,6 @@ export function PortfoliosClient({
         >
           <DialogClose onClick={() => setDialogOpen(false)} />
           <div className="space-y-4">
-            {/* Entry type toggle */}
             <div className="flex gap-1 rounded-lg p-1" style={{ backgroundColor: 'var(--color-muted)' }}>
               {([
                 { key: 'observation' as const, label: 'Observation', Icon: Camera },
@@ -453,7 +630,6 @@ export function PortfoliosClient({
               ))}
             </div>
 
-            {/* Student */}
             <div className="flex flex-col gap-1.5">
               <label htmlFor="pe-student" className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
                 Student <span style={{ color: 'var(--color-destructive)' }}>*</span>
@@ -466,7 +642,6 @@ export function PortfoliosClient({
               </Select>
             </div>
 
-            {/* Title */}
             <div className="flex flex-col gap-1.5">
               <label htmlFor="pe-title" className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
                 Title <span style={{ color: 'var(--color-destructive)' }}>*</span>
@@ -481,7 +656,6 @@ export function PortfoliosClient({
               />
             </div>
 
-            {/* Observation / Milestone: narrative */}
             {(entryMode === 'observation' || entryMode === 'milestone') && (
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="pe-narrative" className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
@@ -499,7 +673,6 @@ export function PortfoliosClient({
               </div>
             )}
 
-            {/* Learning Story: three-part narrative */}
             {entryMode === 'learning_story' && (
               <>
                 <div className="flex flex-col gap-1.5">
@@ -542,66 +715,22 @@ export function PortfoliosClient({
             )}
 
             {/* Learning Domains */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
-                Learning Domains
-              </label>
-              <div className="max-h-[180px] overflow-y-auto rounded-lg border p-2 space-y-2" style={{ borderColor: 'var(--color-border)' }}>
-                {Object.entries(domainGroups).map(([groupName, groupDomains]) => (
-                  <div key={groupName}>
-                    <p className="text-xs font-semibold mb-1" style={{ color: 'var(--color-muted-foreground)' }}>
-                      {groupName}
-                    </p>
-                    <div className="flex flex-wrap gap-1">
-                      {groupDomains.map((d) => {
-                        const isSelected = selectedDomains.includes(d.id)
-                        return (
-                          <button
-                            key={d.id}
-                            type="button"
-                            onClick={() =>
-                              setSelectedDomains((prev) =>
-                                isSelected ? prev.filter((x) => x !== d.id) : [...prev, d.id]
-                              )
-                            }
-                            className="rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors border"
-                            style={{
-                              backgroundColor: isSelected ? 'var(--color-primary)' : 'transparent',
-                              color: isSelected ? 'var(--color-primary-foreground)' : 'var(--color-foreground)',
-                              borderColor: isSelected ? 'var(--color-primary)' : 'var(--color-border)',
-                            }}
-                          >
-                            {d.subdomain_name ?? d.domain_name}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <DomainPicker
+              domainGroups={domainGroups}
+              selectedDomains={selectedDomains}
+              setSelectedDomains={setSelectedDomains}
+            />
 
-            {/* Visibility */}
             <div className="flex items-center gap-4">
               <label className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
                 Visibility:
               </label>
               <label className="flex items-center gap-1.5 text-sm cursor-pointer">
-                <input
-                  type="radio"
-                  name="visibility"
-                  checked={visibility === 'parent'}
-                  onChange={() => setVisibility('parent')}
-                />
+                <input type="radio" name="visibility" checked={visibility === 'parent'} onChange={() => setVisibility('parent')} />
                 <Eye size={14} /> Visible to parents
               </label>
               <label className="flex items-center gap-1.5 text-sm cursor-pointer">
-                <input
-                  type="radio"
-                  name="visibility"
-                  checked={visibility === 'staff_only'}
-                  onChange={() => setVisibility('staff_only')}
-                />
+                <input type="radio" name="visibility" checked={visibility === 'staff_only'} onChange={() => setVisibility('staff_only')} />
                 <EyeOff size={14} /> Staff only
               </label>
             </div>
@@ -610,14 +739,8 @@ export function PortfoliosClient({
               <p className="text-xs" style={{ color: 'var(--color-destructive)' }}>{error}</p>
             )}
 
-            {/* Actions */}
             <div className="flex justify-end gap-3 pt-2">
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => { resetForm(); setDialogOpen(false) }}
-              >
+              <Button type="button" variant="secondary" size="sm" onClick={() => { resetForm(); setDialogOpen(false) }}>
                 Cancel
               </Button>
               <Button size="sm" onClick={handleSubmit} loading={isPending} disabled={!studentId || !title.trim()}>
@@ -627,6 +750,255 @@ export function PortfoliosClient({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Entry Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogOverlay onClick={() => setEditDialogOpen(false)} />
+        <DialogContent title="Edit Entry" description={editingEntry ? `Editing: ${editingEntry.title}` : ''}>
+          <DialogClose onClick={() => setEditDialogOpen(false)} />
+          <div className="space-y-4">
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="edit-title" className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
+                Title <span style={{ color: 'var(--color-destructive)' }}>*</span>
+              </label>
+              <Input
+                id="edit-title"
+                inputSize="sm"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="edit-narrative" className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
+                {editingEntry?.entry_type === 'learning_story' ? 'Story' : 'Notes'} <span style={{ color: 'var(--color-destructive)' }}>*</span>
+              </label>
+              <Textarea
+                id="edit-narrative"
+                value={editNarrative}
+                onChange={(e) => setEditNarrative(e.target.value)}
+                className="min-h-[120px]"
+              />
+            </div>
+
+            <DomainPicker
+              domainGroups={domainGroups}
+              selectedDomains={editDomains}
+              setSelectedDomains={setEditDomains}
+            />
+
+            <div className="flex items-center gap-4">
+              <label className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
+                Visibility:
+              </label>
+              <label className="flex items-center gap-1.5 text-sm cursor-pointer">
+                <input type="radio" name="edit-visibility" checked={editVisibility === 'parent'} onChange={() => setEditVisibility('parent')} />
+                <Eye size={14} /> Visible to parents
+              </label>
+              <label className="flex items-center gap-1.5 text-sm cursor-pointer">
+                <input type="radio" name="edit-visibility" checked={editVisibility === 'staff_only'} onChange={() => setEditVisibility('staff_only')} />
+                <EyeOff size={14} /> Staff only
+              </label>
+            </div>
+
+            {editError && (
+              <p className="text-xs" style={{ color: 'var(--color-destructive)' }}>{editError}</p>
+            )}
+
+            <div className="flex justify-end gap-3 pt-2">
+              <Button type="button" variant="secondary" size="sm" onClick={() => setEditDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button size="sm" onClick={handleEditSubmit} loading={isPending} disabled={!editTitle.trim() || !editNarrative.trim()}>
+                Save Changes
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogOverlay onClick={() => setDeleteDialogOpen(false)} />
+        <DialogContent title="Delete Entry" description="This action cannot be undone.">
+          <DialogClose onClick={() => setDeleteDialogOpen(false)} />
+          <div className="space-y-4">
+            <div className="flex items-start gap-3 rounded-lg p-3" style={{ backgroundColor: 'var(--color-destructive)', color: 'white' }}>
+              <AlertTriangle size={20} className="shrink-0 mt-0.5" />
+              <div className="text-sm">
+                <p className="font-medium">Are you sure you want to delete this entry?</p>
+                <p className="mt-1 opacity-90">
+                  &ldquo;{deletingEntry?.title}&rdquo; for {deletingEntry?.student_name} will be permanently removed. This is logged in the audit trail.
+                </p>
+              </div>
+            </div>
+
+            {deleteError && (
+              <p className="text-xs" style={{ color: 'var(--color-destructive)' }}>{deleteError}</p>
+            )}
+
+            <div className="flex justify-end gap-3">
+              <Button type="button" variant="secondary" size="sm" onClick={() => setDeleteDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleDeleteConfirm}
+                loading={isPending}
+                className="bg-[var(--color-destructive)] text-white hover:opacity-90"
+              >
+                <Trash2 size={12} className="mr-1" />
+                Delete Entry
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Assessment Dialog */}
+      <Dialog open={assessDialogOpen} onOpenChange={setAssessDialogOpen}>
+        <DialogOverlay onClick={() => setAssessDialogOpen(false)} />
+        <DialogContent
+          title={`Developmental Assessment — ${assessStudentName}`}
+          description={`${quarterLabel} assessment (${quarterStart} to ${quarterEnd}). Rate each learning domain.`}
+          className="max-w-2xl max-h-[80vh] overflow-y-auto"
+        >
+          <DialogClose onClick={() => setAssessDialogOpen(false)} />
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 flex-wrap text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
+              {RATING_OPTIONS.map((r) => (
+                <span key={r.value} className="flex items-center gap-1">
+                  <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: r.color }} />
+                  {r.label}
+                </span>
+              ))}
+            </div>
+
+            {Object.entries(domainGroups).map(([groupName, groupDomains]) => (
+              <div key={groupName}>
+                <p className="text-xs font-semibold mb-2 uppercase tracking-wide" style={{ color: 'var(--color-muted-foreground)' }}>
+                  {groupName}
+                </p>
+                <div className="space-y-2">
+                  {groupDomains.map((d) => {
+                    const current = assessRatings[d.id] ?? { rating: 'not_yet', notes: '' }
+                    return (
+                      <div
+                        key={d.id}
+                        className="rounded-lg border p-3"
+                        style={{ borderColor: 'var(--color-border)' }}
+                      >
+                        <p className="text-sm font-medium mb-2" style={{ color: 'var(--color-foreground)' }}>
+                          {d.subdomain_name ?? d.domain_name}
+                        </p>
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          {RATING_OPTIONS.map((opt) => (
+                            <button
+                              key={opt.value}
+                              type="button"
+                              onClick={() =>
+                                setAssessRatings((prev) => ({
+                                  ...prev,
+                                  [d.id]: { ...current, rating: opt.value },
+                                }))
+                              }
+                              className="rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors border"
+                              style={{
+                                backgroundColor: current.rating === opt.value ? opt.color : 'transparent',
+                                color: current.rating === opt.value ? 'white' : 'var(--color-foreground)',
+                                borderColor: current.rating === opt.value ? opt.color : 'var(--color-border)',
+                              }}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                        <Input
+                          inputSize="sm"
+                          placeholder="Evidence notes (optional)"
+                          value={current.notes}
+                          onChange={(e) =>
+                            setAssessRatings((prev) => ({
+                              ...prev,
+                              [d.id]: { ...current, notes: e.target.value },
+                            }))
+                          }
+                        />
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+
+            {assessError && (
+              <p className="text-xs" style={{ color: 'var(--color-destructive)' }}>{assessError}</p>
+            )}
+
+            <div className="flex justify-end gap-3 pt-2 sticky bottom-0 bg-[var(--color-card)] pb-1">
+              <Button type="button" variant="secondary" size="sm" onClick={() => setAssessDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button size="sm" onClick={handleAssessSubmit} loading={isPending}>
+                <ClipboardCheck size={14} className="mr-1" />
+                Complete Assessment
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
+
+function DomainPicker({
+  domainGroups,
+  selectedDomains,
+  setSelectedDomains,
+}: {
+  domainGroups: Record<string, Domain[]>
+  selectedDomains: string[]
+  setSelectedDomains: (fn: string[] | ((prev: string[]) => string[])) => void
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
+        Learning Domains
+      </label>
+      <div className="max-h-[180px] overflow-y-auto rounded-lg border p-2 space-y-2" style={{ borderColor: 'var(--color-border)' }}>
+        {Object.entries(domainGroups).map(([groupName, groupDomains]) => (
+          <div key={groupName}>
+            <p className="text-xs font-semibold mb-1" style={{ color: 'var(--color-muted-foreground)' }}>
+              {groupName}
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {groupDomains.map((d) => {
+                const isSelected = selectedDomains.includes(d.id)
+                return (
+                  <button
+                    key={d.id}
+                    type="button"
+                    onClick={() =>
+                      setSelectedDomains((prev: string[]) =>
+                        isSelected ? prev.filter((x) => x !== d.id) : [...prev, d.id]
+                      )
+                    }
+                    className="rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors border"
+                    style={{
+                      backgroundColor: isSelected ? 'var(--color-primary)' : 'transparent',
+                      color: isSelected ? 'var(--color-primary-foreground)' : 'var(--color-foreground)',
+                      borderColor: isSelected ? 'var(--color-primary)' : 'var(--color-border)',
+                    }}
+                  >
+                    {d.subdomain_name ?? d.domain_name}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
