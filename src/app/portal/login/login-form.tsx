@@ -5,6 +5,7 @@
 // Uses react-hook-form + zod for validation.
 
 import { useState, useTransition } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -65,7 +66,7 @@ export function LoginForm() {
       setServerError(
         error.message === 'Invalid login credentials'
           ? 'Invalid email or password. Please try again.'
-          : error.message
+          : error.message,
       )
       return
     }
@@ -106,7 +107,10 @@ export function LoginForm() {
       >
         <div
           className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full"
-          style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-primary-foreground)' }}
+          style={{
+            backgroundColor: 'var(--color-primary)',
+            color: 'var(--color-primary-foreground)',
+          }}
         >
           <Mail size={24} />
         </div>
@@ -114,16 +118,10 @@ export function LoginForm() {
           Check your email
         </h2>
         <p className="mt-2 text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
-          We sent a sign-in link to{' '}
-          <strong>{magicForm.getValues('email')}</strong>. Click the link to
-          sign in.
+          We sent a sign-in link to <strong>{magicForm.getValues('email')}</strong>. Click the link
+          to sign in.
         </p>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="mt-4"
-          onClick={() => setMagicLinkSent(false)}
-        >
+        <Button variant="ghost" size="sm" className="mt-4" onClick={() => setMagicLinkSent(false)}>
           Use a different method
         </Button>
       </div>
@@ -139,14 +137,23 @@ export function LoginForm() {
       }}
     >
       {/* Mode toggle tabs */}
-      <div className="mb-6 flex rounded-lg overflow-hidden border" style={{ borderColor: 'var(--color-border)' }}>
+      <div
+        className="mb-6 flex rounded-lg overflow-hidden border"
+        style={{ borderColor: 'var(--color-border)' }}
+      >
         <button
           type="button"
-          onClick={() => { setMode('password'); setServerError(null) }}
+          onClick={() => {
+            setMode('password')
+            setServerError(null)
+          }}
           className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-colors"
           style={{
             backgroundColor: mode === 'password' ? 'var(--color-primary)' : 'transparent',
-            color: mode === 'password' ? 'var(--color-primary-foreground)' : 'var(--color-muted-foreground)',
+            color:
+              mode === 'password'
+                ? 'var(--color-primary-foreground)'
+                : 'var(--color-muted-foreground)',
           }}
         >
           <Lock size={14} />
@@ -154,11 +161,17 @@ export function LoginForm() {
         </button>
         <button
           type="button"
-          onClick={() => { setMode('magic'); setServerError(null) }}
+          onClick={() => {
+            setMode('magic')
+            setServerError(null)
+          }}
           className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-colors"
           style={{
             backgroundColor: mode === 'magic' ? 'var(--color-primary)' : 'transparent',
-            color: mode === 'magic' ? 'var(--color-primary-foreground)' : 'var(--color-muted-foreground)',
+            color:
+              mode === 'magic'
+                ? 'var(--color-primary-foreground)'
+                : 'var(--color-muted-foreground)',
           }}
         >
           <Sparkles size={14} />
@@ -219,13 +232,13 @@ export function LoginForm() {
               >
                 Password
               </label>
-              <a
+              <Link
                 href="/portal/login/forgot"
                 className="text-xs font-medium hover:underline"
                 style={{ color: 'var(--color-primary)' }}
               >
                 Forgot password?
-              </a>
+              </Link>
             </div>
             <Input
               id="pw-password"
@@ -254,11 +267,7 @@ export function LoginForm() {
 
       {/* Magic link form */}
       {mode === 'magic' && (
-        <form
-          onSubmit={magicForm.handleSubmit(handleMagicLink)}
-          className="space-y-4"
-          noValidate
-        >
+        <form onSubmit={magicForm.handleSubmit(handleMagicLink)} className="space-y-4" noValidate>
           <div className="space-y-1.5">
             <label
               htmlFor="ml-email"
@@ -282,11 +291,7 @@ export function LoginForm() {
             )}
           </div>
 
-          <Button
-            type="submit"
-            className="w-full"
-            loading={magicForm.formState.isSubmitting}
-          >
+          <Button type="submit" className="w-full" loading={magicForm.formState.isSubmitting}>
             Send magic link
           </Button>
 

@@ -19,11 +19,7 @@ interface ExpensesPageClientProps {
   totalExpensesCents: number
 }
 
-export function ExpensesPageClient({
-  initialExpenses,
-  categories,
-  totalExpensesCents,
-}: ExpensesPageClientProps) {
+export function ExpensesPageClient({ initialExpenses, categories }: ExpensesPageClientProps) {
   const [expenses, setExpenses] = useState<ExpenseRow[]>(initialExpenses)
 
   const runningTotal = expenses.reduce((s, e) => s + e.amount_cents, 0)
@@ -61,10 +57,18 @@ export function ExpensesPageClient({
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-[var(--color-muted)]">
-                <th className="p-3 text-left font-medium text-[var(--color-muted-foreground)]">Date</th>
-                <th className="p-3 text-left font-medium text-[var(--color-muted-foreground)]">Vendor</th>
-                <th className="p-3 text-left font-medium text-[var(--color-muted-foreground)]">Category</th>
-                <th className="p-3 text-right font-medium text-[var(--color-muted-foreground)]">Amount</th>
+                <th className="p-3 text-left font-medium text-[var(--color-muted-foreground)]">
+                  Date
+                </th>
+                <th className="p-3 text-left font-medium text-[var(--color-muted-foreground)]">
+                  Vendor
+                </th>
+                <th className="p-3 text-left font-medium text-[var(--color-muted-foreground)]">
+                  Category
+                </th>
+                <th className="p-3 text-right font-medium text-[var(--color-muted-foreground)]">
+                  Amount
+                </th>
               </tr>
             </thead>
             <tbody>

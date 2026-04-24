@@ -42,7 +42,6 @@ export async function runBillingForAllTenants(): Promise<BillingRunSummary> {
         .eq('period_end', periodEndStr)
 
       if ((existingCount ?? 0) > 0) {
-        console.log(`[cron:billing] Tenant ${tenant.slug} already billed for ${yyyymm}, skipping`)
         continue
       }
 
@@ -54,7 +53,6 @@ export async function runBillingForAllTenants(): Promise<BillingRunSummary> {
         .eq('status', 'active')
 
       if (enrollErr) {
-        console.error(`[cron:billing] Enrollment query error for ${tenant.slug}:`, enrollErr.message)
         continue
       }
 
@@ -152,7 +150,6 @@ export async function runBillingForAllTenants(): Promise<BillingRunSummary> {
           .single()
 
         if (invErr || !invoice) {
-          console.error(`[cron:billing] Invoice insert error for family ${familyId}:`, invErr?.message)
           continue
         }
 
@@ -164,10 +161,7 @@ export async function runBillingForAllTenants(): Promise<BillingRunSummary> {
         }))
 
         if (lines.length > 0) {
-          const { error: lineErr } = await supabase.from('invoice_lines').insert(lines)
-          if (lineErr) {
-            console.error(`[cron:billing] Line items insert error for invoice ${invoice.id}:`, lineErr.message)
-          }
+          await supabase.from('invoice_lines').insert(lines)
         }
 
         // ---- Audit ----
@@ -218,8 +212,8 @@ export async function runBillingForAllTenants(): Promise<BillingRunSummary> {
       }
 
       summary.tenants_processed++
-    } catch (err) {
-      console.error(`[cron:billing] Error processing tenant ${tenant.slug}:`, err)
+    } catch {
+      // Error processing tenant
     }
   }
 
@@ -233,9 +227,7 @@ export async function runBillingForAllTenants(): Promise<BillingRunSummary> {
       .eq('status', 'sent')
       .lt('due_date', todayStr)
 
-    if (overdueErr) {
-      console.error('[cron:billing] Overdue query error:', overdueErr.message)
-    } else if (overdueInvoices && overdueInvoices.length > 0) {
+    if (!overdueErr && overdueInvoices && overdueInvoices.length > 0) {
       const overdueIds = overdueInvoices.map((inv) => inv.id)
 
       const { error: updateErr } = await supabase
@@ -243,17 +235,13 @@ export async function runBillingForAllTenants(): Promise<BillingRunSummary> {
         .update({ status: 'overdue' })
         .in('id', overdueIds)
 
-      if (updateErr) {
-        console.error('[cron:billing] Overdue update error:', updateErr.message)
-      } else {
+      if (!updateErr) {
         summary.overdue_marked = overdueIds.length
-        console.log(`[cron:billing] Marked ${overdueIds.length} invoices as overdue`)
       }
     }
-  } catch (err) {
-    console.error('[cron:billing] Overdue processing error:', err)
+  } catch {
+    // Error processing overdue invoices
   }
 
-  console.log('[cron:billing] Run complete:', summary)
   return summary
 }

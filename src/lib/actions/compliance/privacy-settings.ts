@@ -55,7 +55,10 @@ export async function savePrivacySettings(formData: FormData): Promise<PrivacySe
     { key: 'privacy.retention_days', value: String(parsed.data.retention_days) },
     { key: 'privacy.coppa_contact_email', value: parsed.data.coppa_contact_email },
     { key: 'privacy.auto_delete_withdrawn', value: String(parsed.data.auto_delete_withdrawn) },
-    { key: 'privacy.anonymize_after_withdrawal', value: String(parsed.data.anonymize_after_withdrawal) },
+    {
+      key: 'privacy.anonymize_after_withdrawal',
+      value: String(parsed.data.anonymize_after_withdrawal),
+    },
   ]
 
   for (const entry of entries) {
@@ -83,7 +86,8 @@ export async function savePrivacySettings(formData: FormData): Promise<PrivacySe
   return { ok: true }
 }
 
-export async function loadPrivacySettings(tenantId: string): Promise<PrivacySettings> {
+export async function loadPrivacySettings(): Promise<PrivacySettings> {
+  const tenantId = await getTenantId()
   const supabase = await createTenantAdminClient(tenantId)
 
   const { data: rows } = await supabase

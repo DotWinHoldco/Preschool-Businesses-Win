@@ -21,7 +21,13 @@ export type ManageMenuState = {
 /** Validate USDA meal pattern requirements based on meal type */
 function validateUSDAPattern(
   mealType: string,
-  components: { grains: boolean; meat_alt: boolean; vegetable: boolean; fruit: boolean; milk: boolean }
+  components: {
+    grains: boolean
+    meat_alt: boolean
+    vegetable: boolean
+    fruit: boolean
+    milk: boolean
+  },
 ): string[] {
   const warnings: string[] = []
 
@@ -29,7 +35,8 @@ function validateUSDAPattern(
   if (mealType === 'breakfast') {
     if (!components.grains) warnings.push('Breakfast requires a grains component')
     if (!components.milk) warnings.push('Breakfast requires a milk component')
-    if (!components.fruit && !components.vegetable) warnings.push('Breakfast requires a fruit or vegetable')
+    if (!components.fruit && !components.vegetable)
+      warnings.push('Breakfast requires a fruit or vegetable')
   } else if (mealType === 'lunch' || mealType === 'supper') {
     if (!components.grains) warnings.push(`${mealType} requires a grains component`)
     if (!components.meat_alt) warnings.push(`${mealType} requires a meat/meat alternate`)
@@ -38,7 +45,13 @@ function validateUSDAPattern(
     if (!components.milk) warnings.push(`${mealType} requires a milk component`)
   } else if (mealType === 'am_snack' || mealType === 'pm_snack') {
     // Snacks require at least 2 of the 5 food components
-    const count = [components.grains, components.meat_alt, components.vegetable, components.fruit, components.milk].filter(Boolean).length
+    const count = [
+      components.grains,
+      components.meat_alt,
+      components.vegetable,
+      components.fruit,
+      components.milk,
+    ].filter(Boolean).length
     if (count < 2) warnings.push('Snacks require at least 2 different food components')
   }
 
@@ -120,6 +133,7 @@ export async function updateMealMenu(input: UpdateMealMenuInput): Promise<Manage
     .from('meal_menus')
     .update(updateFields)
     .eq('id', id)
+    .eq('tenant_id', tenantId)
 
   if (error) {
     return { ok: false, error: error.message }

@@ -9,13 +9,11 @@ export async function POST(request: NextRequest) {
   if (blocked) return blocked
 
   try {
-    const subscription = await request.json()
+    const _subscription = await request.json()
 
     // TODO: Store push subscription in database
     // Link to user_id and tenant_id
     // Update notification_preferences
-
-    console.log('[Push] New subscription registered', subscription)
 
     return NextResponse.json({ success: true })
   } catch (error) {

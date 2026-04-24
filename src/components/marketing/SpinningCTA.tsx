@@ -1,8 +1,8 @@
-import Image from 'next/image';
-import Link from 'next/link';
-import { VideoBackground } from './VideoBackground';
+import Image from 'next/image'
+import Link from 'next/link'
+import { VideoBackground } from './VideoBackground'
 
-const VIDEO_BASE = 'https://oajfxyiqjqymuvevnoui.supabase.co/storage/v1/object/public/marketing-videos';
+const VIDEO_BASE = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/marketing-videos`
 
 export function SpinningCTA() {
   return (
@@ -15,7 +15,10 @@ export function SpinningCTA() {
     >
       <div className="w-full min-h-screen relative flex flex-col items-center justify-end pb-20 px-6">
         {/* Spinning "Now Enrolling" sunshine — absolute top-right, INDEPENDENT */}
-        <Link href="/enroll" className="absolute top-[8%] right-[6%] md:right-[10%] lg:right-[15%] w-[200px] h-[200px] md:w-[280px] md:h-[280px] lg:w-[400px] lg:h-[400px] z-20">
+        <Link
+          href="/enroll"
+          className="absolute top-[8%] right-[6%] md:right-[10%] lg:right-[15%] w-[200px] h-[200px] md:w-[280px] md:h-[280px] lg:w-[400px] lg:h-[400px] z-20"
+        >
           <Image
             src="/marketing/home/mascot-sunshine-face.png"
             alt="Now Enrolling"
@@ -51,5 +54,5 @@ export function SpinningCTA() {
         </div>
       </div>
     </VideoBackground>
-  );
+  )
 }

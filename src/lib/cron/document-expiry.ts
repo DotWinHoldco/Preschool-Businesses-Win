@@ -30,18 +30,14 @@ export async function runDocumentExpiryCheckForAllTenants(): Promise<DocumentExp
     .lt('expiry_date', nowISO)
     .eq('status', 'active')
 
-  if (expiredErr) {
-    console.error('[cron:doc-expiry] Expired query error:', expiredErr.message)
-  } else if (expiredDocs && expiredDocs.length > 0) {
+  if (!expiredErr && expiredDocs && expiredDocs.length > 0) {
     const expiredIds = expiredDocs.map((d) => d.id)
     const { error: updateErr } = await supabase
       .from('documents')
       .update({ status: 'expired' })
       .in('id', expiredIds)
 
-    if (updateErr) {
-      console.error('[cron:doc-expiry] Expired update error:', updateErr.message)
-    } else {
+    if (!updateErr) {
       summary.expired_updated = expiredIds.length
     }
   }
@@ -55,12 +51,10 @@ export async function runDocumentExpiryCheckForAllTenants(): Promise<DocumentExp
     .eq('status', 'active')
 
   if (expiringErr) {
-    console.error('[cron:doc-expiry] Expiring query error:', expiringErr.message)
     return summary
   }
 
   if (!expiringDocs || expiringDocs.length === 0) {
-    console.log('[cron:doc-expiry] No expiring documents found')
     return summary
   }
 
@@ -149,11 +143,10 @@ export async function runDocumentExpiryCheckForAllTenants(): Promise<DocumentExp
       })
 
       summary.notifications_sent++
-    } catch (err) {
-      console.error(`[cron:doc-expiry] Error processing document ${doc.id}:`, err)
+    } catch {
+      // Error processing document
     }
   }
 
-  console.log('[cron:doc-expiry] Summary:', summary)
   return summary
 }

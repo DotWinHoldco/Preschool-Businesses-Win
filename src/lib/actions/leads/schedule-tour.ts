@@ -1,7 +1,12 @@
 // @anchor: cca.leads.schedule-tour
 'use server'
 
-import { ScheduleTourSchema, CompleteTourSchema, type ScheduleTourInput, type CompleteTourInput } from '@/lib/schemas/lead'
+import {
+  ScheduleTourSchema,
+  CompleteTourSchema,
+  type ScheduleTourInput,
+  type CompleteTourInput,
+} from '@/lib/schemas/lead'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
 import { assertRole } from '@/lib/auth/session'
@@ -92,6 +97,7 @@ export async function completeTour(input: CompleteTourInput): Promise<ScheduleTo
       notes: data.notes ?? null,
     })
     .eq('id', data.tour_id)
+    .eq('tenant_id', tenantId)
     .select('lead_id')
     .single()
 

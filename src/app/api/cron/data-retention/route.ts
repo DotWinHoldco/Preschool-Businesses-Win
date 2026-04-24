@@ -11,7 +11,6 @@ export async function GET(request: Request) {
   if (authError) return authError
 
   try {
-    console.log('[Cron] Data retention check started')
     const summary = await runDataRetentionForAllTenants()
 
     return NextResponse.json({
@@ -19,8 +18,7 @@ export async function GET(request: Request) {
       message: 'Data retention check complete',
       ...summary,
     })
-  } catch (error) {
-    console.error('[Cron] Data retention check error:', error)
+  } catch {
     return NextResponse.json({ error: 'Check failed' }, { status: 500 })
   }
 }

@@ -1,6 +1,7 @@
 // @anchor: cca.billing.payment-methods
 // Payment method management for parents.
 
+import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
 import { CreditCard } from 'lucide-react'
 
@@ -9,12 +10,12 @@ export default async function PaymentMethodsPage() {
   return (
     <div className="flex flex-col gap-6 max-w-lg mx-auto">
       <div>
-        <a
+        <Link
           href="/portal/parent/billing"
           className="text-sm text-[var(--color-primary)] hover:underline mb-2 inline-block"
         >
           &larr; Back to billing
-        </a>
+        </Link>
         <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Payment Methods</h1>
       </div>
 
@@ -27,7 +28,8 @@ export default async function PaymentMethodsPage() {
             Online payments coming soon
           </h2>
           <p className="mt-2 text-sm text-[var(--color-muted-foreground)] max-w-sm mx-auto">
-            Payment method management requires Stripe integration. Contact your school to set up online payments.
+            Payment method management requires Stripe integration. Contact your school to set up
+            online payments.
           </p>
         </CardContent>
       </Card>

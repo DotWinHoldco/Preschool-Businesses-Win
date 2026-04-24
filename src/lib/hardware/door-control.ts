@@ -22,35 +22,28 @@ export interface DoorController {
 // ---------------------------------------------------------------------------
 
 class HttpDoorController implements DoorController {
-  async unlock(doorId: string, userId: string, reason: string): Promise<DoorControlResult> {
+  async unlock(_doorId: string, _userId: string, _reason: string): Promise<DoorControlResult> {
     // In production, this would:
     // 1. Look up the door's API endpoint and auth from door_locks table
     // 2. Make an HTTP POST to the lock's API
     // 3. Verify the response indicates success
     // 4. Set an auto-lock timer (default 10 seconds)
-    console.log(`[door-control] UNLOCK door=${doorId} user=${userId} reason=${reason}`)
-
     // Stub: always succeeds in development
     return { success: true }
   }
 
-  async lock(doorId: string, userId: string): Promise<DoorControlResult> {
-    console.log(`[door-control] LOCK door=${doorId} user=${userId}`)
+  async lock(_doorId: string, _userId: string): Promise<DoorControlResult> {
     return { success: true }
   }
 
-  async getStatus(doorId: string): Promise<DoorStatus> {
-    console.log(`[door-control] STATUS door=${doorId}`)
+  async getStatus(_doorId: string): Promise<DoorStatus> {
     // Stub: report as locked
     return 'locked'
   }
 
-  onStatusChange(doorId: string, callback: (status: DoorStatus) => void): () => void {
+  onStatusChange(_doorId: string, _callback: (status: DoorStatus) => void): () => void {
     // Stub: no-op subscription, returns unsubscribe function
-    console.log(`[door-control] SUBSCRIBE door=${doorId}`)
-    return () => {
-      console.log(`[door-control] UNSUBSCRIBE door=${doorId}`)
-    }
+    return () => {}
   }
 }
 
@@ -71,8 +64,7 @@ export function createDoorController(): DoorController {
  * Lock all doors for a tenant. Used during emergency lockdown.
  * In production, this would iterate over all door_locks for the tenant.
  */
-export async function lockAllDoors(tenantId: string): Promise<DoorControlResult> {
-  console.log(`[door-control] LOCK ALL DOORS tenant=${tenantId}`)
+export async function lockAllDoors(_tenantId: string): Promise<DoorControlResult> {
   // Stub: in production, query door_locks table and lock each one
   return { success: true }
 }

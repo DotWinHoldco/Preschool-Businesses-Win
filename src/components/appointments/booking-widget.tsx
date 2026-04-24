@@ -120,7 +120,8 @@ export function BookingWidget({
     const firstDow = start.getDay()
     const daysInMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 0).getDate()
     const cells: Array<{ date: Date | null; available: boolean; isToday: boolean }> = []
-    for (let i = 0; i < firstDow; i += 1) cells.push({ date: null, available: false, isToday: false })
+    for (let i = 0; i < firstDow; i += 1)
+      cells.push({ date: null, available: false, isToday: false })
     const today = new Date()
     for (let d = 1; d <= daysInMonth; d += 1) {
       const date = new Date(viewMonth.getFullYear(), viewMonth.getMonth(), d)
@@ -201,9 +202,7 @@ export function BookingWidget({
             <div className="mb-3 flex items-center justify-between">
               <button
                 onClick={() =>
-                  setViewMonth(
-                    new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1, 1),
-                  )
+                  setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1, 1))
                 }
                 className="rounded-full p-1.5 hover:bg-[var(--color-muted)]"
                 aria-label="Previous month"
@@ -215,9 +214,7 @@ export function BookingWidget({
               </div>
               <button
                 onClick={() =>
-                  setViewMonth(
-                    new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1),
-                  )
+                  setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1))
                 }
                 className="rounded-full p-1.5 hover:bg-[var(--color-muted)]"
                 aria-label="Next month"
@@ -435,7 +432,11 @@ function Confirmation({
   const start = new Date(startIso)
   const end = new Date(start.getTime() + appointmentType.duration_minutes * 60 * 1000)
 
-  const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
+  const fmt = (d: Date) =>
+    d
+      .toISOString()
+      .replace(/[-:]/g, '')
+      .replace(/\.\d{3}/, '')
   const title = encodeURIComponent(appointmentType.name)
   const details = encodeURIComponent(appointmentType.description ?? '')
   const location = encodeURIComponent(appointmentType.location ?? '')
@@ -449,7 +450,7 @@ function Confirmation({
         <CalendarCheck className="h-7 w-7" />
       </div>
       <h1 className="mt-4 text-2xl font-bold text-[var(--color-foreground)]">
-        You're booked!
+        You&apos;re booked!
       </h1>
       <p className="mt-2 text-sm text-[var(--color-muted-foreground)]">
         A confirmation email is on its way to you.

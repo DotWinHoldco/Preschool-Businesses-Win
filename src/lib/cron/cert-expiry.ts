@@ -40,24 +40,24 @@ export async function runCertExpiryCheckForAllTenants(): Promise<CertExpirySumma
   // Single cross-tenant query for all expiring certs
   const { data: expiringCerts, error } = await supabase
     .from('staff_certifications')
-    .select(`
+    .select(
+      `
       id,
       tenant_id,
       user_id,
       certification_name,
       expiry_date,
       user_profiles(first_name, last_name)
-    `)
+    `,
+    )
     .gte('expiry_date', now.toISOString().split('T')[0])
     .lte('expiry_date', sixtyDaysOut.toISOString().split('T')[0])
 
   if (error) {
-    console.error('[cron:cert-expiry] Query failed:', error.message)
     return summary
   }
 
   if (!expiringCerts || expiringCerts.length === 0) {
-    console.log('[cron:cert-expiry] No expiring certifications found')
     return summary
   }
 
@@ -78,9 +78,7 @@ export async function runCertExpiryCheckForAllTenants(): Promise<CertExpirySumma
         first_name: string
         last_name: string
       } | null
-      const staffName = profile
-        ? `${profile.first_name} ${profile.last_name}`
-        : 'Staff member'
+      const staffName = profile ? `${profile.first_name} ${profile.last_name}` : 'Staff member'
 
       // (a) Dedup per user + cert (24 hours)
       const alreadySent = await deduplicateNotification(supabase, {
@@ -133,17 +131,10 @@ export async function runCertExpiryCheckForAllTenants(): Promise<CertExpirySumma
           })
         }
       }
-    } catch (err) {
-      console.error(
-        `[cron:cert-expiry] Error processing cert ${cert.id}:`,
-        err,
-      )
+    } catch {
+      // Error processing cert
     }
   }
-
-  console.log(
-    `[cron:cert-expiry] Done — ${summary.certs_checked} certs checked, ${summary.critical} critical, ${summary.warning} warning, ${summary.notice} notice, ${summary.alerts_sent} alerts sent`,
-  )
 
   return summary
 }

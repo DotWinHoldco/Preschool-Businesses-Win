@@ -5,7 +5,7 @@ import { cn } from '@/lib/cn'
 // Card
 // ---------------------------------------------------------------------------
 
-export interface CardProps extends HTMLAttributes<HTMLDivElement> {}
+export type CardProps = HTMLAttributes<HTMLDivElement>
 
 const Card = forwardRef<HTMLDivElement, CardProps>(({ className, ...props }, ref) => (
   <div
@@ -25,7 +25,7 @@ Card.displayName = 'Card'
 // CardHeader
 // ---------------------------------------------------------------------------
 
-export interface CardHeaderProps extends HTMLAttributes<HTMLDivElement> {}
+export type CardHeaderProps = HTMLAttributes<HTMLDivElement>
 
 const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>(({ className, ...props }, ref) => (
   <div ref={ref} className={cn('flex flex-col gap-1.5 p-6', className)} {...props} />
@@ -36,7 +36,7 @@ CardHeader.displayName = 'CardHeader'
 // CardTitle
 // ---------------------------------------------------------------------------
 
-export interface CardTitleProps extends HTMLAttributes<HTMLHeadingElement> {}
+export type CardTitleProps = HTMLAttributes<HTMLHeadingElement>
 
 const CardTitle = forwardRef<HTMLHeadingElement, CardTitleProps>(({ className, ...props }, ref) => (
   <h3
@@ -51,7 +51,7 @@ CardTitle.displayName = 'CardTitle'
 // CardDescription
 // ---------------------------------------------------------------------------
 
-export interface CardDescriptionProps extends HTMLAttributes<HTMLParagraphElement> {}
+export type CardDescriptionProps = HTMLAttributes<HTMLParagraphElement>
 
 const CardDescription = forwardRef<HTMLParagraphElement, CardDescriptionProps>(
   ({ className, ...props }, ref) => (
@@ -68,7 +68,7 @@ CardDescription.displayName = 'CardDescription'
 // CardContent
 // ---------------------------------------------------------------------------
 
-export interface CardContentProps extends HTMLAttributes<HTMLDivElement> {}
+export type CardContentProps = HTMLAttributes<HTMLDivElement>
 
 const CardContent = forwardRef<HTMLDivElement, CardContentProps>(({ className, ...props }, ref) => (
   <div ref={ref} className={cn('p-6 pt-0', className)} {...props} />
@@ -79,7 +79,7 @@ CardContent.displayName = 'CardContent'
 // CardFooter
 // ---------------------------------------------------------------------------
 
-export interface CardFooterProps extends HTMLAttributes<HTMLDivElement> {}
+export type CardFooterProps = HTMLAttributes<HTMLDivElement>
 
 const CardFooter = forwardRef<HTMLDivElement, CardFooterProps>(({ className, ...props }, ref) => (
   <div ref={ref} className={cn('flex items-center p-6 pt-0', className)} {...props} />

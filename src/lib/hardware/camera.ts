@@ -30,26 +30,21 @@ class OnvifCameraAdapter implements CameraFeed {
     // 2. Use ONVIF discovery or stored RTSP URL
     // 3. Transcode to HLS if needed (via the camera system's NVR or a transcoder)
     // 4. Return a signed HLS URL for browser playback
-    console.log(`[camera] GET_STREAM camera=${cameraId}`)
-
     // Stub: return a placeholder HLS URL
     return `/api/cameras/${cameraId}/stream.m3u8`
   }
 
-  async getSnapshot(cameraId: string): Promise<Buffer | null> {
+  async getSnapshot(_cameraId: string): Promise<Buffer | null> {
     // In production: ONVIF GetSnapshotUri or RTSP frame grab
-    console.log(`[camera] SNAPSHOT camera=${cameraId}`)
     return null
   }
 
-  async getMotionEvents(cameraId: string, from: Date, to: Date): Promise<MotionEvent[]> {
-    console.log(`[camera] MOTION_EVENTS camera=${cameraId} from=${from.toISOString()} to=${to.toISOString()}`)
+  async getMotionEvents(_cameraId: string, _from: Date, _to: Date): Promise<MotionEvent[]> {
     // Stub: no events
     return []
   }
 
-  async bookmark(cameraId: string, timestamp: Date, label: string): Promise<void> {
-    console.log(`[camera] BOOKMARK camera=${cameraId} at=${timestamp.toISOString()} label=${label}`)
+  async bookmark(_cameraId: string, _timestamp: Date, _label: string): Promise<void> {
     // In production: insert into camera_bookmarks table
   }
 }

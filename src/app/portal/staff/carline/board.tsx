@@ -4,7 +4,7 @@
 // Carline queue board — shows who is waiting, which children to ready, release button.
 // See CCA_BUILD_BRIEF.md §30
 
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { cn } from '@/lib/cn'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -23,14 +23,14 @@ interface QueueEntry {
   }>
 }
 
-export function CarlineBoard() {
-  // TODO: Replace with real-time Supabase subscription to carline_queue_entries
-  const [entries, setEntries] = useState<QueueEntry[]>([
+function createInitialEntries(): QueueEntry[] {
+  const now = Date.now()
+  return [
     {
       id: '1',
       position: 1,
       pickup_person_name: 'Sarah Martinez',
-      arrived_at: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+      arrived_at: new Date(now - 5 * 60 * 1000).toISOString(),
       status: 'waiting',
       students: [
         { id: 's1', name: 'Sophia Martinez', classroom_name: 'Butterfly Room' },
@@ -41,22 +41,23 @@ export function CarlineBoard() {
       id: '2',
       position: 2,
       pickup_person_name: 'James Thompson',
-      arrived_at: new Date(Date.now() - 3 * 60 * 1000).toISOString(),
+      arrived_at: new Date(now - 3 * 60 * 1000).toISOString(),
       status: 'waiting',
-      students: [
-        { id: 's3', name: 'Emma Thompson', classroom_name: 'Butterfly Room' },
-      ],
+      students: [{ id: 's3', name: 'Emma Thompson', classroom_name: 'Butterfly Room' }],
     },
-  ])
+  ]
+}
+
+export function CarlineBoard() {
+  // TODO: Replace with real-time Supabase subscription to carline_queue_entries
+  const [entries, setEntries] = useState<QueueEntry[]>(createInitialEntries)
   const [releasing, setReleasing] = useState<string | null>(null)
 
   const handleRelease = useCallback((entryId: string) => {
     setReleasing(entryId)
     // Optimistic local state update — mark as released immediately
     setEntries((prev) =>
-      prev.map((e) =>
-        e.id === entryId ? { ...e, status: 'released' as const } : e,
-      ),
+      prev.map((e) => (e.id === entryId ? { ...e, status: 'released' as const } : e)),
     )
     // Clear the loading indicator on next tick
     requestAnimationFrame(() => setReleasing(null))
@@ -75,17 +76,16 @@ export function CarlineBoard() {
     return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
   }
 
+  const nowRef = useRef(Date.now())
   const getWaitMinutes = (iso: string) => {
-    return Math.round((Date.now() - new Date(iso).getTime()) / 60000)
+    return Math.round((nowRef.current - new Date(iso).getTime()) / 60000)
   }
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">
-            Carline Queue
-          </h1>
+          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Carline Queue</h1>
           <p className="mt-1 text-[var(--color-muted-foreground)]">
             {waitingEntries.length} {waitingEntries.length === 1 ? 'family' : 'families'} waiting
           </p>
@@ -150,7 +150,8 @@ export function CarlineBoard() {
                   <div className="mt-2 flex items-center gap-2 text-xs text-[var(--color-muted-foreground)]">
                     <Clock className="h-3 w-3" />
                     <span>
-                      Arrived {formatTime(entry.arrived_at)} ({getWaitMinutes(entry.arrived_at)} min ago)
+                      Arrived {formatTime(entry.arrived_at)} ({getWaitMinutes(entry.arrived_at)} min
+                      ago)
                     </span>
                   </div>
                 </div>

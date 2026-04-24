@@ -35,7 +35,6 @@ export async function runAttendanceFinalizeForAllTenants(): Promise<AttendanceFi
         .or(`assigned_to.is.null,assigned_to.gte.${today}`)
 
       if (assignErr) {
-        console.error(`[cron:attendance] Assignment query error for tenant ${tenant.slug}:`, assignErr.message)
         continue
       }
 
@@ -50,18 +49,13 @@ export async function runAttendanceFinalizeForAllTenants(): Promise<AttendanceFi
         .eq('date', today)
 
       if (recErr) {
-        console.error(`[cron:attendance] Records query error for tenant ${tenant.slug}:`, recErr.message)
         continue
       }
 
-      const recordsByStudent = new Map(
-        (existingRecords ?? []).map((r) => [r.student_id, r]),
-      )
+      const recordsByStudent = new Map((existingRecords ?? []).map((r) => [r.student_id, r]))
 
       // ── c. Mark absent for students with no attendance record ──
-      const missingStudentIds = activeStudentIds.filter(
-        (sid) => !recordsByStudent.has(sid),
-      )
+      const missingStudentIds = activeStudentIds.filter((sid) => !recordsByStudent.has(sid))
 
       if (missingStudentIds.length > 0) {
         const absentRows = missingStudentIds.map((studentId) => ({
@@ -73,13 +67,9 @@ export async function runAttendanceFinalizeForAllTenants(): Promise<AttendanceFi
           hours_present: 0,
         }))
 
-        const { error: insertErr } = await supabase
-          .from('attendance_records')
-          .insert(absentRows)
+        const { error: insertErr } = await supabase.from('attendance_records').insert(absentRows)
 
-        if (insertErr) {
-          console.error(`[cron:attendance] Absent insert error for tenant ${tenant.slug}:`, insertErr.message)
-        } else {
+        if (!insertErr) {
           summary.absent_marked += missingStudentIds.length
         }
       }
@@ -161,9 +151,7 @@ export async function runAttendanceFinalizeForAllTenants(): Promise<AttendanceFi
             })
             .eq('id', upd.id)
 
-          if (updErr) {
-            console.error(`[cron:attendance] Update error for record ${upd.id}:`, updErr.message)
-          } else {
+          if (!updErr) {
             summary.records_finalized++
           }
         }
@@ -182,11 +170,10 @@ export async function runAttendanceFinalizeForAllTenants(): Promise<AttendanceFi
           absent_marked: summary.absent_marked,
         },
       })
-    } catch (err) {
-      console.error(`[cron:attendance] Unhandled error for tenant ${tenant.slug}:`, err)
+    } catch {
+      // Error processing tenant
     }
   }
 
-  console.log('[cron:attendance] Summary:', summary)
   return summary
 }

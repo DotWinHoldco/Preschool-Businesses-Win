@@ -127,10 +127,14 @@ export function MessageThread({
                     )}
                   >
                     {!isOwn && (
-                      <p className={cn(
-                        'text-xs font-semibold mb-1',
-                        msg.urgent ? 'text-[var(--color-destructive)]' : 'text-[var(--color-primary)]',
-                      )}>
+                      <p
+                        className={cn(
+                          'text-xs font-semibold mb-1',
+                          msg.urgent
+                            ? 'text-[var(--color-destructive)]'
+                            : 'text-[var(--color-primary)]',
+                        )}
+                      >
                         {msg.sender_name}
                       </p>
                     )}
@@ -142,7 +146,6 @@ export function MessageThread({
                     )}
                     {msg.message_type === 'photo' && msg.file_path && (
                       <div className="mb-2 rounded-[calc(var(--radius,0.75rem)*0.5)] overflow-hidden">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={msg.file_path} alt="Shared photo" className="max-w-full" />
                       </div>
                     )}
@@ -161,7 +164,9 @@ export function MessageThread({
                     <p
                       className={cn(
                         'text-xs mt-1',
-                        isOwn && !msg.urgent ? 'text-[var(--color-primary-foreground)]/70' : 'text-[var(--color-muted-foreground)]',
+                        isOwn && !msg.urgent
+                          ? 'text-[var(--color-primary-foreground)]/70'
+                          : 'text-[var(--color-muted-foreground)]',
                       )}
                     >
                       {formatTime(msg.created_at)}
@@ -175,10 +180,7 @@ export function MessageThread({
       </div>
 
       {/* Compose */}
-      <form
-        onSubmit={handleSend}
-        className="border-t border-[var(--color-border)] p-3 flex gap-2"
-      >
+      <form onSubmit={handleSend} className="border-t border-[var(--color-border)] p-3 flex gap-2">
         <input
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}

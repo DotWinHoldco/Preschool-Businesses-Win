@@ -2,7 +2,6 @@
 'use client'
 
 import { useState } from 'react'
-import { cn } from '@/lib/cn'
 import { Calendar, Clock, Save } from 'lucide-react'
 
 interface TourSchedulerProps {
@@ -11,7 +10,7 @@ interface TourSchedulerProps {
   onSchedule: (data: { scheduled_at: string; notes: string }) => void
 }
 
-export function TourScheduler({ leadId, leadName, onSchedule }: TourSchedulerProps) {
+export function TourScheduler({ leadName, onSchedule }: TourSchedulerProps) {
   const [date, setDate] = useState('')
   const [time, setTime] = useState('10:00')
   const [notes, setNotes] = useState('')
@@ -36,9 +35,7 @@ export function TourScheduler({ leadId, leadName, onSchedule }: TourSchedulerPro
 
   return (
     <div className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] p-4 md:p-6">
-      <h3 className="text-lg font-semibold text-[var(--color-foreground)] mb-1">
-        Schedule Tour
-      </h3>
+      <h3 className="text-lg font-semibold text-[var(--color-foreground)] mb-1">Schedule Tour</h3>
       <p className="text-sm text-[var(--color-muted-foreground)] mb-4">
         For <span className="font-medium text-[var(--color-foreground)]">{leadName}</span>
       </p>
@@ -80,7 +77,9 @@ export function TourScheduler({ leadId, leadName, onSchedule }: TourSchedulerPro
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-[var(--color-muted-foreground)] mb-1">Notes</label>
+          <label className="block text-sm font-medium text-[var(--color-muted-foreground)] mb-1">
+            Notes
+          </label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}

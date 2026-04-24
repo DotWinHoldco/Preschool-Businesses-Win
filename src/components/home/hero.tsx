@@ -6,7 +6,7 @@
 
 import Link from 'next/link'
 import { motion, useReducedMotion } from 'motion/react'
-import { fadeUp, stagger, easeOutExpo } from '@/lib/motion'
+import { fadeUp, stagger } from '@/lib/motion'
 import { cn } from '@/lib/cn'
 import { Shield, Award, Heart, Clock } from 'lucide-react'
 
@@ -24,10 +24,7 @@ export function Hero() {
   const Item = prefersReduced ? 'div' : motion.div
 
   return (
-    <section
-      className="relative overflow-hidden"
-      style={{ background: 'var(--gradient-hero)' }}
-    >
+    <section className="relative overflow-hidden" style={{ background: 'var(--gradient-hero)' }}>
       {/* Decorative shapes */}
       <div
         className="pointer-events-none absolute -top-48 -right-48 h-[600px] w-[600px] rounded-full opacity-[0.07]"
@@ -48,9 +45,7 @@ export function Hero() {
           className="max-w-2xl"
         >
           {/* Eyebrow */}
-          <Item
-            {...(!prefersReduced && { variants: fadeUp })}
-          >
+          <Item {...(!prefersReduced && { variants: fadeUp })}>
             <span
               className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em]"
               style={{ color: 'var(--color-primary)' }}
@@ -66,9 +61,7 @@ export function Hero() {
           </Item>
 
           {/* Headline */}
-          <Item
-            {...(!prefersReduced && { variants: fadeUp })}
-          >
+          <Item {...(!prefersReduced && { variants: fadeUp })}>
             <h1
               className={cn(
                 'mt-6 text-[40px] font-extrabold leading-[0.95] tracking-tight md:text-[56px] lg:text-[72px]',
@@ -84,9 +77,7 @@ export function Hero() {
           </Item>
 
           {/* Subheadline */}
-          <Item
-            {...(!prefersReduced && { variants: fadeUp })}
-          >
+          <Item {...(!prefersReduced && { variants: fadeUp })}>
             <p
               className={cn(
                 'mt-6 text-lg leading-relaxed md:text-xl lg:text-[22px] lg:leading-relaxed',
@@ -94,9 +85,9 @@ export function Hero() {
               )}
               style={{ color: 'var(--color-muted-foreground)' }}
             >
-              Crandall Christian Academy is a preschool built on the belief that
-              every child deserves to be known, loved, and prepared &mdash;
-              spiritually, socially, and academically.
+              Crandall Christian Academy is a preschool built on the belief that every child
+              deserves to be known, loved, and prepared &mdash; spiritually, socially, and
+              academically.
             </p>
           </Item>
 

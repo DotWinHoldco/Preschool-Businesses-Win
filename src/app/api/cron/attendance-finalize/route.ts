@@ -11,7 +11,6 @@ export async function GET(request: Request) {
   if (authError) return authError
 
   try {
-    console.log('[Cron] Attendance finalization started')
     const summary = await runAttendanceFinalizeForAllTenants()
 
     return NextResponse.json({
@@ -19,8 +18,7 @@ export async function GET(request: Request) {
       message: 'Attendance finalized',
       ...summary,
     })
-  } catch (error) {
-    console.error('[Cron] Attendance finalization error:', error)
+  } catch {
     return NextResponse.json({ error: 'Finalization failed' }, { status: 500 })
   }
 }

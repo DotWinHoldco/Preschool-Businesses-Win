@@ -11,9 +11,20 @@ import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogOverlay, DialogContent, DialogClose } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import {
-  Camera, FileText, BarChart3, GraduationCap, Plus,
-  ChevronDown, ChevronUp, BookOpen, Eye, EyeOff, ExternalLink,
-  Pencil, Trash2, AlertTriangle, ClipboardCheck,
+  Camera,
+  BarChart3,
+  GraduationCap,
+  Plus,
+  ChevronDown,
+  ChevronUp,
+  BookOpen,
+  Eye,
+  EyeOff,
+  ExternalLink,
+  Pencil,
+  Trash2,
+  AlertTriangle,
+  ClipboardCheck,
 } from 'lucide-react'
 import { createObservation } from '@/lib/actions/portfolios/create-observation'
 import { createLearningStory } from '@/lib/actions/portfolios/create-learning-story'
@@ -93,7 +104,9 @@ export function PortfoliosClient({
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [entryMode, setEntryMode] = useState<'observation' | 'learning_story' | 'milestone'>('observation')
+  const [entryMode, setEntryMode] = useState<'observation' | 'learning_story' | 'milestone'>(
+    'observation',
+  )
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [filterType, setFilterType] = useState<string>('all')
@@ -115,7 +128,9 @@ export function PortfoliosClient({
   // Assessment state
   const [assessDialogOpen, setAssessDialogOpen] = useState(false)
   const [assessStudentId, setAssessStudentId] = useState('')
-  const [assessRatings, setAssessRatings] = useState<Record<string, { rating: string; notes: string }>>({})
+  const [assessRatings, setAssessRatings] = useState<
+    Record<string, { rating: string; notes: string }>
+  >({})
   const [assessError, setAssessError] = useState<string | null>(null)
 
   // Form state
@@ -164,7 +179,11 @@ export function PortfoliosClient({
         })
       } else {
         if (!narrative.trim()) {
-          setError(entryMode === 'milestone' ? 'Please describe the milestone' : 'Please describe what you observed')
+          setError(
+            entryMode === 'milestone'
+              ? 'Please describe the milestone'
+              : 'Please describe what you observed',
+          )
           return
         }
         result = await createObservation({
@@ -297,9 +316,8 @@ export function PortfoliosClient({
     return d.subdomain_name ? `${d.domain_name} › ${d.subdomain_name}` : d.domain_name
   }
 
-  const filteredEntries = filterType === 'all'
-    ? entries
-    : entries.filter((e) => e.entry_type === filterType)
+  const filteredEntries =
+    filterType === 'all' ? entries : entries.filter((e) => e.entry_type === filterType)
 
   const statCards = [
     { label: 'Total Observations', value: stats.observations, icon: Camera },
@@ -326,10 +344,17 @@ export function PortfoliosClient({
             Portfolios
           </h1>
           <p className="mt-1 text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
-            Track child development through observations, learning stories, and formal assessments aligned to learning domains.
+            Track child development through observations, learning stories, and formal assessments
+            aligned to learning domains.
           </p>
         </div>
-        <Button size="sm" onClick={() => { resetForm(); setDialogOpen(true) }}>
+        <Button
+          size="sm"
+          onClick={() => {
+            resetForm()
+            setDialogOpen(true)
+          }}
+        >
           <Plus size={16} />
           Add Entry
         </Button>
@@ -344,7 +369,10 @@ export function PortfoliosClient({
               <CardContent className="flex items-center gap-4 p-6">
                 <div
                   className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
-                  style={{ backgroundColor: 'var(--color-secondary, var(--color-primary))', color: 'var(--color-primary-foreground)' }}
+                  style={{
+                    backgroundColor: 'var(--color-secondary, var(--color-primary))',
+                    color: 'var(--color-primary-foreground)',
+                  }}
                 >
                   <Icon size={20} />
                 </div>
@@ -364,7 +392,9 @@ export function PortfoliosClient({
 
       {/* Filter bar */}
       <div className="flex items-center gap-2">
-        <span className="text-sm font-medium" style={{ color: 'var(--color-muted-foreground)' }}>Show:</span>
+        <span className="text-sm font-medium" style={{ color: 'var(--color-muted-foreground)' }}>
+          Show:
+        </span>
         {[
           { value: 'all', label: 'All' },
           { value: 'observation', label: 'Observations' },
@@ -377,8 +407,12 @@ export function PortfoliosClient({
             onClick={() => setFilterType(f.value)}
             className="rounded-full px-3 py-1 text-xs font-medium transition-colors"
             style={{
-              backgroundColor: filterType === f.value ? 'var(--color-primary)' : 'var(--color-muted)',
-              color: filterType === f.value ? 'var(--color-primary-foreground)' : 'var(--color-muted-foreground)',
+              backgroundColor:
+                filterType === f.value ? 'var(--color-primary)' : 'var(--color-muted)',
+              color:
+                filterType === f.value
+                  ? 'var(--color-primary-foreground)'
+                  : 'var(--color-muted-foreground)',
             }}
           >
             {f.label}
@@ -399,7 +433,10 @@ export function PortfoliosClient({
         <CardContent>
           <div className="divide-y" style={{ borderColor: 'var(--color-border)' }}>
             {filteredEntries.map((entry) => {
-              const config = ENTRY_TYPE_CONFIG[entry.entry_type] ?? { label: entry.entry_type, color: 'var(--color-muted-foreground)' }
+              const config = ENTRY_TYPE_CONFIG[entry.entry_type] ?? {
+                label: entry.entry_type,
+                color: 'var(--color-muted-foreground)',
+              }
               const isExpanded = expandedId === entry.id
               return (
                 <div key={entry.id} className="py-3 first:pt-0 last:pb-0">
@@ -414,11 +451,17 @@ export function PortfoliosClient({
                           className="inline-block h-2 w-2 rounded-full shrink-0"
                           style={{ backgroundColor: config.color }}
                         />
-                        <p className="font-medium text-sm truncate" style={{ color: 'var(--color-foreground)' }}>
+                        <p
+                          className="font-medium text-sm truncate"
+                          style={{ color: 'var(--color-foreground)' }}
+                        >
                           {entry.title}
                         </p>
                       </div>
-                      <p className="text-xs mt-0.5 pl-4" style={{ color: 'var(--color-muted-foreground)' }}>
+                      <p
+                        className="text-xs mt-0.5 pl-4"
+                        style={{ color: 'var(--color-muted-foreground)' }}
+                      >
                         <Link
                           href={`/portal/admin/students/${entry.student_id}`}
                           className="hover:underline"
@@ -436,7 +479,9 @@ export function PortfoliosClient({
                       </p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0 ml-2">
-                      <Badge variant="outline" size="sm">{config.label}</Badge>
+                      <Badge variant="outline" size="sm">
+                        {config.label}
+                      </Badge>
                       {isExpanded ? (
                         <ChevronUp size={16} style={{ color: 'var(--color-muted-foreground)' }} />
                       ) : (
@@ -446,10 +491,18 @@ export function PortfoliosClient({
                   </button>
 
                   {isExpanded && (
-                    <div className="mt-2 rounded-lg p-4 text-sm space-y-3" style={{ backgroundColor: 'var(--color-muted)' }}>
+                    <div
+                      className="mt-2 rounded-lg p-4 text-sm space-y-3"
+                      style={{ backgroundColor: 'var(--color-muted)' }}
+                    >
                       <div className="grid gap-2 sm:grid-cols-3">
                         <div>
-                          <p className="text-xs font-medium" style={{ color: 'var(--color-muted-foreground)' }}>Student</p>
+                          <p
+                            className="text-xs font-medium"
+                            style={{ color: 'var(--color-muted-foreground)' }}
+                          >
+                            Student
+                          </p>
                           <Link
                             href={`/portal/admin/students/${entry.student_id}`}
                             className="text-[var(--color-primary)] hover:underline"
@@ -458,26 +511,56 @@ export function PortfoliosClient({
                           </Link>
                         </div>
                         <div>
-                          <p className="text-xs font-medium" style={{ color: 'var(--color-muted-foreground)' }}>Type</p>
+                          <p
+                            className="text-xs font-medium"
+                            style={{ color: 'var(--color-muted-foreground)' }}
+                          >
+                            Type
+                          </p>
                           <p style={{ color: 'var(--color-foreground)' }}>{config.label}</p>
                         </div>
                         <div>
-                          <p className="text-xs font-medium" style={{ color: 'var(--color-muted-foreground)' }}>Visibility</p>
-                          <p className="flex items-center gap-1" style={{ color: 'var(--color-foreground)' }}>
-                            {entry.visibility === 'parent' ? <><Eye size={12} /> Visible to parents</> : <><EyeOff size={12} /> Staff only</>}
+                          <p
+                            className="text-xs font-medium"
+                            style={{ color: 'var(--color-muted-foreground)' }}
+                          >
+                            Visibility
+                          </p>
+                          <p
+                            className="flex items-center gap-1"
+                            style={{ color: 'var(--color-foreground)' }}
+                          >
+                            {entry.visibility === 'parent' ? (
+                              <>
+                                <Eye size={12} /> Visible to parents
+                              </>
+                            ) : (
+                              <>
+                                <EyeOff size={12} /> Staff only
+                              </>
+                            )}
                           </p>
                         </div>
                       </div>
 
                       {entry.learning_domain_ids.length > 0 && (
                         <div>
-                          <p className="text-xs font-medium mb-1" style={{ color: 'var(--color-muted-foreground)' }}>Learning Domains</p>
+                          <p
+                            className="text-xs font-medium mb-1"
+                            style={{ color: 'var(--color-muted-foreground)' }}
+                          >
+                            Learning Domains
+                          </p>
                           <div className="flex flex-wrap gap-1">
                             {entry.learning_domain_ids.map((id) => (
                               <span
                                 key={id}
                                 className="inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium"
-                                style={{ backgroundColor: 'var(--color-card)', color: 'var(--color-foreground)', border: '1px solid var(--color-border)' }}
+                                style={{
+                                  backgroundColor: 'var(--color-card)',
+                                  color: 'var(--color-foreground)',
+                                  border: '1px solid var(--color-border)',
+                                }}
                               >
                                 {getDomainLabel(id)}
                               </span>
@@ -488,10 +571,18 @@ export function PortfoliosClient({
 
                       {entry.narrative && (
                         <div>
-                          <p className="text-xs font-medium mb-1" style={{ color: 'var(--color-muted-foreground)' }}>
+                          <p
+                            className="text-xs font-medium mb-1"
+                            style={{ color: 'var(--color-muted-foreground)' }}
+                          >
                             {entry.entry_type === 'learning_story' ? 'Story' : 'Notes'}
                           </p>
-                          <p className="whitespace-pre-wrap" style={{ color: 'var(--color-foreground)' }}>{entry.narrative}</p>
+                          <p
+                            className="whitespace-pre-wrap"
+                            style={{ color: 'var(--color-foreground)' }}
+                          >
+                            {entry.narrative}
+                          </p>
                         </div>
                       )}
 
@@ -500,7 +591,10 @@ export function PortfoliosClient({
                           <Button
                             variant="secondary"
                             size="sm"
-                            onClick={(e) => { e.stopPropagation(); openEditDialog(entry) }}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              openEditDialog(entry)
+                            }}
                           >
                             <Pencil size={12} className="mr-1" />
                             Edit
@@ -508,7 +602,10 @@ export function PortfoliosClient({
                           <Button
                             variant="secondary"
                             size="sm"
-                            onClick={(e) => { e.stopPropagation(); openDeleteDialog(entry) }}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              openDeleteDialog(entry)
+                            }}
                             className="text-[var(--color-destructive)] hover:bg-[var(--color-destructive)] hover:text-white"
                           >
                             <Trash2 size={12} className="mr-1" />
@@ -530,7 +627,11 @@ export function PortfoliosClient({
 
             {filteredEntries.length === 0 && (
               <div className="py-8 text-center">
-                <Camera className="mx-auto mb-2" size={32} style={{ color: 'var(--color-muted-foreground)' }} />
+                <Camera
+                  className="mx-auto mb-2"
+                  size={32}
+                  style={{ color: 'var(--color-muted-foreground)' }}
+                />
                 <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
                   No entries yet. Click &ldquo;+ Add Entry&rdquo; to log one.
                 </p>
@@ -545,14 +646,24 @@ export function PortfoliosClient({
         <CardHeader>
           <CardTitle>Assessments Due</CardTitle>
           <CardDescription>
-            {quarterLabel} developmental assessments — rate each student across all learning domains.
+            {quarterLabel} developmental assessments — rate each student across all learning
+            domains.
           </CardDescription>
         </CardHeader>
         <CardContent>
           {studentsNeedingAssessment.length === 0 ? (
-            <div className="rounded-lg p-6 text-center" style={{ backgroundColor: 'var(--color-muted)' }}>
-              <BarChart3 className="mx-auto mb-2" size={28} style={{ color: 'var(--color-success)' }} />
-              <p className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>All caught up!</p>
+            <div
+              className="rounded-lg p-6 text-center"
+              style={{ backgroundColor: 'var(--color-muted)' }}
+            >
+              <BarChart3
+                className="mx-auto mb-2"
+                size={28}
+                style={{ color: 'var(--color-success)' }}
+              />
+              <p className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
+                All caught up!
+              </p>
               <p className="mt-1 text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
                 All students have been assessed for {quarterLabel}.
               </p>
@@ -570,10 +681,16 @@ export function PortfoliosClient({
                       className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold"
                       style={{ backgroundColor: 'var(--color-warning)', color: 'white' }}
                     >
-                      {student.name.split(' ').map((n) => n[0]).join('')}
+                      {student.name
+                        .split(' ')
+                        .map((n) => n[0])
+                        .join('')}
                     </div>
                     <div>
-                      <p className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
+                      <p
+                        className="text-sm font-medium"
+                        style={{ color: 'var(--color-foreground)' }}
+                      >
                         {student.name}
                       </p>
                       <p className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
@@ -596,10 +713,16 @@ export function PortfoliosClient({
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogOverlay onClick={() => setDialogOpen(false)} />
         <DialogContent
-          title={entryMode === 'learning_story' ? 'Add Learning Story' : entryMode === 'milestone' ? 'Record Milestone' : 'Add Observation'}
+          title={
+            entryMode === 'learning_story'
+              ? 'Add Learning Story'
+              : entryMode === 'milestone'
+                ? 'Record Milestone'
+                : 'Add Observation'
+          }
           description={
             entryMode === 'learning_story'
-              ? 'Document a child\'s learning journey with a three-part narrative: what happened, what learning occurred, and what\'s next.'
+              ? "Document a child's learning journey with a three-part narrative: what happened, what learning occurred, and what's next."
               : entryMode === 'milestone'
                 ? 'Record a significant developmental achievement — first steps, first words, a new skill mastered.'
                 : 'Log a developmental observation for a student.'
@@ -607,12 +730,15 @@ export function PortfoliosClient({
         >
           <DialogClose onClick={() => setDialogOpen(false)} />
           <div className="space-y-4">
-            <div className="flex gap-1 rounded-lg p-1" style={{ backgroundColor: 'var(--color-muted)' }}>
-              {([
+            <div
+              className="flex gap-1 rounded-lg p-1"
+              style={{ backgroundColor: 'var(--color-muted)' }}
+            >
+              {[
                 { key: 'observation' as const, label: 'Observation', Icon: Camera },
                 { key: 'learning_story' as const, label: 'Learning Story', Icon: BookOpen },
                 { key: 'milestone' as const, label: 'Milestone', Icon: GraduationCap },
-              ]).map(({ key, label, Icon }) => (
+              ].map(({ key, label, Icon }) => (
                 <button
                   key={key}
                   type="button"
@@ -631,25 +757,46 @@ export function PortfoliosClient({
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="pe-student" className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
+              <label
+                htmlFor="pe-student"
+                className="text-sm font-medium"
+                style={{ color: 'var(--color-foreground)' }}
+              >
                 Student <span style={{ color: 'var(--color-destructive)' }}>*</span>
               </label>
-              <Select id="pe-student" value={studentId} onChange={(e) => setStudentId(e.target.value)} required>
+              <Select
+                id="pe-student"
+                value={studentId}
+                onChange={(e) => setStudentId(e.target.value)}
+                required
+              >
                 <option value="">Select student...</option>
                 {students.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
                 ))}
               </Select>
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="pe-title" className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
+              <label
+                htmlFor="pe-title"
+                className="text-sm font-medium"
+                style={{ color: 'var(--color-foreground)' }}
+              >
                 Title <span style={{ color: 'var(--color-destructive)' }}>*</span>
               </label>
               <Input
                 id="pe-title"
                 inputSize="sm"
-                placeholder={entryMode === 'learning_story' ? 'e.g. The Block Tower Collaboration' : entryMode === 'milestone' ? 'e.g. First time writing full name' : 'e.g. Building with blocks — spatial reasoning'}
+                placeholder={
+                  entryMode === 'learning_story'
+                    ? 'e.g. The Block Tower Collaboration'
+                    : entryMode === 'milestone'
+                      ? 'e.g. First time writing full name'
+                      : 'e.g. Building with blocks — spatial reasoning'
+                }
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
@@ -658,14 +805,21 @@ export function PortfoliosClient({
 
             {(entryMode === 'observation' || entryMode === 'milestone') && (
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="pe-narrative" className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
-                  {entryMode === 'milestone' ? 'Describe the milestone' : 'What did you observe?'} <span style={{ color: 'var(--color-destructive)' }}>*</span>
+                <label
+                  htmlFor="pe-narrative"
+                  className="text-sm font-medium"
+                  style={{ color: 'var(--color-foreground)' }}
+                >
+                  {entryMode === 'milestone' ? 'Describe the milestone' : 'What did you observe?'}{' '}
+                  <span style={{ color: 'var(--color-destructive)' }}>*</span>
                 </label>
                 <Textarea
                   id="pe-narrative"
-                  placeholder={entryMode === 'milestone'
-                    ? 'e.g. First time writing their full name independently...'
-                    : 'Describe the behavior, interaction, or milestone you observed...'}
+                  placeholder={
+                    entryMode === 'milestone'
+                      ? 'e.g. First time writing their full name independently...'
+                      : 'Describe the behavior, interaction, or milestone you observed...'
+                  }
                   value={narrative}
                   onChange={(e) => setNarrative(e.target.value)}
                   className="min-h-[100px]"
@@ -676,7 +830,11 @@ export function PortfoliosClient({
             {entryMode === 'learning_story' && (
               <>
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor="pe-what-happened" className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
+                  <label
+                    htmlFor="pe-what-happened"
+                    className="text-sm font-medium"
+                    style={{ color: 'var(--color-foreground)' }}
+                  >
                     What Happened? <span style={{ color: 'var(--color-destructive)' }}>*</span>
                   </label>
                   <Textarea
@@ -688,8 +846,13 @@ export function PortfoliosClient({
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor="pe-what-learning" className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
-                    What Learning Occurred? <span style={{ color: 'var(--color-destructive)' }}>*</span>
+                  <label
+                    htmlFor="pe-what-learning"
+                    className="text-sm font-medium"
+                    style={{ color: 'var(--color-foreground)' }}
+                  >
+                    What Learning Occurred?{' '}
+                    <span style={{ color: 'var(--color-destructive)' }}>*</span>
                   </label>
                   <Textarea
                     id="pe-what-learning"
@@ -700,7 +863,11 @@ export function PortfoliosClient({
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor="pe-what-next" className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
+                  <label
+                    htmlFor="pe-what-next"
+                    className="text-sm font-medium"
+                    style={{ color: 'var(--color-foreground)' }}
+                  >
                     What&apos;s Next?
                   </label>
                   <Textarea
@@ -726,25 +893,54 @@ export function PortfoliosClient({
                 Visibility:
               </label>
               <label className="flex items-center gap-1.5 text-sm cursor-pointer">
-                <input type="radio" name="visibility" checked={visibility === 'parent'} onChange={() => setVisibility('parent')} />
+                <input
+                  type="radio"
+                  name="visibility"
+                  checked={visibility === 'parent'}
+                  onChange={() => setVisibility('parent')}
+                />
                 <Eye size={14} /> Visible to parents
               </label>
               <label className="flex items-center gap-1.5 text-sm cursor-pointer">
-                <input type="radio" name="visibility" checked={visibility === 'staff_only'} onChange={() => setVisibility('staff_only')} />
+                <input
+                  type="radio"
+                  name="visibility"
+                  checked={visibility === 'staff_only'}
+                  onChange={() => setVisibility('staff_only')}
+                />
                 <EyeOff size={14} /> Staff only
               </label>
             </div>
 
             {error && (
-              <p className="text-xs" style={{ color: 'var(--color-destructive)' }}>{error}</p>
+              <p className="text-xs" style={{ color: 'var(--color-destructive)' }}>
+                {error}
+              </p>
             )}
 
             <div className="flex justify-end gap-3 pt-2">
-              <Button type="button" variant="secondary" size="sm" onClick={() => { resetForm(); setDialogOpen(false) }}>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  resetForm()
+                  setDialogOpen(false)
+                }}
+              >
                 Cancel
               </Button>
-              <Button size="sm" onClick={handleSubmit} loading={isPending} disabled={!studentId || !title.trim()}>
-                {entryMode === 'learning_story' ? 'Save Learning Story' : entryMode === 'milestone' ? 'Save Milestone' : 'Save Observation'}
+              <Button
+                size="sm"
+                onClick={handleSubmit}
+                loading={isPending}
+                disabled={!studentId || !title.trim()}
+              >
+                {entryMode === 'learning_story'
+                  ? 'Save Learning Story'
+                  : entryMode === 'milestone'
+                    ? 'Save Milestone'
+                    : 'Save Observation'}
               </Button>
             </div>
           </div>
@@ -754,11 +950,18 @@ export function PortfoliosClient({
       {/* Edit Entry Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogOverlay onClick={() => setEditDialogOpen(false)} />
-        <DialogContent title="Edit Entry" description={editingEntry ? `Editing: ${editingEntry.title}` : ''}>
+        <DialogContent
+          title="Edit Entry"
+          description={editingEntry ? `Editing: ${editingEntry.title}` : ''}
+        >
           <DialogClose onClick={() => setEditDialogOpen(false)} />
           <div className="space-y-4">
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="edit-title" className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
+              <label
+                htmlFor="edit-title"
+                className="text-sm font-medium"
+                style={{ color: 'var(--color-foreground)' }}
+              >
                 Title <span style={{ color: 'var(--color-destructive)' }}>*</span>
               </label>
               <Input
@@ -771,8 +974,13 @@ export function PortfoliosClient({
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="edit-narrative" className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
-                {editingEntry?.entry_type === 'learning_story' ? 'Story' : 'Notes'} <span style={{ color: 'var(--color-destructive)' }}>*</span>
+              <label
+                htmlFor="edit-narrative"
+                className="text-sm font-medium"
+                style={{ color: 'var(--color-foreground)' }}
+              >
+                {editingEntry?.entry_type === 'learning_story' ? 'Story' : 'Notes'}{' '}
+                <span style={{ color: 'var(--color-destructive)' }}>*</span>
               </label>
               <Textarea
                 id="edit-narrative"
@@ -793,24 +1001,46 @@ export function PortfoliosClient({
                 Visibility:
               </label>
               <label className="flex items-center gap-1.5 text-sm cursor-pointer">
-                <input type="radio" name="edit-visibility" checked={editVisibility === 'parent'} onChange={() => setEditVisibility('parent')} />
+                <input
+                  type="radio"
+                  name="edit-visibility"
+                  checked={editVisibility === 'parent'}
+                  onChange={() => setEditVisibility('parent')}
+                />
                 <Eye size={14} /> Visible to parents
               </label>
               <label className="flex items-center gap-1.5 text-sm cursor-pointer">
-                <input type="radio" name="edit-visibility" checked={editVisibility === 'staff_only'} onChange={() => setEditVisibility('staff_only')} />
+                <input
+                  type="radio"
+                  name="edit-visibility"
+                  checked={editVisibility === 'staff_only'}
+                  onChange={() => setEditVisibility('staff_only')}
+                />
                 <EyeOff size={14} /> Staff only
               </label>
             </div>
 
             {editError && (
-              <p className="text-xs" style={{ color: 'var(--color-destructive)' }}>{editError}</p>
+              <p className="text-xs" style={{ color: 'var(--color-destructive)' }}>
+                {editError}
+              </p>
             )}
 
             <div className="flex justify-end gap-3 pt-2">
-              <Button type="button" variant="secondary" size="sm" onClick={() => setEditDialogOpen(false)}>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => setEditDialogOpen(false)}
+              >
                 Cancel
               </Button>
-              <Button size="sm" onClick={handleEditSubmit} loading={isPending} disabled={!editTitle.trim() || !editNarrative.trim()}>
+              <Button
+                size="sm"
+                onClick={handleEditSubmit}
+                loading={isPending}
+                disabled={!editTitle.trim() || !editNarrative.trim()}
+              >
                 Save Changes
               </Button>
             </div>
@@ -824,22 +1054,33 @@ export function PortfoliosClient({
         <DialogContent title="Delete Entry" description="This action cannot be undone.">
           <DialogClose onClick={() => setDeleteDialogOpen(false)} />
           <div className="space-y-4">
-            <div className="flex items-start gap-3 rounded-lg p-3" style={{ backgroundColor: 'var(--color-destructive)', color: 'white' }}>
+            <div
+              className="flex items-start gap-3 rounded-lg p-3"
+              style={{ backgroundColor: 'var(--color-destructive)', color: 'white' }}
+            >
               <AlertTriangle size={20} className="shrink-0 mt-0.5" />
               <div className="text-sm">
                 <p className="font-medium">Are you sure you want to delete this entry?</p>
                 <p className="mt-1 opacity-90">
-                  &ldquo;{deletingEntry?.title}&rdquo; for {deletingEntry?.student_name} will be permanently removed. This is logged in the audit trail.
+                  &ldquo;{deletingEntry?.title}&rdquo; for {deletingEntry?.student_name} will be
+                  permanently removed. This is logged in the audit trail.
                 </p>
               </div>
             </div>
 
             {deleteError && (
-              <p className="text-xs" style={{ color: 'var(--color-destructive)' }}>{deleteError}</p>
+              <p className="text-xs" style={{ color: 'var(--color-destructive)' }}>
+                {deleteError}
+              </p>
             )}
 
             <div className="flex justify-end gap-3">
-              <Button type="button" variant="secondary" size="sm" onClick={() => setDeleteDialogOpen(false)}>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => setDeleteDialogOpen(false)}
+              >
                 Cancel
               </Button>
               <Button
@@ -866,10 +1107,16 @@ export function PortfoliosClient({
         >
           <DialogClose onClick={() => setAssessDialogOpen(false)} />
           <div className="space-y-4">
-            <div className="flex items-center gap-2 flex-wrap text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
+            <div
+              className="flex items-center gap-2 flex-wrap text-xs"
+              style={{ color: 'var(--color-muted-foreground)' }}
+            >
               {RATING_OPTIONS.map((r) => (
                 <span key={r.value} className="flex items-center gap-1">
-                  <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: r.color }} />
+                  <span
+                    className="inline-block h-2 w-2 rounded-full"
+                    style={{ backgroundColor: r.color }}
+                  />
                   {r.label}
                 </span>
               ))}
@@ -877,7 +1124,10 @@ export function PortfoliosClient({
 
             {Object.entries(domainGroups).map(([groupName, groupDomains]) => (
               <div key={groupName}>
-                <p className="text-xs font-semibold mb-2 uppercase tracking-wide" style={{ color: 'var(--color-muted-foreground)' }}>
+                <p
+                  className="text-xs font-semibold mb-2 uppercase tracking-wide"
+                  style={{ color: 'var(--color-muted-foreground)' }}
+                >
                   {groupName}
                 </p>
                 <div className="space-y-2">
@@ -889,7 +1139,10 @@ export function PortfoliosClient({
                         className="rounded-lg border p-3"
                         style={{ borderColor: 'var(--color-border)' }}
                       >
-                        <p className="text-sm font-medium mb-2" style={{ color: 'var(--color-foreground)' }}>
+                        <p
+                          className="text-sm font-medium mb-2"
+                          style={{ color: 'var(--color-foreground)' }}
+                        >
                           {d.subdomain_name ?? d.domain_name}
                         </p>
                         <div className="flex flex-wrap gap-1 mb-2">
@@ -905,9 +1158,14 @@ export function PortfoliosClient({
                               }
                               className="rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors border"
                               style={{
-                                backgroundColor: current.rating === opt.value ? opt.color : 'transparent',
-                                color: current.rating === opt.value ? 'white' : 'var(--color-foreground)',
-                                borderColor: current.rating === opt.value ? opt.color : 'var(--color-border)',
+                                backgroundColor:
+                                  current.rating === opt.value ? opt.color : 'transparent',
+                                color:
+                                  current.rating === opt.value
+                                    ? 'white'
+                                    : 'var(--color-foreground)',
+                                borderColor:
+                                  current.rating === opt.value ? opt.color : 'var(--color-border)',
                               }}
                             >
                               {opt.label}
@@ -933,11 +1191,18 @@ export function PortfoliosClient({
             ))}
 
             {assessError && (
-              <p className="text-xs" style={{ color: 'var(--color-destructive)' }}>{assessError}</p>
+              <p className="text-xs" style={{ color: 'var(--color-destructive)' }}>
+                {assessError}
+              </p>
             )}
 
             <div className="flex justify-end gap-3 pt-2 sticky bottom-0 bg-[var(--color-card)] pb-1">
-              <Button type="button" variant="secondary" size="sm" onClick={() => setAssessDialogOpen(false)}>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => setAssessDialogOpen(false)}
+              >
                 Cancel
               </Button>
               <Button size="sm" onClick={handleAssessSubmit} loading={isPending}>
@@ -966,10 +1231,16 @@ function DomainPicker({
       <label className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
         Learning Domains
       </label>
-      <div className="max-h-[180px] overflow-y-auto rounded-lg border p-2 space-y-2" style={{ borderColor: 'var(--color-border)' }}>
+      <div
+        className="max-h-[180px] overflow-y-auto rounded-lg border p-2 space-y-2"
+        style={{ borderColor: 'var(--color-border)' }}
+      >
         {Object.entries(domainGroups).map(([groupName, groupDomains]) => (
           <div key={groupName}>
-            <p className="text-xs font-semibold mb-1" style={{ color: 'var(--color-muted-foreground)' }}>
+            <p
+              className="text-xs font-semibold mb-1"
+              style={{ color: 'var(--color-muted-foreground)' }}
+            >
               {groupName}
             </p>
             <div className="flex flex-wrap gap-1">
@@ -981,13 +1252,15 @@ function DomainPicker({
                     type="button"
                     onClick={() =>
                       setSelectedDomains((prev: string[]) =>
-                        isSelected ? prev.filter((x) => x !== d.id) : [...prev, d.id]
+                        isSelected ? prev.filter((x) => x !== d.id) : [...prev, d.id],
                       )
                     }
                     className="rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors border"
                     style={{
                       backgroundColor: isSelected ? 'var(--color-primary)' : 'transparent',
-                      color: isSelected ? 'var(--color-primary-foreground)' : 'var(--color-foreground)',
+                      color: isSelected
+                        ? 'var(--color-primary-foreground)'
+                        : 'var(--color-foreground)',
                       borderColor: isSelected ? 'var(--color-primary)' : 'var(--color-border)',
                     }}
                   >

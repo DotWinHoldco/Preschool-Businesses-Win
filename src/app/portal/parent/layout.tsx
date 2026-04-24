@@ -6,16 +6,11 @@ import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { redirect } from 'next/navigation'
 
-export default async function ParentLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default async function ParentLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession()
 
-  // In development without auth, allow access
   if (!session) {
-    return <>{children}</>
+    redirect('/portal/login')
   }
 
   const headerStore = await headers()

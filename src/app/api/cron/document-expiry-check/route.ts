@@ -10,7 +10,6 @@ export async function GET(request: Request) {
   if (authError) return authError
 
   try {
-    console.log('[Cron] Document expiry check started')
     const summary = await runDocumentExpiryCheckForAllTenants()
 
     return NextResponse.json({
@@ -18,8 +17,7 @@ export async function GET(request: Request) {
       message: 'Document expiry check complete',
       ...summary,
     })
-  } catch (error) {
-    console.error('[Cron] Document expiry check error:', error)
+  } catch {
     return NextResponse.json({ error: 'Document expiry check failed' }, { status: 500 })
   }
 }

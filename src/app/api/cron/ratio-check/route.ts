@@ -11,7 +11,6 @@ export async function GET(request: Request) {
   if (authError) return authError
 
   try {
-    console.log('[Cron] Ratio compliance check started')
     const summary = await runRatioCheckForAllTenants()
 
     return NextResponse.json({
@@ -19,8 +18,7 @@ export async function GET(request: Request) {
       message: 'Ratio check complete',
       ...summary,
     })
-  } catch (error) {
-    console.error('[Cron] Ratio check error:', error)
+  } catch {
     return NextResponse.json({ error: 'Ratio check failed' }, { status: 500 })
   }
 }

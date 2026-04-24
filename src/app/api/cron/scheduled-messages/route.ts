@@ -10,7 +10,6 @@ export async function GET(request: Request) {
   if (authError) return authError
 
   try {
-    console.log('[Cron] Scheduled messages started')
     const summary = await runScheduledMessagesForAllTenants()
 
     return NextResponse.json({
@@ -18,8 +17,7 @@ export async function GET(request: Request) {
       message: 'Scheduled messages processed',
       ...summary,
     })
-  } catch (error) {
-    console.error('[Cron] Scheduled messages error:', error)
+  } catch {
     return NextResponse.json({ error: 'Scheduled messages failed' }, { status: 500 })
   }
 }

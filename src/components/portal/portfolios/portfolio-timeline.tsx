@@ -1,5 +1,4 @@
 // @anchor: cca.portfolio.timeline
-import { cn } from '@/lib/cn'
 import { Camera, Video, FileText, BookOpen, Star, Eye } from 'lucide-react'
 import { format } from 'date-fns'
 
@@ -20,7 +19,10 @@ interface PortfolioTimelineProps {
   studentName: string
 }
 
-const entryTypeConfig: Record<string, { icon: React.ComponentType<{ className?: string }>; label: string; color: string }> = {
+const entryTypeConfig: Record<
+  string,
+  { icon: React.ComponentType<{ className?: string }>; label: string; color: string }
+> = {
   observation: { icon: Eye, label: 'Observation', color: 'var(--color-primary)' },
   work_sample: { icon: FileText, label: 'Work Sample', color: 'var(--color-secondary)' },
   photo: { icon: Camera, label: 'Photo', color: 'var(--color-accent)' },
@@ -50,7 +52,7 @@ export function PortfolioTimeline({ entries, studentName }: PortfolioTimelinePro
         {/* Timeline line */}
         <div className="absolute left-[19px] top-0 bottom-0 w-px bg-[var(--color-border)]" />
 
-        {entries.map((entry, index) => {
+        {entries.map((entry) => {
           const config = entryTypeConfig[entry.entry_type] ?? entryTypeConfig.observation
           const Icon = config.icon
 
@@ -78,7 +80,9 @@ export function PortfolioTimeline({ entries, studentName }: PortfolioTimelinePro
                     >
                       {config.label}
                     </span>
-                    <h4 className="mt-1 text-sm font-semibold text-[var(--color-foreground)]">{entry.title}</h4>
+                    <h4 className="mt-1 text-sm font-semibold text-[var(--color-foreground)]">
+                      {entry.title}
+                    </h4>
                   </div>
                   <div className="text-right flex-shrink-0">
                     <div className="text-xs text-[var(--color-muted-foreground)]">
@@ -100,7 +104,10 @@ export function PortfolioTimeline({ entries, studentName }: PortfolioTimelinePro
                 {entry.learning_domains && entry.learning_domains.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1">
                     {entry.learning_domains.map((d) => (
-                      <span key={d} className="rounded bg-[var(--color-muted)] px-1.5 py-0.5 text-[10px] text-[var(--color-muted-foreground)]">
+                      <span
+                        key={d}
+                        className="rounded bg-[var(--color-muted)] px-1.5 py-0.5 text-[10px] text-[var(--color-muted-foreground)]"
+                      >
                         {d}
                       </span>
                     ))}

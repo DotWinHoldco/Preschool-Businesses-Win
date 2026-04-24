@@ -32,9 +32,13 @@ export default async function StaffTrainingPage() {
     provider: (r.provider as string) ?? '',
     hours: (r.hours as number) ?? 0,
     completedAt: r.completed_at
-      ? new Date(r.completed_at as string).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      ? new Date(r.completed_at as string).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        })
       : 'In Progress',
-    hasCertificate: !!(r.certificate_url),
+    hasCertificate: !!r.certificate_url,
   }))
 
   const totalHours = trainingRecords.reduce((sum, r) => sum + r.hours, 0)
@@ -50,15 +54,21 @@ export default async function StaffTrainingPage() {
   const certifications = (certRows ?? []).map((c: Record<string, unknown>) => {
     const expiresAt = c.expires_at ? new Date(c.expires_at as string) : null
     const isExpired = expiresAt ? expiresAt < new Date() : false
-    const isExpiringSoon = expiresAt && !isExpired
-      ? expiresAt.getTime() - Date.now() < 90 * 24 * 60 * 60 * 1000 // 90 days
-      : false
+    const now = new Date()
+    const isExpiringSoon =
+      expiresAt && !isExpired
+        ? expiresAt.getTime() - now.getTime() < 90 * 24 * 60 * 60 * 1000 // 90 days
+        : false
 
     return {
       id: c.id as string,
       name: (c.name as string) ?? 'Certification',
       issuedAt: c.issued_at
-        ? new Date(c.issued_at as string).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        ? new Date(c.issued_at as string).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          })
         : '—',
       expiresAt: expiresAt
         ? expiresAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
@@ -87,7 +97,11 @@ export default async function StaffTrainingPage() {
           className="rounded-xl p-8 text-center"
           style={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)' }}
         >
-          <GraduationCap size={32} className="mx-auto mb-2" style={{ color: 'var(--color-muted-foreground)' }} />
+          <GraduationCap
+            size={32}
+            className="mx-auto mb-2"
+            style={{ color: 'var(--color-muted-foreground)' }}
+          />
           <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
             No training records.
           </p>
@@ -98,11 +112,19 @@ export default async function StaffTrainingPage() {
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
             <div
               className="rounded-xl p-4"
-              style={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)' }}
+              style={{
+                backgroundColor: 'var(--color-card)',
+                border: '1px solid var(--color-border)',
+              }}
             >
               <div className="flex items-center gap-2">
                 <Clock size={16} style={{ color: 'var(--color-primary)' }} />
-                <p className="text-xs font-medium" style={{ color: 'var(--color-muted-foreground)' }}>Total Hours</p>
+                <p
+                  className="text-xs font-medium"
+                  style={{ color: 'var(--color-muted-foreground)' }}
+                >
+                  Total Hours
+                </p>
               </div>
               <p className="mt-1 text-2xl font-bold" style={{ color: 'var(--color-foreground)' }}>
                 {totalHours}
@@ -110,11 +132,19 @@ export default async function StaffTrainingPage() {
             </div>
             <div
               className="rounded-xl p-4"
-              style={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)' }}
+              style={{
+                backgroundColor: 'var(--color-card)',
+                border: '1px solid var(--color-border)',
+              }}
             >
               <div className="flex items-center gap-2">
                 <GraduationCap size={16} style={{ color: 'var(--color-primary)' }} />
-                <p className="text-xs font-medium" style={{ color: 'var(--color-muted-foreground)' }}>Trainings</p>
+                <p
+                  className="text-xs font-medium"
+                  style={{ color: 'var(--color-muted-foreground)' }}
+                >
+                  Trainings
+                </p>
               </div>
               <p className="mt-1 text-2xl font-bold" style={{ color: 'var(--color-foreground)' }}>
                 {trainingRecords.length}
@@ -122,11 +152,19 @@ export default async function StaffTrainingPage() {
             </div>
             <div
               className="rounded-xl p-4"
-              style={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)' }}
+              style={{
+                backgroundColor: 'var(--color-card)',
+                border: '1px solid var(--color-border)',
+              }}
             >
               <div className="flex items-center gap-2">
                 <Award size={16} style={{ color: 'var(--color-primary)' }} />
-                <p className="text-xs font-medium" style={{ color: 'var(--color-muted-foreground)' }}>Certifications</p>
+                <p
+                  className="text-xs font-medium"
+                  style={{ color: 'var(--color-muted-foreground)' }}
+                >
+                  Certifications
+                </p>
               </div>
               <p className="mt-1 text-2xl font-bold" style={{ color: 'var(--color-foreground)' }}>
                 {certifications.length}
@@ -138,7 +176,10 @@ export default async function StaffTrainingPage() {
           {trainingRecords.length > 0 && (
             <div
               className="rounded-xl"
-              style={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)' }}
+              style={{
+                backgroundColor: 'var(--color-card)',
+                border: '1px solid var(--color-border)',
+              }}
             >
               <div className="p-4">
                 <h2 className="text-lg font-semibold" style={{ color: 'var(--color-foreground)' }}>
@@ -149,7 +190,10 @@ export default async function StaffTrainingPage() {
                 {trainingRecords.map((record) => (
                   <div key={record.id} className="flex items-center justify-between px-4 py-3">
                     <div>
-                      <p className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
+                      <p
+                        className="text-sm font-medium"
+                        style={{ color: 'var(--color-foreground)' }}
+                      >
                         {record.title}
                       </p>
                       {record.provider && (
@@ -159,7 +203,10 @@ export default async function StaffTrainingPage() {
                       )}
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
+                      <p
+                        className="text-sm font-medium"
+                        style={{ color: 'var(--color-foreground)' }}
+                      >
                         {record.hours} hrs
                       </p>
                       <p className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
@@ -176,7 +223,10 @@ export default async function StaffTrainingPage() {
           {certifications.length > 0 && (
             <div
               className="rounded-xl"
-              style={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)' }}
+              style={{
+                backgroundColor: 'var(--color-card)',
+                border: '1px solid var(--color-border)',
+              }}
             >
               <div className="p-4">
                 <h2 className="text-lg font-semibold" style={{ color: 'var(--color-foreground)' }}>
@@ -187,7 +237,10 @@ export default async function StaffTrainingPage() {
                 {certifications.map((cert) => (
                   <div key={cert.id} className="flex items-center justify-between px-4 py-3">
                     <div>
-                      <p className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
+                      <p
+                        className="text-sm font-medium"
+                        style={{ color: 'var(--color-foreground)' }}
+                      >
                         {cert.name}
                       </p>
                       <p className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
@@ -206,9 +259,16 @@ export default async function StaffTrainingPage() {
                           color: 'var(--color-primary-foreground)',
                         }}
                       >
-                        {cert.isExpired ? 'Expired' : cert.isExpiringSoon ? 'Expiring Soon' : 'Active'}
+                        {cert.isExpired
+                          ? 'Expired'
+                          : cert.isExpiringSoon
+                            ? 'Expiring Soon'
+                            : 'Active'}
                       </span>
-                      <p className="mt-1 text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
+                      <p
+                        className="mt-1 text-xs"
+                        style={{ color: 'var(--color-muted-foreground)' }}
+                      >
                         Expires: {cert.expiresAt}
                       </p>
                     </div>

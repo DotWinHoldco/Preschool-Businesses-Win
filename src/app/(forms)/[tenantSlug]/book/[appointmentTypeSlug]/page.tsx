@@ -42,7 +42,7 @@ export default async function BookingPage({ params, searchParams }: PageProps) {
   let prefillName = query.name ?? ''
   let prefillEmail = query.email ?? ''
   let prefillPhone = ''
-  let applicationId = query.application_id
+  const applicationId = query.application_id
 
   if (applicationId) {
     const { data: app } = await supabase

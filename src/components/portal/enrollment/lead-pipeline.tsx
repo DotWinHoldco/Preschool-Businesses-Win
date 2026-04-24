@@ -3,7 +3,7 @@
 
 import { useState, useCallback } from 'react'
 import { cn } from '@/lib/cn'
-import { User, Phone, Mail, Calendar, Star, MoreHorizontal } from 'lucide-react'
+import { User, Phone, Mail } from 'lucide-react'
 
 interface Lead {
   id: string
@@ -59,7 +59,7 @@ export function LeadPipeline({ leads, onLeadClick, onStatusChange }: LeadPipelin
         setDraggedLead(null)
       }
     },
-    [draggedLead, onStatusChange]
+    [draggedLead, onStatusChange],
   )
 
   return (
@@ -78,7 +78,9 @@ export function LeadPipeline({ leads, onLeadClick, onStatusChange }: LeadPipelin
             <div className="mb-2 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="h-2 w-2 rounded-full" style={{ backgroundColor: col.color }} />
-                <span className="text-sm font-semibold text-[var(--color-foreground)]">{col.label}</span>
+                <span className="text-sm font-semibold text-[var(--color-foreground)]">
+                  {col.label}
+                </span>
                 <span className="rounded-full bg-[var(--color-muted)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--color-muted-foreground)]">
                   {columnLeads.length}
                 </span>
@@ -95,7 +97,7 @@ export function LeadPipeline({ leads, onLeadClick, onStatusChange }: LeadPipelin
                   onClick={() => onLeadClick?.(lead.id)}
                   className={cn(
                     'cursor-pointer rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] p-3 shadow-sm hover:shadow-md transition-shadow',
-                    draggedLead === lead.id && 'opacity-50'
+                    draggedLead === lead.id && 'opacity-50',
                   )}
                 >
                   <div className="flex items-start justify-between gap-2 mb-2">
@@ -105,7 +107,12 @@ export function LeadPipeline({ leads, onLeadClick, onStatusChange }: LeadPipelin
                         {lead.parent_first_name} {lead.parent_last_name}
                       </span>
                     </div>
-                    <span className={cn('rounded-full px-1.5 py-0.5 text-[10px] font-medium', priorityColors[lead.priority])}>
+                    <span
+                      className={cn(
+                        'rounded-full px-1.5 py-0.5 text-[10px] font-medium',
+                        priorityColors[lead.priority],
+                      )}
+                    >
                       {lead.priority}
                     </span>
                   </div>

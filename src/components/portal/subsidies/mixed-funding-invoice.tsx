@@ -1,5 +1,4 @@
 // @anchor: cca.subsidy.mixed-funding-invoice
-import { cn } from '@/lib/cn'
 import { DollarSign, Shield, CreditCard } from 'lucide-react'
 
 interface MixedFundingInvoiceProps {
@@ -21,9 +20,10 @@ function formatCurrency(cents: number): string {
 }
 
 export function MixedFundingInvoice({ invoice }: MixedFundingInvoiceProps) {
-  const subsidyPct = invoice.total_tuition_cents > 0
-    ? Math.round((invoice.subsidy_covered_cents / invoice.total_tuition_cents) * 100)
-    : 0
+  const subsidyPct =
+    invoice.total_tuition_cents > 0
+      ? Math.round((invoice.subsidy_covered_cents / invoice.total_tuition_cents) * 100)
+      : 0
 
   return (
     <div className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] overflow-hidden">
@@ -95,7 +95,9 @@ export function MixedFundingInvoice({ invoice }: MixedFundingInvoiceProps) {
 
         {/* Amount due */}
         <div className="flex items-center justify-between py-2">
-          <span className="text-sm font-semibold text-[var(--color-foreground)]">Amount Due from Family</span>
+          <span className="text-sm font-semibold text-[var(--color-foreground)]">
+            Amount Due from Family
+          </span>
           <span className="text-xl font-bold text-[var(--color-foreground)]">
             {formatCurrency(invoice.family_copay_cents + invoice.private_pay_balance_cents)}
           </span>

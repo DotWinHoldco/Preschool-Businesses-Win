@@ -35,12 +35,7 @@ export async function sendMessage(
     const supabase = await createTenantServerClient()
 
     // Verify user is a member of the conversation
-    // TODO: Get real user ID from session
-    const senderId = raw.sender_id as string
-
-    if (!senderId) {
-      return { ok: false, error: 'Sender ID is required' }
-    }
+    const senderId = await getActorId()
 
     const { data: membership } = await supabase
       .from('conversation_members')
@@ -78,7 +73,11 @@ export async function sendMessage(
       action: 'messaging.send',
       entityType: 'message',
       entityId: message.id,
-      after: { conversation_id: parsed.data.conversation_id, message_type: parsed.data.message_type, urgent: parsed.data.urgent },
+      after: {
+        conversation_id: parsed.data.conversation_id,
+        message_type: parsed.data.message_type,
+        urgent: parsed.data.urgent,
+      },
     })
 
     // TODO: Trigger push notification for urgent messages

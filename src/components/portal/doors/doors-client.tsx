@@ -4,16 +4,7 @@
 // Door control grid with unlock/hold actions and event log
 
 import { useState, useCallback, useRef, useEffect } from 'react'
-import {
-  DoorOpen,
-  Lock,
-  Unlock,
-  Wifi,
-  WifiOff,
-  Timer,
-  LockOpen,
-  ScrollText,
-} from 'lucide-react'
+import { Lock, Unlock, WifiOff, Timer, LockOpen, ScrollText } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -77,16 +68,58 @@ const INITIAL_DOORS: DoorData[] = [
 ]
 
 const INITIAL_EVENTS: DoorEvent[] = [
-  { id: 'e1', doorName: 'Main Entrance', action: 'unlocked', actor: 'Jane Smith', timestamp: '8:02 AM' },
+  {
+    id: 'e1',
+    doorName: 'Main Entrance',
+    action: 'unlocked',
+    actor: 'Jane Smith',
+    timestamp: '8:02 AM',
+  },
   { id: 'e2', doorName: 'Main Entrance', action: 'locked', actor: 'system', timestamp: '8:02 AM' },
-  { id: 'e3', doorName: 'Staff Entrance', action: 'unlocked', actor: 'Tom Wilson', timestamp: '7:55 AM' },
+  {
+    id: 'e3',
+    doorName: 'Staff Entrance',
+    action: 'unlocked',
+    actor: 'Tom Wilson',
+    timestamp: '7:55 AM',
+  },
   { id: 'e4', doorName: 'Staff Entrance', action: 'locked', actor: 'system', timestamp: '7:55 AM' },
-  { id: 'e5', doorName: 'Side Door', action: 'unlocked', actor: 'Maria Garcia', timestamp: '7:45 AM' },
+  {
+    id: 'e5',
+    doorName: 'Side Door',
+    action: 'unlocked',
+    actor: 'Maria Garcia',
+    timestamp: '7:45 AM',
+  },
   { id: 'e6', doorName: 'Side Door', action: 'locked', actor: 'system', timestamp: '7:45 AM' },
-  { id: 'e7', doorName: 'Back Gate', action: 'went offline', actor: 'system', timestamp: '5:30 PM (yesterday)' },
-  { id: 'e8', doorName: 'Main Entrance', action: 'held unlocked', actor: 'Sarah Johnson', timestamp: '3:00 PM (yesterday)' },
-  { id: 'e9', doorName: 'Main Entrance', action: 'locked', actor: 'Sarah Johnson', timestamp: '3:30 PM (yesterday)' },
-  { id: 'e10', doorName: 'Staff Entrance', action: 'unlocked', actor: 'Jane Smith', timestamp: '7:00 AM (yesterday)' },
+  {
+    id: 'e7',
+    doorName: 'Back Gate',
+    action: 'went offline',
+    actor: 'system',
+    timestamp: '5:30 PM (yesterday)',
+  },
+  {
+    id: 'e8',
+    doorName: 'Main Entrance',
+    action: 'held unlocked',
+    actor: 'Sarah Johnson',
+    timestamp: '3:00 PM (yesterday)',
+  },
+  {
+    id: 'e9',
+    doorName: 'Main Entrance',
+    action: 'locked',
+    actor: 'Sarah Johnson',
+    timestamp: '3:30 PM (yesterday)',
+  },
+  {
+    id: 'e10',
+    doorName: 'Staff Entrance',
+    action: 'unlocked',
+    actor: 'Jane Smith',
+    timestamp: '7:00 AM (yesterday)',
+  },
 ]
 
 // ---------------------------------------------------------------------------
@@ -114,30 +147,28 @@ export function DoorsClient() {
 
   // Cleanup timers on unmount
   useEffect(() => {
+    const timers = timerRefs.current
     return () => {
-      timerRefs.current.forEach((timer) => clearTimeout(timer))
+      timers.forEach((timer) => clearTimeout(timer))
     }
   }, [])
 
-  const addEvent = useCallback(
-    (doorName: string, action: string) => {
-      const now = new Date()
-      const timestamp = now.toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true,
-      })
-      const evt: DoorEvent = {
-        id: crypto.randomUUID(),
-        doorName,
-        action,
-        actor: 'Admin',
-        timestamp,
-      }
-      setEvents((prev) => [evt, ...prev].slice(0, 10))
-    },
-    [],
-  )
+  const addEvent = useCallback((doorName: string, action: string) => {
+    const now = new Date()
+    const timestamp = now.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    })
+    const evt: DoorEvent = {
+      id: crypto.randomUUID(),
+      doorName,
+      action,
+      actor: 'Admin',
+      timestamp,
+    }
+    setEvents((prev) => [evt, ...prev].slice(0, 10))
+  }, [])
 
   const handleUnlock10s = useCallback(
     (doorId: string) => {
@@ -251,10 +282,7 @@ export function DoorsClient() {
           const isOffline = door.status === 'offline'
           const isUnlocked = door.status === 'unlocked'
           return (
-            <Card
-              key={door.id}
-              className={cn(isOffline && 'opacity-60')}
-            >
+            <Card key={door.id} className={cn(isOffline && 'opacity-60')}>
               <CardContent className="p-5 space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -269,26 +297,15 @@ export function DoorsClient() {
                       )}
                     >
                       {isOffline ? (
-                        <WifiOff
-                          size={20}
-                          className="text-[var(--color-muted-foreground)]"
-                        />
+                        <WifiOff size={20} className="text-[var(--color-muted-foreground)]" />
                       ) : isUnlocked ? (
-                        <Unlock
-                          size={20}
-                          className="text-[var(--color-warning)]"
-                        />
+                        <Unlock size={20} className="text-[var(--color-warning)]" />
                       ) : (
-                        <Lock
-                          size={20}
-                          className="text-[var(--color-success)]"
-                        />
+                        <Lock size={20} className="text-[var(--color-success)]" />
                       )}
                     </div>
                     <div>
-                      <p className="font-semibold text-[var(--color-foreground)]">
-                        {door.name}
-                      </p>
+                      <p className="font-semibold text-[var(--color-foreground)]">{door.name}</p>
                       <p className="text-xs text-[var(--color-muted-foreground)]">
                         Last event: {formatTimestamp(door.lastEvent)}
                       </p>

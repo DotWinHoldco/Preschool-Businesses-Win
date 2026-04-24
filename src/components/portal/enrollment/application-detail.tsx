@@ -1,8 +1,7 @@
 'use client'
 
 // @anchor: cca.enrollment.application-detail
-import { cn } from '@/lib/cn'
-import { CheckCircle, XCircle, Clock, AlertTriangle, User, Baby, Calendar, MapPin, MessageSquare } from 'lucide-react'
+import { CheckCircle, XCircle, Clock, AlertTriangle, User, Baby, MessageSquare } from 'lucide-react'
 
 interface ApplicationDetailProps {
   application: {
@@ -54,8 +53,12 @@ export function ApplicationDetail({
           </div>
           {application.triage_score !== null && (
             <div className="text-center">
-              <div className="text-2xl font-bold text-[var(--color-primary)]">{application.triage_score}</div>
-              <div className="text-[10px] uppercase tracking-wider text-[var(--color-muted-foreground)]">Score</div>
+              <div className="text-2xl font-bold text-[var(--color-primary)]">
+                {application.triage_score}
+              </div>
+              <div className="text-[10px] uppercase tracking-wider text-[var(--color-muted-foreground)]">
+                Score
+              </div>
             </div>
           )}
         </div>
@@ -71,22 +74,30 @@ export function ApplicationDetail({
           <dl className="space-y-2 text-sm">
             <div className="flex justify-between">
               <dt className="text-[var(--color-muted-foreground)]">Name</dt>
-              <dd className="font-medium text-[var(--color-foreground)]">{application.parent_first_name} {application.parent_last_name}</dd>
+              <dd className="font-medium text-[var(--color-foreground)]">
+                {application.parent_first_name} {application.parent_last_name}
+              </dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-[var(--color-muted-foreground)]">Email</dt>
-              <dd className="font-medium text-[var(--color-foreground)]">{application.parent_email}</dd>
+              <dd className="font-medium text-[var(--color-foreground)]">
+                {application.parent_email}
+              </dd>
             </div>
             {application.parent_phone && (
               <div className="flex justify-between">
                 <dt className="text-[var(--color-muted-foreground)]">Phone</dt>
-                <dd className="font-medium text-[var(--color-foreground)]">{application.parent_phone}</dd>
+                <dd className="font-medium text-[var(--color-foreground)]">
+                  {application.parent_phone}
+                </dd>
               </div>
             )}
             {application.faith_community && (
               <div className="flex justify-between">
                 <dt className="text-[var(--color-muted-foreground)]">Faith community</dt>
-                <dd className="font-medium text-[var(--color-foreground)]">{application.faith_community}</dd>
+                <dd className="font-medium text-[var(--color-foreground)]">
+                  {application.faith_community}
+                </dd>
               </div>
             )}
           </dl>
@@ -100,20 +111,28 @@ export function ApplicationDetail({
           <dl className="space-y-2 text-sm">
             <div className="flex justify-between">
               <dt className="text-[var(--color-muted-foreground)]">Name</dt>
-              <dd className="font-medium text-[var(--color-foreground)]">{application.student_first_name} {application.student_last_name}</dd>
+              <dd className="font-medium text-[var(--color-foreground)]">
+                {application.student_first_name} {application.student_last_name}
+              </dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-[var(--color-muted-foreground)]">Date of birth</dt>
-              <dd className="font-medium text-[var(--color-foreground)]">{application.student_dob}</dd>
+              <dd className="font-medium text-[var(--color-foreground)]">
+                {application.student_dob}
+              </dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-[var(--color-muted-foreground)]">Program</dt>
-              <dd className="font-medium text-[var(--color-foreground)]">{application.program_type}</dd>
+              <dd className="font-medium text-[var(--color-foreground)]">
+                {application.program_type}
+              </dd>
             </div>
             {application.desired_start_date && (
               <div className="flex justify-between">
                 <dt className="text-[var(--color-muted-foreground)]">Desired start</dt>
-                <dd className="font-medium text-[var(--color-foreground)]">{application.desired_start_date}</dd>
+                <dd className="font-medium text-[var(--color-foreground)]">
+                  {application.desired_start_date}
+                </dd>
               </div>
             )}
           </dl>
@@ -126,7 +145,9 @@ export function ApplicationDetail({
           <h3 className="flex items-center gap-2 text-sm font-semibold text-[var(--color-foreground)] mb-2">
             <MessageSquare className="h-4 w-4 text-[var(--color-primary)]" /> Additional Notes
           </h3>
-          <p className="text-sm text-[var(--color-muted-foreground)] whitespace-pre-line">{application.notes}</p>
+          <p className="text-sm text-[var(--color-muted-foreground)] whitespace-pre-line">
+            {application.notes}
+          </p>
         </div>
       )}
 

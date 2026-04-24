@@ -4,6 +4,7 @@
 // DFPS Compliance dashboard: scorecard, renewals, inspections
 
 import { useState } from 'react'
+import Link from 'next/link'
 import {
   FileText,
   GraduationCap,
@@ -18,12 +19,7 @@ import {
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  Dialog,
-  DialogOverlay,
-  DialogContent,
-  DialogClose,
-} from '@/components/ui/dialog'
+import { Dialog, DialogOverlay, DialogContent, DialogClose } from '@/components/ui/dialog'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -94,7 +90,10 @@ const RENEWALS: RenewalItem[] = [
   { id: 'r5', label: 'Background Checks (2 new hires)', detail: 'Due Apr 2026', status: 'warning' },
 ]
 
-const STATUS_CONFIG: Record<RenewalStatus, { icon: typeof CheckCircle; color: string; label: string }> = {
+const STATUS_CONFIG: Record<
+  RenewalStatus,
+  { icon: typeof CheckCircle; color: string; label: string }
+> = {
   ok: { icon: CheckCircle, color: 'var(--color-success, #10B981)', label: 'Current' },
   warning: { icon: Clock, color: 'var(--color-warning)', label: 'Due Soon' },
   expired: { icon: XCircle, color: 'var(--color-destructive)', label: 'Expired' },
@@ -105,9 +104,30 @@ const STATUS_CONFIG: Record<RenewalStatus, { icon: typeof CheckCircle; color: st
 // ---------------------------------------------------------------------------
 
 const INITIAL_INSPECTIONS: InspectionRecord[] = [
-  { id: 'insp-1', type: 'DFPS Annual', date: '2025-11-12', inspectorName: 'Maria Gonzalez', result: 'pass', notes: 'All standards met. No corrective actions.' },
-  { id: 'insp-2', type: 'Fire Marshal', date: '2025-09-05', inspectorName: 'James Burton', result: 'conditional', notes: 'Replace extinguisher in kitchen. Corrected same day.' },
-  { id: 'insp-3', type: 'Health Dept.', date: '2025-06-20', inspectorName: 'Anita Patel', result: 'pass', notes: 'Kitchen and restrooms in compliance.' },
+  {
+    id: 'insp-1',
+    type: 'DFPS Annual',
+    date: '2025-11-12',
+    inspectorName: 'Maria Gonzalez',
+    result: 'pass',
+    notes: 'All standards met. No corrective actions.',
+  },
+  {
+    id: 'insp-2',
+    type: 'Fire Marshal',
+    date: '2025-09-05',
+    inspectorName: 'James Burton',
+    result: 'conditional',
+    notes: 'Replace extinguisher in kitchen. Corrected same day.',
+  },
+  {
+    id: 'insp-3',
+    type: 'Health Dept.',
+    date: '2025-06-20',
+    inspectorName: 'Anita Patel',
+    result: 'pass',
+    notes: 'Kitchen and restrooms in compliance.',
+  },
 ]
 
 // ---------------------------------------------------------------------------
@@ -160,7 +180,10 @@ export function ComplianceClient() {
                   >
                     <Icon size={20} style={{ color: metric.color }} />
                   </div>
-                  <p className="text-sm font-medium" style={{ color: 'var(--color-muted-foreground)' }}>
+                  <p
+                    className="text-sm font-medium"
+                    style={{ color: 'var(--color-muted-foreground)' }}
+                  >
                     {metric.label}
                   </p>
                 </div>
@@ -181,7 +204,10 @@ export function ComplianceClient() {
                         }}
                       />
                     </div>
-                    <p className="text-xs mt-1 text-right" style={{ color: 'var(--color-muted-foreground)' }}>
+                    <p
+                      className="text-xs mt-1 text-right"
+                      style={{ color: 'var(--color-muted-foreground)' }}
+                    >
                       {metric.pct}%
                     </p>
                   </div>
@@ -235,10 +261,10 @@ export function ComplianceClient() {
           {/* Link to DFPS Reports */}
           <div className="mt-4">
             <Button variant="secondary" asChild>
-              <a href="/portal/admin/dfps-compliance">
+              <Link href="/portal/admin/dfps-compliance">
                 View DFPS Reports
                 <ArrowRight size={14} />
-              </a>
+              </Link>
             </Button>
           </div>
         </CardContent>
@@ -264,22 +290,54 @@ export function ComplianceClient() {
               <table className="w-full text-sm">
                 <thead>
                   <tr style={{ backgroundColor: 'var(--color-muted)' }}>
-                    <th className="p-3 text-left font-medium" style={{ color: 'var(--color-muted-foreground)' }}>Date</th>
-                    <th className="p-3 text-left font-medium" style={{ color: 'var(--color-muted-foreground)' }}>Type</th>
-                    <th className="p-3 text-left font-medium" style={{ color: 'var(--color-muted-foreground)' }}>Inspector</th>
-                    <th className="p-3 text-left font-medium" style={{ color: 'var(--color-muted-foreground)' }}>Result</th>
-                    <th className="p-3 text-left font-medium hidden sm:table-cell" style={{ color: 'var(--color-muted-foreground)' }}>Notes</th>
+                    <th
+                      className="p-3 text-left font-medium"
+                      style={{ color: 'var(--color-muted-foreground)' }}
+                    >
+                      Date
+                    </th>
+                    <th
+                      className="p-3 text-left font-medium"
+                      style={{ color: 'var(--color-muted-foreground)' }}
+                    >
+                      Type
+                    </th>
+                    <th
+                      className="p-3 text-left font-medium"
+                      style={{ color: 'var(--color-muted-foreground)' }}
+                    >
+                      Inspector
+                    </th>
+                    <th
+                      className="p-3 text-left font-medium"
+                      style={{ color: 'var(--color-muted-foreground)' }}
+                    >
+                      Result
+                    </th>
+                    <th
+                      className="p-3 text-left font-medium hidden sm:table-cell"
+                      style={{ color: 'var(--color-muted-foreground)' }}
+                    >
+                      Notes
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {inspections.map((insp) => {
                     const rcfg = resultConfig[insp.result]
                     return (
-                      <tr key={insp.id} className="border-t" style={{ borderColor: 'var(--color-border)' }}>
+                      <tr
+                        key={insp.id}
+                        className="border-t"
+                        style={{ borderColor: 'var(--color-border)' }}
+                      >
                         <td className="p-3" style={{ color: 'var(--color-muted-foreground)' }}>
                           {new Date(insp.date).toLocaleDateString()}
                         </td>
-                        <td className="p-3 font-medium" style={{ color: 'var(--color-foreground)' }}>
+                        <td
+                          className="p-3 font-medium"
+                          style={{ color: 'var(--color-foreground)' }}
+                        >
                           {insp.type}
                         </td>
                         <td className="p-3" style={{ color: 'var(--color-muted-foreground)' }}>
@@ -293,7 +351,10 @@ export function ComplianceClient() {
                             {rcfg.label}
                           </span>
                         </td>
-                        <td className="p-3 hidden sm:table-cell max-w-[240px] truncate" style={{ color: 'var(--color-muted-foreground)' }}>
+                        <td
+                          className="p-3 hidden sm:table-cell max-w-[240px] truncate"
+                          style={{ color: 'var(--color-muted-foreground)' }}
+                        >
                           {insp.notes}
                         </td>
                       </tr>
@@ -301,7 +362,11 @@ export function ComplianceClient() {
                   })}
                   {inspections.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="p-8 text-center text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
+                      <td
+                        colSpan={5}
+                        className="p-8 text-center text-sm"
+                        style={{ color: 'var(--color-muted-foreground)' }}
+                      >
                         No inspection records yet.
                       </td>
                     </tr>
@@ -320,7 +385,9 @@ export function ComplianceClient() {
           <DialogClose onClick={() => setShowInspectionDialog(false)} />
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>Type</label>
+              <label className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
+                Type
+              </label>
               <Input
                 value={inspForm.type}
                 onChange={(e) => setInspForm((f) => ({ ...f, type: e.target.value }))}
@@ -328,7 +395,9 @@ export function ComplianceClient() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>Date</label>
+              <label className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
+                Date
+              </label>
               <Input
                 type="date"
                 value={inspForm.date}
@@ -336,7 +405,9 @@ export function ComplianceClient() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>Inspector Name</label>
+              <label className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
+                Inspector Name
+              </label>
               <Input
                 value={inspForm.inspectorName}
                 onChange={(e) => setInspForm((f) => ({ ...f, inspectorName: e.target.value }))}
@@ -344,12 +415,23 @@ export function ComplianceClient() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>Result</label>
+              <label className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
+                Result
+              </label>
               <select
                 value={inspForm.result}
-                onChange={(e) => setInspForm((f) => ({ ...f, result: e.target.value as 'pass' | 'fail' | 'conditional' }))}
+                onChange={(e) =>
+                  setInspForm((f) => ({
+                    ...f,
+                    result: e.target.value as 'pass' | 'fail' | 'conditional',
+                  }))
+                }
                 className="w-full rounded-[var(--radius,0.75rem)] border px-4 py-3 text-sm min-h-[48px]"
-                style={{ borderColor: 'var(--color-border)', color: 'var(--color-foreground)', backgroundColor: 'var(--color-background)' }}
+                style={{
+                  borderColor: 'var(--color-border)',
+                  color: 'var(--color-foreground)',
+                  backgroundColor: 'var(--color-background)',
+                }}
               >
                 <option value="pass">Pass</option>
                 <option value="fail">Fail</option>
@@ -357,18 +439,28 @@ export function ComplianceClient() {
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>Notes</label>
+              <label className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
+                Notes
+              </label>
               <textarea
                 value={inspForm.notes}
                 onChange={(e) => setInspForm((f) => ({ ...f, notes: e.target.value }))}
                 placeholder="Optional notes..."
                 rows={3}
                 className="w-full rounded-[var(--radius,0.75rem)] border px-4 py-3 text-sm"
-                style={{ borderColor: 'var(--color-border)', color: 'var(--color-foreground)', backgroundColor: 'var(--color-background)' }}
+                style={{
+                  borderColor: 'var(--color-border)',
+                  color: 'var(--color-foreground)',
+                  backgroundColor: 'var(--color-background)',
+                }}
               />
             </div>
             <div className="flex gap-3">
-              <Button variant="secondary" className="flex-1" onClick={() => setShowInspectionDialog(false)}>
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onClick={() => setShowInspectionDialog(false)}
+              >
                 Cancel
               </Button>
               <Button

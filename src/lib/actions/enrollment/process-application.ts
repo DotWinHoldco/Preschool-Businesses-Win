@@ -14,7 +14,7 @@ export type ProcessApplicationState = {
 }
 
 export async function processApplication(
-  input: ProcessApplicationInput
+  input: ProcessApplicationInput,
 ): Promise<ProcessApplicationState> {
   await assertRole('admin')
 
@@ -33,6 +33,7 @@ export async function processApplication(
     .from('enrollment_applications')
     .select('*')
     .eq('id', data.application_id)
+    .eq('tenant_id', tenantId)
     .single()
 
   if (appError || !application) {
@@ -64,6 +65,7 @@ export async function processApplication(
     .from('enrollment_applications')
     .update(updateFields)
     .eq('id', data.application_id)
+    .eq('tenant_id', tenantId)
 
   if (updateError) {
     return { ok: false, error: updateError.message }

@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// @ts-nocheck
 // @anchor: cca.medical.student-page
 // Student medical detail page — placeholder for Phase 2. Types will be generated from Supabase.
 // Next.js 16: params is a Promise, must await
@@ -28,7 +26,7 @@ export default async function StudentMedicalPage({
     .select('*')
     .eq('student_id', studentId)
     .single()
-  const medical = medicalRaw as any
+  const medical = medicalRaw as Record<string, unknown>
 
   // Fetch allergies
   const { data: allergies } = await supabase
@@ -58,16 +56,14 @@ export default async function StudentMedicalPage({
     .order('priority_order', { ascending: true })
 
   const hasLifeThreatening = (allergies ?? []).some(
-    (a: any) => a.severity === 'life_threatening'
+    (a: Record<string, unknown>) => a.severity === 'life_threatening',
   )
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-[var(--color-foreground)]">
-          Medical Profile
-        </h1>
+        <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Medical Profile</h1>
         <p className="text-sm text-[var(--color-muted-foreground)]">
           {student?.first_name} {student?.last_name} | DOB: {student?.date_of_birth}
         </p>
@@ -84,8 +80,8 @@ export default async function StudentMedicalPage({
               </p>
               <p className="text-sm text-[var(--color-foreground)]">
                 {(allergies ?? [])
-                  .filter((a: any) => a.severity === 'life_threatening')
-                  .map((a: any) => a.allergen)
+                  .filter((a: Record<string, unknown>) => a.severity === 'life_threatening')
+                  .map((a: Record<string, unknown>) => a.allergen)
                   .join(', ')}
               </p>
             </div>
@@ -104,13 +100,17 @@ export default async function StudentMedicalPage({
             </span>
           </div>
           {(allergies ?? []).length === 0 ? (
-            <div className="p-4 text-sm text-[var(--color-muted-foreground)] text-center">No allergies on file</div>
+            <div className="p-4 text-sm text-[var(--color-muted-foreground)] text-center">
+              No allergies on file
+            </div>
           ) : (
             <div className="divide-y divide-[var(--color-border)]">
-              {(allergies ?? []).map((allergy: any) => (
+              {(allergies ?? []).map((allergy: Record<string, unknown>) => (
                 <div key={allergy.id as string} className="p-3">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm font-semibold text-[var(--color-foreground)]">{allergy.allergen as string}</span>
+                    <span className="text-sm font-semibold text-[var(--color-foreground)]">
+                      {allergy.allergen as string}
+                    </span>
                     <span
                       className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
                         allergy.severity === 'life_threatening'
@@ -130,7 +130,10 @@ export default async function StudentMedicalPage({
                   ) : null}
                   {allergy.epipen_on_site ? (
                     <p className="text-xs font-medium text-[var(--color-destructive)] mt-0.5">
-                      EpiPen on site{allergy.medication_location ? ` - ${String(allergy.medication_location)}` : ''}
+                      EpiPen on site
+                      {allergy.medication_location
+                        ? ` - ${String(allergy.medication_location)}`
+                        : ''}
                     </p>
                   ) : null}
                 </div>
@@ -143,7 +146,9 @@ export default async function StudentMedicalPage({
         <div className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] overflow-hidden">
           <div className="flex items-center gap-2 p-4 border-b border-[var(--color-border)]">
             <Heart className="h-4 w-4 text-[var(--color-primary)]" />
-            <h2 className="text-sm font-semibold text-[var(--color-foreground)]">Medical Information</h2>
+            <h2 className="text-sm font-semibold text-[var(--color-foreground)]">
+              Medical Information
+            </h2>
           </div>
           <div className="p-4 space-y-3 text-sm">
             {medical ? (
@@ -151,36 +156,48 @@ export default async function StudentMedicalPage({
                 {Boolean(medical.blood_type) && (
                   <div className="flex justify-between">
                     <span className="text-[var(--color-muted-foreground)]">Blood type</span>
-                    <span className="font-medium text-[var(--color-foreground)]">{medical.blood_type}</span>
+                    <span className="font-medium text-[var(--color-foreground)]">
+                      {String(medical.blood_type)}
+                    </span>
                   </div>
                 )}
                 {Boolean(medical.primary_physician_name) && (
                   <div className="flex justify-between">
                     <span className="text-[var(--color-muted-foreground)]">Physician</span>
-                    <span className="font-medium text-[var(--color-foreground)]">{medical.primary_physician_name}</span>
+                    <span className="font-medium text-[var(--color-foreground)]">
+                      {String(medical.primary_physician_name)}
+                    </span>
                   </div>
                 )}
                 {Boolean(medical.primary_physician_phone) && (
                   <div className="flex justify-between">
                     <span className="text-[var(--color-muted-foreground)]">Physician phone</span>
-                    <span className="font-medium text-[var(--color-foreground)]">{medical.primary_physician_phone}</span>
+                    <span className="font-medium text-[var(--color-foreground)]">
+                      {String(medical.primary_physician_phone)}
+                    </span>
                   </div>
                 )}
                 {Boolean(medical.insurance_provider) && (
                   <div className="flex justify-between">
                     <span className="text-[var(--color-muted-foreground)]">Insurance</span>
-                    <span className="font-medium text-[var(--color-foreground)]">{medical.insurance_provider}</span>
+                    <span className="font-medium text-[var(--color-foreground)]">
+                      {String(medical.insurance_provider)}
+                    </span>
                   </div>
                 )}
                 {Boolean(medical.special_needs_notes) && (
                   <div>
                     <span className="text-[var(--color-muted-foreground)]">Special needs</span>
-                    <p className="mt-0.5 text-[var(--color-foreground)]">{medical.special_needs_notes}</p>
+                    <p className="mt-0.5 text-[var(--color-foreground)]">
+                      {String(medical.special_needs_notes)}
+                    </p>
                   </div>
                 )}
               </>
             ) : (
-              <p className="text-[var(--color-muted-foreground)] text-center">No medical profile on file</p>
+              <p className="text-[var(--color-muted-foreground)] text-center">
+                No medical profile on file
+              </p>
             )}
           </div>
         </div>
@@ -192,12 +209,16 @@ export default async function StudentMedicalPage({
             <h2 className="text-sm font-semibold text-[var(--color-foreground)]">Medications</h2>
           </div>
           {(medications ?? []).length === 0 ? (
-            <div className="p-4 text-sm text-[var(--color-muted-foreground)] text-center">No medications on file</div>
+            <div className="p-4 text-sm text-[var(--color-muted-foreground)] text-center">
+              No medications on file
+            </div>
           ) : (
             <div className="divide-y divide-[var(--color-border)]">
-              {(medications ?? []).map((med: any) => (
+              {(medications ?? []).map((med: Record<string, unknown>) => (
                 <div key={med.id as string} className="p-3">
-                  <p className="text-sm font-semibold text-[var(--color-foreground)]">{med.medication_name as string}</p>
+                  <p className="text-sm font-semibold text-[var(--color-foreground)]">
+                    {med.medication_name as string}
+                  </p>
                   <p className="text-xs text-[var(--color-muted-foreground)]">
                     {med.dosage as string} - {med.frequency as string}
                   </p>
@@ -219,13 +240,17 @@ export default async function StudentMedicalPage({
             <h2 className="text-sm font-semibold text-[var(--color-foreground)]">Immunizations</h2>
           </div>
           {(immunizations ?? []).length === 0 ? (
-            <div className="p-4 text-sm text-[var(--color-muted-foreground)] text-center">No immunizations on file</div>
+            <div className="p-4 text-sm text-[var(--color-muted-foreground)] text-center">
+              No immunizations on file
+            </div>
           ) : (
             <div className="divide-y divide-[var(--color-border)]">
-              {(immunizations ?? []).map((imm: any) => (
+              {(immunizations ?? []).map((imm: Record<string, unknown>) => (
                 <div key={imm.id as string} className="flex items-center justify-between p-3">
                   <div>
-                    <p className="text-sm font-medium text-[var(--color-foreground)]">{imm.vaccine_name as string}</p>
+                    <p className="text-sm font-medium text-[var(--color-foreground)]">
+                      {imm.vaccine_name as string}
+                    </p>
                     <p className="text-xs text-[var(--color-muted-foreground)]">
                       Dose {imm.dose_number as number} | {imm.administered_date as string}
                     </p>
@@ -246,13 +271,17 @@ export default async function StudentMedicalPage({
       <div className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] overflow-hidden">
         <div className="flex items-center gap-2 p-4 border-b border-[var(--color-border)]">
           <Phone className="h-4 w-4 text-[var(--color-destructive)]" />
-          <h2 className="text-sm font-semibold text-[var(--color-foreground)]">Emergency Contacts</h2>
+          <h2 className="text-sm font-semibold text-[var(--color-foreground)]">
+            Emergency Contacts
+          </h2>
         </div>
         {(emergencyContacts ?? []).length === 0 ? (
-          <div className="p-4 text-sm text-[var(--color-muted-foreground)] text-center">No emergency contacts on file</div>
+          <div className="p-4 text-sm text-[var(--color-muted-foreground)] text-center">
+            No emergency contacts on file
+          </div>
         ) : (
           <div className="divide-y divide-[var(--color-border)]">
-            {(emergencyContacts ?? []).map((contact: any) => (
+            {(emergencyContacts ?? []).map((contact: Record<string, unknown>) => (
               <div key={contact.id as string} className="flex items-center justify-between p-3">
                 <div>
                   <p className="text-sm font-semibold text-[var(--color-foreground)]">
@@ -261,7 +290,9 @@ export default async function StudentMedicalPage({
                       ({contact.relationship as string})
                     </span>
                   </p>
-                  <p className="text-xs text-[var(--color-muted-foreground)]">{contact.phone_primary as string}</p>
+                  <p className="text-xs text-[var(--color-muted-foreground)]">
+                    {contact.phone_primary as string}
+                  </p>
                 </div>
                 <div className="flex items-center gap-2">
                   {contact.can_pickup ? (

@@ -1,7 +1,12 @@
 // @anchor: cca.leads.manage
 'use server'
 
-import { UpdateLeadSchema, AddLeadActivitySchema, type UpdateLeadInput, type AddLeadActivityInput } from '@/lib/schemas/lead'
+import {
+  UpdateLeadSchema,
+  AddLeadActivitySchema,
+  type UpdateLeadInput,
+  type AddLeadActivityInput,
+} from '@/lib/schemas/lead'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
 import { assertRole } from '@/lib/auth/session'
@@ -29,6 +34,7 @@ export async function updateLead(input: UpdateLeadInput): Promise<ManageLeadStat
     .from('enrollment_leads')
     .select('*')
     .eq('id', data.id)
+    .eq('tenant_id', tenantId)
     .single()
 
   const { id, ...updateFields } = data
@@ -37,6 +43,7 @@ export async function updateLead(input: UpdateLeadInput): Promise<ManageLeadStat
     .from('enrollment_leads')
     .update({ ...updateFields, updated_at: new Date().toISOString() })
     .eq('id', id)
+    .eq('tenant_id', tenantId)
 
   if (error) {
     return { ok: false, error: error.message }

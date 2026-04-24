@@ -29,12 +29,10 @@ export async function runScheduledMessagesForAllTenants(): Promise<ScheduledMess
     .limit(50)
 
   if (fetchErr) {
-    console.error('[cron:scheduled-messages] Fetch error:', fetchErr.message)
     return summary
   }
 
   if (!schedules || schedules.length === 0) {
-    console.log('[cron:scheduled-messages] No scheduled messages due')
     return summary
   }
 
@@ -51,57 +49,40 @@ export async function runScheduledMessagesForAllTenants(): Promise<ScheduledMess
         .eq('status', 'scheduled') // Optimistic lock: only update if still 'scheduled'
 
       if (lockErr) {
-        console.error(`[cron:scheduled-messages] Lock error for ${schedule.id}:`, lockErr.message)
         summary.failed++
         continue
       }
 
       // ── 2b. Insert into messages table ──
-      const { error: insertErr } = await supabase
-        .from('messages')
-        .insert({
-          conversation_id: schedule.conversation_id,
-          body: schedule.message_body,
-          sender_id: schedule.created_by,
-          message_type: 'text',
-          tenant_id: schedule.tenant_id,
-        })
+      const { error: insertErr } = await supabase.from('messages').insert({
+        conversation_id: schedule.conversation_id,
+        body: schedule.message_body,
+        sender_id: schedule.created_by,
+        message_type: 'text',
+        tenant_id: schedule.tenant_id,
+      })
 
       if (insertErr) {
         // ── 2d. Mark as failed ──
-        console.error(`[cron:scheduled-messages] Insert error for ${schedule.id}:`, insertErr.message)
-        await supabase
-          .from('message_schedules')
-          .update({ status: 'failed' })
-          .eq('id', schedule.id)
+        await supabase.from('message_schedules').update({ status: 'failed' }).eq('id', schedule.id)
 
         summary.failed++
       } else {
         // ── 2c. Mark as sent ──
-        const { error: sentErr } = await supabase
+        await supabase
           .from('message_schedules')
           .update({ status: 'sent', sent_at: new Date().toISOString() })
           .eq('id', schedule.id)
 
-        if (sentErr) {
-          console.error(`[cron:scheduled-messages] Sent update error for ${schedule.id}:`, sentErr.message)
-        }
-
         summary.sent++
       }
-    } catch (err) {
-      console.error(`[cron:scheduled-messages] Unhandled error for ${schedule.id}:`, err)
-
+    } catch {
       // Best-effort mark as failed
-      await supabase
-        .from('message_schedules')
-        .update({ status: 'failed' })
-        .eq('id', schedule.id)
+      await supabase.from('message_schedules').update({ status: 'failed' }).eq('id', schedule.id)
 
       summary.failed++
     }
   }
 
-  console.log('[cron:scheduled-messages] Summary:', summary)
   return summary
 }

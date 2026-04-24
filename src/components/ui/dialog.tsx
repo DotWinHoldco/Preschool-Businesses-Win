@@ -61,7 +61,7 @@ function Dialog({ open, onOpenChange, children }: DialogProps) {
 // Overlay
 // ---------------------------------------------------------------------------
 
-export interface DialogOverlayProps extends HTMLAttributes<HTMLDivElement> {}
+export type DialogOverlayProps = HTMLAttributes<HTMLDivElement>
 
 const DialogOverlay = forwardRef<HTMLDivElement, DialogOverlayProps>(
   ({ className, ...props }, ref) => (
@@ -147,10 +147,7 @@ const DialogContent = forwardRef<HTMLDivElement, DialogContentProps>(
         )}
         {...props}
       >
-        <h2
-          id={titleId}
-          className="text-lg font-semibold text-[var(--color-foreground)]"
-        >
+        <h2 id={titleId} className="text-lg font-semibold text-[var(--color-foreground)]">
           {title}
         </h2>
         {description && (
@@ -169,7 +166,7 @@ DialogContent.displayName = 'DialogContent'
 // Close trigger helper
 // ---------------------------------------------------------------------------
 
-export interface DialogCloseProps extends HTMLAttributes<HTMLButtonElement> {}
+export type DialogCloseProps = HTMLAttributes<HTMLButtonElement>
 
 const DialogClose = forwardRef<HTMLButtonElement, DialogCloseProps>(
   ({ className, children, ...props }, ref) => (
@@ -187,7 +184,16 @@ const DialogClose = forwardRef<HTMLButtonElement, DialogCloseProps>(
       {...props}
     >
       {children ?? (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <line x1="18" y1="6" x2="6" y2="18" />
           <line x1="6" y1="6" x2="18" y2="18" />
         </svg>

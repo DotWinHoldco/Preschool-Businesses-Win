@@ -12,11 +12,7 @@ import { PortalShell } from '@/components/portal/portal-shell'
 import { ImpersonationBanner } from '@/components/portal/impersonation-banner'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-export default async function PortalLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default async function PortalLayout({ children }: { children: React.ReactNode }) {
   // Read tenant context from proxy-injected headers (Next.js 16: async headers)
   const headerStore = await headers()
   const tenantId = headerStore.get('x-tenant-id')
@@ -29,14 +25,21 @@ export default async function PortalLayout({
   if (!tenantId) notFound()
   const effectiveTenantId = tenantId
 
-  // Default to admin for dev when no session exists
-  type PortalRole = 'cca_owner' | 'cca_admin' | 'lead_teacher' | 'teacher' | 'aide' | 'parent' | 'guardian' | 'applicant_parent'
-  let userRole: PortalRole = 'cca_admin'
+  type PortalRole =
+    | 'cca_owner'
+    | 'cca_admin'
+    | 'lead_teacher'
+    | 'teacher'
+    | 'aide'
+    | 'parent'
+    | 'guardian'
+    | 'applicant_parent'
+  let userRole: PortalRole = 'parent'
   let user = {
-    name: 'Admin User',
-    email: 'admin@school.com',
+    name: 'User',
+    email: '',
     avatarUrl: null as string | null,
-    role: 'Admin',
+    role: '',
   }
 
   if (session) {
@@ -86,7 +89,10 @@ export default async function PortalLayout({
     .eq('status', 'active')
     .is('deleted_at', null)
     .order('name')
-  const classrooms = (classroomRows ?? []).map((c) => ({ id: c.id as string, name: c.name as string }))
+  const classrooms = (classroomRows ?? []).map((c) => ({
+    id: c.id as string,
+    name: c.name as string,
+  }))
 
   const cookieStore = await cookies()
   const activeClassroomId = cookieStore.get('active_classroom_id')?.value ?? null
@@ -119,16 +125,13 @@ export default async function PortalLayout({
               className="pointer-events-none fixed inset-0 z-0 flex items-center justify-center print:hidden"
               aria-hidden="true"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/cca-assets/crandall-sunshine.png"
                 alt=""
                 className="h-[420px] w-[420px] object-contain opacity-[0.06]"
               />
             </div>
-            <div className="relative z-10">
-              {children}
-            </div>
+            <div className="relative z-10">{children}</div>
           </main>
         </PortalShell>
       </div>

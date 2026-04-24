@@ -1,15 +1,15 @@
-import Image from 'next/image';
-import { ScrollReveal } from './ScrollReveal';
+import Image from 'next/image'
+import { ScrollReveal } from './ScrollReveal'
 
 interface StaffCardProps {
-  name: string;
-  title: string;
-  bio?: string;
-  headshotPath: string;
-  index: number;
+  name: string
+  title: string
+  bio?: string
+  headshotPath: string
+  index: number
 }
 
-export function StaffCard({ name, title, bio, headshotPath, index }: StaffCardProps) {
+export function StaffCard({ name, title, headshotPath, index }: StaffCardProps) {
   return (
     <ScrollReveal delay={index * 0.08}>
       <div className="group relative bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300">
@@ -29,5 +29,5 @@ export function StaffCard({ name, title, bio, headshotPath, index }: StaffCardPr
         </div>
       </div>
     </ScrollReveal>
-  );
+  )
 }

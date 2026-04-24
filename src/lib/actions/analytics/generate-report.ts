@@ -77,7 +77,10 @@ export async function generateReport(input: GenerateReportInput) {
     .single()
 
   if (reportError || !report) {
-    return { ok: false as const, error: { _form: [reportError?.message ?? 'Failed to create report'] } }
+    return {
+      ok: false as const,
+      error: { _form: [reportError?.message ?? 'Failed to create report'] },
+    }
   }
 
   // Execute the report query based on entity_type
@@ -98,7 +101,11 @@ export async function generateReport(input: GenerateReportInput) {
     action: 'analytics.generate_report',
     entityType: 'saved_report',
     entityId: report.id as string,
-    after: { name: parsed.data.name, entity_type: parsed.data.entity_type, row_count: results.length },
+    after: {
+      name: parsed.data.name,
+      entity_type: parsed.data.entity_type,
+      row_count: results.length,
+    },
   })
 
   return {
@@ -118,13 +125,46 @@ async function executeReportQuery(
   sort?: { column: string; direction: 'asc' | 'desc' },
   dateRange?: { start: string; end: string },
 ): Promise<Array<Record<string, unknown>>> {
+  // Column allowlist to prevent SQL injection / data exfiltration
+  const ALLOWED_COLUMNS: Record<string, string[]> = {
+    students: [
+      'id',
+      'first_name',
+      'last_name',
+      'date_of_birth',
+      'enrollment_status',
+      'enrollment_date',
+      'classroom_id',
+      'created_at',
+      'updated_at',
+    ],
+    families: ['id', 'family_name', 'billing_email', 'billing_phone', 'created_at', 'updated_at'],
+    staff: ['id', 'first_name', 'last_name', 'email', 'role', 'status', 'hire_date', 'created_at'],
+    attendance: ['id', 'student_id', 'date', 'check_in', 'check_out', 'status', 'created_at'],
+    billing: ['id', 'family_id', 'amount_cents', 'status', 'due_date', 'paid_at', 'created_at'],
+    enrollment: [
+      'id',
+      'student_first_name',
+      'student_last_name',
+      'parent_email',
+      'triage_status',
+      'created_at',
+      'updated_at',
+    ],
+    classrooms: ['id', 'name', 'capacity', 'age_group', 'status', 'created_at'],
+  }
+  const allowed = ALLOWED_COLUMNS[entityType]
+  if (allowed) {
+    const invalid = columns.filter((c) => !allowed.includes(c))
+    if (invalid.length > 0) {
+      console.error(`[analytics] Rejected invalid columns: ${invalid.join(', ')}`)
+      return []
+    }
+  }
+
   const columnSelect = columns.join(', ')
 
-  let query = supabase
-    .from(entityType)
-    .select(columnSelect)
-    .eq('tenant_id', tenantId)
-    .limit(1000)
+  let query = supabase.from(entityType).select(columnSelect).eq('tenant_id', tenantId).limit(1000)
 
   // Apply filters
   if (filters) {

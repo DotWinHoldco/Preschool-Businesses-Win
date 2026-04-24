@@ -3,7 +3,7 @@
 // For v1, returns the English string as-is.
 // In v2, this will connect to next-intl for Spanish translations.
 
-const translations: Record<string, Record<string, string>> = {
+const _translations: Record<string, Record<string, string>> = {
   en: {}, // English is the default — strings pass through
 }
 
@@ -24,7 +24,7 @@ export function t(key: string, _locale?: string): string {
 export function tpl(
   template: string,
   vars: Record<string, string | number>,
-  _locale?: string
+  _locale?: string,
 ): string {
   let result = template
   for (const [key, value] of Object.entries(vars)) {

@@ -36,11 +36,7 @@ export async function broadcastMessage(
     const tenantId = await getTenantId()
     const supabase = await createTenantServerClient()
 
-    // TODO: Get real user ID from session
-    const senderId = raw.sender_id as string
-    if (!senderId) {
-      return { ok: false, error: 'Sender ID is required' }
-    }
+    const senderId = await getActorId()
 
     // Create broadcast conversation
     const { data: conversation, error: convErr } = await supabase
@@ -88,23 +84,24 @@ export async function broadcastMessage(
       }
     } else if (scope === 'staff') {
       // Get all staff members
-      const { data: staff } = await supabase
-        .from('staff_profiles')
-        .select('user_id')
+      const { data: staff } = await supabase.from('staff_profiles').select('user_id')
 
       recipientIds = (staff ?? []).map((s) => s.user_id)
     } else {
       // School-wide: get all family members
-      const { data: members } = await supabase
-        .from('family_members')
-        .select('user_id')
+      const { data: members } = await supabase.from('family_members').select('user_id')
 
       recipientIds = [...new Set((members ?? []).map((m) => m.user_id))]
     }
 
     // Add sender + recipients as conversation members
     const memberRows = [
-      { tenant_id: tenantId, conversation_id: conversation.id, user_id: senderId, role: 'admin' as const },
+      {
+        tenant_id: tenantId,
+        conversation_id: conversation.id,
+        user_id: senderId,
+        role: 'admin' as const,
+      },
       ...recipientIds.map((uid) => ({
         tenant_id: tenantId,
         conversation_id: conversation.id,
@@ -118,16 +115,14 @@ export async function broadcastMessage(
     }
 
     // Send the broadcast message
-    const { error: msgErr } = await supabase
-      .from('messages')
-      .insert({
-        tenant_id: tenantId,
-        conversation_id: conversation.id,
-        sender_id: senderId,
-        body,
-        message_type: 'text',
-        urgent,
-      })
+    const { error: msgErr } = await supabase.from('messages').insert({
+      tenant_id: tenantId,
+      conversation_id: conversation.id,
+      sender_id: senderId,
+      body,
+      message_type: 'text',
+      urgent,
+    })
 
     if (msgErr) {
       return { ok: false, error: msgErr.message }
@@ -140,7 +135,13 @@ export async function broadcastMessage(
       action: 'messaging.broadcast',
       entityType: 'conversation',
       entityId: conversation.id,
-      after: { scope, classroom_id: classroom_id ?? null, title, urgent, recipients_count: recipientIds.length },
+      after: {
+        scope,
+        classroom_id: classroom_id ?? null,
+        title,
+        urgent,
+        recipients_count: recipientIds.length,
+      },
     })
 
     // TODO: Trigger notifications for all recipients

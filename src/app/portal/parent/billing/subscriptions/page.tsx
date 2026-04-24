@@ -1,6 +1,7 @@
 // @anchor: cca.billing.subscriptions-page
 
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { FileText } from 'lucide-react'
 
 export const metadata: Metadata = {
@@ -34,17 +35,23 @@ export default function ParentBillingSubscriptionsPage() {
         <h2 className="text-lg font-semibold" style={{ color: 'var(--color-foreground)' }}>
           Subscription management coming soon
         </h2>
-        <p className="mt-2 text-sm max-w-md mx-auto" style={{ color: 'var(--color-muted-foreground)' }}>
+        <p
+          className="mt-2 text-sm max-w-md mx-auto"
+          style={{ color: 'var(--color-muted-foreground)' }}
+        >
           Recurring tuition subscription plans will be available here once set up by your school.
           Contact your school for current billing arrangements.
         </p>
-        <a
+        <Link
           href="/portal/parent/billing"
           className="mt-4 inline-block rounded-lg px-4 py-2 text-sm font-medium"
-          style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-primary-foreground)' }}
+          style={{
+            backgroundColor: 'var(--color-primary)',
+            color: 'var(--color-primary-foreground)',
+          }}
         >
           Back to Billing
-        </a>
+        </Link>
       </div>
     </div>
   )

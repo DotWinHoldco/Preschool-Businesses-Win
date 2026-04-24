@@ -1,5 +1,5 @@
 import { headers } from 'next/headers'
-import { requireAuth, getUserMembership } from '@/lib/auth/session'
+import { requireAuth } from '@/lib/auth/session'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ApplicationStatusCard } from '@/components/portal/applicant/application-status-card'
 import { InterviewBookingWidget } from '@/components/portal/applicant/interview-booking-widget'
@@ -13,7 +13,9 @@ export default async function ApplicantDashboardPage() {
 
   const { data: applications } = await supabase
     .from('enrollment_applications')
-    .select('id, student_first_name, student_last_name, program_type, pipeline_stage, created_at, parent_first_name, parent_last_name, parent_email')
+    .select(
+      'id, student_first_name, student_last_name, program_type, pipeline_stage, created_at, parent_first_name, parent_last_name, parent_email',
+    )
     .eq('parent_user_id', session.user.id)
     .eq('tenant_id', tenantId)
     .order('created_at', { ascending: false })
@@ -22,15 +24,22 @@ export default async function ApplicantDashboardPage() {
 
   const appIds = apps.map((a) => a.id as string)
 
-  const { data: allSteps } = appIds.length > 0
-    ? await supabase
-        .from('application_pipeline_steps')
-        .select('application_id, step_type, status, created_at, completed_at')
-        .in('application_id', appIds)
-        .order('created_at', { ascending: true })
-    : { data: [] }
+  const { data: allSteps } =
+    appIds.length > 0
+      ? await supabase
+          .from('application_pipeline_steps')
+          .select('application_id, step_type, status, created_at, completed_at')
+          .in('application_id', appIds)
+          .order('created_at', { ascending: true })
+      : { data: [] }
 
-  type StepRow = { application_id: unknown; step_type: unknown; status: unknown; created_at: unknown; completed_at: unknown }
+  type StepRow = {
+    application_id: unknown
+    step_type: unknown
+    status: unknown
+    created_at: unknown
+    completed_at: unknown
+  }
   const stepsByApp = new Map<string, StepRow[]>()
   for (const step of (allSteps ?? []) as StepRow[]) {
     const appId = step.application_id as string
@@ -38,15 +47,23 @@ export default async function ApplicantDashboardPage() {
     stepsByApp.get(appId)!.push(step)
   }
 
-  const { data: existingAppointments } = appIds.length > 0
-    ? await supabase
-        .from('appointments')
-        .select('id, enrollment_application_id, start_at, end_at, status, notes')
-        .in('enrollment_application_id', appIds)
-        .not('status', 'in', '("cancelled_by_parent","cancelled_by_staff")')
-    : { data: [] }
+  const { data: existingAppointments } =
+    appIds.length > 0
+      ? await supabase
+          .from('appointments')
+          .select('id, enrollment_application_id, start_at, end_at, status, notes')
+          .in('enrollment_application_id', appIds)
+          .not('status', 'in', '("cancelled_by_parent","cancelled_by_staff")')
+      : { data: [] }
 
-  type ApptRow = { id: unknown; enrollment_application_id: unknown; start_at: unknown; end_at: unknown; status: unknown; notes: unknown }
+  type ApptRow = {
+    id: unknown
+    enrollment_application_id: unknown
+    start_at: unknown
+    end_at: unknown
+    status: unknown
+    notes: unknown
+  }
   const appointmentsByApp = new Map<string, ApptRow>()
   for (const appt of (existingAppointments ?? []) as ApptRow[]) {
     const appId = appt.enrollment_application_id as string
@@ -70,9 +87,7 @@ export default async function ApplicantDashboardPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-[var(--color-foreground)]">
-          My Application
-        </h1>
+        <h1 className="text-2xl font-semibold text-[var(--color-foreground)]">My Application</h1>
         <p className="text-sm text-[var(--color-muted-foreground)] mt-1">
           Track the status of your enrollment application below.
         </p>

@@ -64,12 +64,10 @@ export async function upsertConsent(formData: FormData): Promise<ConsentResult> 
     row.revoked_at = now
   }
 
-  const { error } = await supabase
-    .from('consent_records')
-    .upsert(row, {
-      onConflict: 'tenant_id,family_id,student_id,consent_type',
-      ignoreDuplicates: false,
-    })
+  const { error } = await supabase.from('consent_records').upsert(row, {
+    onConflict: 'tenant_id,family_id,student_id,consent_type',
+    ignoreDuplicates: false,
+  })
 
   if (error) {
     return { ok: false, error: error.message }
@@ -88,6 +86,7 @@ export async function upsertConsent(formData: FormData): Promise<ConsentResult> 
 }
 
 export async function listConsents(familyId: string): Promise<ConsentRecord[]> {
+  await assertRole('admin')
   const tenantId = await getTenantId()
   const supabase = await createTenantAdminClient(tenantId)
 

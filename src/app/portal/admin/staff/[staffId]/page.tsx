@@ -1,6 +1,7 @@
 // @anchor: cca.staff.admin-detail
 // Staff detail page — profile, certs, schedule, time entries — real Supabase data.
 
+import Link from 'next/link'
 import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { createTenantAdminClient } from '@/lib/supabase/admin'
@@ -79,12 +80,12 @@ export default async function StaffDetailPage({
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <a
+        <Link
           href="/portal/admin/staff"
           className="text-sm text-[var(--color-primary)] hover:underline mb-2 inline-block"
         >
           &larr; Back to staff
-        </a>
+        </Link>
         <h1 className="text-2xl font-bold text-[var(--color-foreground)]">{staffName}</h1>
         <p className="text-sm text-[var(--color-muted-foreground)]">
           {staffRow.employment_type ?? 'Staff'}
@@ -112,7 +113,9 @@ export default async function StaffDetailPage({
             </div>
             <div className="flex justify-between">
               <span className="text-[var(--color-muted-foreground)]">Type</span>
-              <span className="text-[var(--color-foreground)]">{staffRow.employment_type ?? '-'}</span>
+              <span className="text-[var(--color-foreground)]">
+                {staffRow.employment_type ?? '-'}
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="text-[var(--color-muted-foreground)]">Hourly Rate</span>
@@ -123,7 +126,9 @@ export default async function StaffDetailPage({
             {staffRow.bio && (
               <div className="flex justify-between">
                 <span className="text-[var(--color-muted-foreground)]">Bio</span>
-                <span className="text-[var(--color-foreground)] text-right max-w-[60%]">{staffRow.bio}</span>
+                <span className="text-[var(--color-foreground)] text-right max-w-[60%]">
+                  {staffRow.bio}
+                </span>
               </div>
             )}
           </CardContent>
@@ -136,15 +141,13 @@ export default async function StaffDetailPage({
           </CardHeader>
           <CardContent>
             {certList.length === 0 ? (
-              <p className="text-sm text-[var(--color-muted-foreground)]">No certifications on file.</p>
+              <p className="text-sm text-[var(--color-muted-foreground)]">
+                No certifications on file.
+              </p>
             ) : (
               <div className="flex flex-col gap-2">
                 {certList.map((cert) => (
-                  <CertStatusBadge
-                    key={cert.name}
-                    certName={cert.name}
-                    expiryDate={cert.expiry}
-                  />
+                  <CertStatusBadge key={cert.name} certName={cert.name} expiryDate={cert.expiry} />
                 ))}
               </div>
             )}

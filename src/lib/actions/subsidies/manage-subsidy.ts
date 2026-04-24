@@ -17,7 +17,9 @@ export type ManageSubsidyState = {
   id?: string
 }
 
-export async function createFamilySubsidy(input: CreateFamilySubsidyInput): Promise<ManageSubsidyState> {
+export async function createFamilySubsidy(
+  input: CreateFamilySubsidyInput,
+): Promise<ManageSubsidyState> {
   await assertRole('admin')
 
   const parsed = CreateFamilySubsidySchema.safeParse(input)
@@ -66,7 +68,9 @@ export async function createFamilySubsidy(input: CreateFamilySubsidyInput): Prom
   return { ok: true, id: subsidy.id }
 }
 
-export async function updateFamilySubsidy(input: UpdateFamilySubsidyInput): Promise<ManageSubsidyState> {
+export async function updateFamilySubsidy(
+  input: UpdateFamilySubsidyInput,
+): Promise<ManageSubsidyState> {
   await assertRole('admin')
 
   const parsed = UpdateFamilySubsidySchema.safeParse(input)
@@ -83,6 +87,7 @@ export async function updateFamilySubsidy(input: UpdateFamilySubsidyInput): Prom
     .from('family_subsidies')
     .select('*')
     .eq('id', data.id)
+    .eq('tenant_id', tenantId)
     .single()
 
   const { id, ...updateFields } = data
@@ -91,6 +96,7 @@ export async function updateFamilySubsidy(input: UpdateFamilySubsidyInput): Prom
     .from('family_subsidies')
     .update(updateFields)
     .eq('id', id)
+    .eq('tenant_id', tenantId)
 
   if (error) {
     return { ok: false, error: error.message }

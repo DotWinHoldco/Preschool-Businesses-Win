@@ -120,6 +120,7 @@ export function UniversalSearch({ className }: UniversalSearchProps) {
           ref={inputRef}
           type="search"
           role="combobox"
+          aria-controls="universal-search-results"
           aria-expanded={isOpen && results.length > 0}
           aria-autocomplete="list"
           aria-label="Search students, families, and staff"
@@ -153,9 +154,17 @@ export function UniversalSearch({ className }: UniversalSearchProps) {
               No results found for &quot;{query}&quot;
             </div>
           ) : (
-            <ul role="listbox" className="max-h-80 overflow-y-auto py-1">
+            <ul
+              id="universal-search-results"
+              role="listbox"
+              className="max-h-80 overflow-y-auto py-1"
+            >
               {results.map((result, idx) => (
-                <li key={`${result.type}-${result.id}`} role="option" aria-selected={idx === selectedIndex}>
+                <li
+                  key={`${result.type}-${result.id}`}
+                  role="option"
+                  aria-selected={idx === selectedIndex}
+                >
                   <a
                     href={result.href}
                     className={cn(

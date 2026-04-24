@@ -3,6 +3,7 @@
 import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
+import { assertRole } from '@/lib/auth/session'
 import { writeAudit } from '@/lib/audit'
 import { revalidatePath } from 'next/cache'
 
@@ -35,9 +36,8 @@ export type CreateStaffResult = {
   fieldErrors?: Record<string, string>
 }
 
-export async function createStaff(
-  input: CreateStaffInput,
-): Promise<CreateStaffResult> {
+export async function createStaff(input: CreateStaffInput): Promise<CreateStaffResult> {
+  await assertRole('admin')
   const parsed = CreateStaffSchema.safeParse(input)
   if (!parsed.success) {
     const fieldErrors: Record<string, string> = {}
@@ -69,21 +69,27 @@ export async function createStaff(
     const userId = authUser.user.id
 
     // 2. Create user_profiles row
-    await supabase.from('user_profiles').upsert({
-      id: userId,
-      tenant_id: tenantId,
-      first_name: data.first_name,
-      last_name: data.last_name,
-      phone: data.phone || null,
-    }, { onConflict: 'id' })
+    await supabase.from('user_profiles').upsert(
+      {
+        id: userId,
+        tenant_id: tenantId,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        phone: data.phone || null,
+      },
+      { onConflict: 'id' },
+    )
 
     // 3. Create user_tenant_memberships row
-    await supabase.from('user_tenant_memberships').upsert({
-      user_id: userId,
-      tenant_id: tenantId,
-      role: data.role,
-      status: 'active',
-    }, { onConflict: 'user_id,tenant_id' })
+    await supabase.from('user_tenant_memberships').upsert(
+      {
+        user_id: userId,
+        tenant_id: tenantId,
+        role: data.role,
+        status: 'active',
+      },
+      { onConflict: 'user_id,tenant_id' },
+    )
 
     // 4. Create staff_profiles row
     const { data: staff, error: staffError } = await supabase

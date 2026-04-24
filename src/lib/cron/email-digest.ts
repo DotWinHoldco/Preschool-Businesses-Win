@@ -29,12 +29,10 @@ export async function runEmailDigestForAllTenants(): Promise<EmailDigestSummary>
     .gte('created_at', cutoff)
 
   if (notifErr) {
-    console.error('[cron:email-digest] Notification query error:', notifErr.message)
     return summary
   }
 
   if (!notifications || notifications.length === 0) {
-    console.log('[cron:email-digest] No unread notifications in last 24h')
     return summary
   }
 
@@ -63,7 +61,6 @@ export async function runEmailDigestForAllTenants(): Promise<EmailDigestSummary>
     .in('id', userIds)
 
   if (profileErr) {
-    console.error('[cron:email-digest] Profile query error:', profileErr.message)
     return summary
   }
 
@@ -125,11 +122,10 @@ export async function runEmailDigestForAllTenants(): Promise<EmailDigestSummary>
       })
 
       summary.digests_sent++
-    } catch (err) {
-      console.error(`[cron:email-digest] Error sending to user ${entry.userId}:`, err)
+    } catch {
+      // Error sending digest
     }
   }
 
-  console.log('[cron:email-digest] Run complete:', summary)
   return summary
 }

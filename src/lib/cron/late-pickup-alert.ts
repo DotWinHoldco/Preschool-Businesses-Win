@@ -3,11 +3,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendNotification } from '@/lib/notifications/send'
-import {
-  getActiveTenants,
-  getAdminUserIds,
-  deduplicateNotification,
-} from './helpers'
+import { getActiveTenants, getAdminUserIds, deduplicateNotification } from './helpers'
 
 interface LatePickupSummary {
   tenants_checked: number
@@ -119,17 +115,10 @@ export async function runLatePickupAlertForAllTenants(): Promise<LatePickupSumma
 
         summary.alerts_sent++
       }
-    } catch (err) {
-      console.error(
-        `[cron:late-pickup] Error processing tenant ${tenant.slug}:`,
-        err,
-      )
+    } catch {
+      // Error processing tenant
     }
   }
-
-  console.log(
-    `[cron:late-pickup] Done — ${summary.tenants_checked} tenants, ${summary.students_still_present} students still present, ${summary.alerts_sent} alerts sent`,
-  )
 
   return summary
 }

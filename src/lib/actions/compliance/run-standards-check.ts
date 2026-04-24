@@ -113,7 +113,7 @@ export async function runRatioComplianceCheck() {
       .is('checked_out_at' as string, null)
 
     // Count staff assigned today
-    const dayOfWeek = new Date().getDay()
+    const _dayOfWeek = new Date().getDay()
     const { count: staffCount } = await supabase
       .from('classroom_staff_assignments')
       .select('id', { count: 'exact', head: true })
@@ -128,14 +128,10 @@ export async function runRatioComplianceCheck() {
     // Find the most restrictive applicable ratio
     const ageMin = classroom.age_range_min_months as number
     const applicableReq = ratioReqs.find(
-      (r) =>
-        (r.age_min_months as number) <= ageMin &&
-        (r.age_max_months as number) >= ageMin,
+      (r) => (r.age_min_months as number) <= ageMin && (r.age_max_months as number) >= ageMin,
     )
 
-    const ratioRequired = applicableReq
-      ? (applicableReq.max_children_per_caregiver as number)
-      : 10 // Default fallback
+    const ratioRequired = applicableReq ? (applicableReq.max_children_per_caregiver as number) : 10 // Default fallback
     const ratioActual = staff > 0 ? students / staff : students
     const compliant = ratioActual <= ratioRequired
 

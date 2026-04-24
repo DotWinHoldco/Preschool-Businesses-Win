@@ -29,9 +29,7 @@ export function ActivityEntry({
   return (
     <div className={cn('flex flex-col gap-2', className)}>
       <div className="flex items-center justify-between gap-2">
-        <span className="text-sm font-semibold text-[var(--color-foreground)]">
-          {activityName}
-        </span>
+        <span className="text-sm font-semibold text-[var(--color-foreground)]">{activityName}</span>
         {engagement && (
           <span
             className={cn(
@@ -43,9 +41,7 @@ export function ActivityEntry({
           </span>
         )}
       </div>
-      {description && (
-        <p className="text-sm text-[var(--color-muted-foreground)]">{description}</p>
-      )}
+      {description && <p className="text-sm text-[var(--color-muted-foreground)]">{description}</p>}
       {photoPaths.length > 0 && (
         <div className="flex gap-2 overflow-x-auto py-1">
           {photoPaths.map((path, i) => (
@@ -53,7 +49,6 @@ export function ActivityEntry({
               key={i}
               className="h-16 w-16 shrink-0 rounded-[var(--radius,0.75rem)] bg-[var(--color-muted)] overflow-hidden"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={path}
                 alt={`Activity photo ${i + 1}`}

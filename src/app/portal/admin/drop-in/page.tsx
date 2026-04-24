@@ -1,6 +1,6 @@
 // @anchor: cca.dropin.admin-page
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { CalendarClock, Users, DollarSign, Calendar } from 'lucide-react'
 import { DropInTabs } from '@/components/portal/drop-in/drop-in-tabs'
 
@@ -38,13 +38,20 @@ export default async function AdminDropInPage({
               <CardContent className="flex items-center gap-4 p-6">
                 <div
                   className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
-                  style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-primary-foreground)' }}
+                  style={{
+                    backgroundColor: 'var(--color-primary)',
+                    color: 'var(--color-primary-foreground)',
+                  }}
                 >
                   <Icon size={20} />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold" style={{ color: 'var(--color-foreground)' }}>{stat.value}</p>
-                  <p className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>{stat.label}</p>
+                  <p className="text-2xl font-bold" style={{ color: 'var(--color-foreground)' }}>
+                    {stat.value}
+                  </p>
+                  <p className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
+                    {stat.label}
+                  </p>
                 </div>
               </CardContent>
             </Card>

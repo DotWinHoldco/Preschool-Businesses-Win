@@ -1,4 +1,9 @@
-import { forwardRef, type HTMLAttributes, type TdHTMLAttributes, type ThHTMLAttributes } from 'react'
+import {
+  forwardRef,
+  type HTMLAttributes,
+  type TdHTMLAttributes,
+  type ThHTMLAttributes,
+} from 'react'
 import { cn } from '@/lib/cn'
 
 // ---------------------------------------------------------------------------
@@ -30,11 +35,15 @@ Table.displayName = 'Table'
 // TableHeader
 // ---------------------------------------------------------------------------
 
-export interface TableHeaderProps extends HTMLAttributes<HTMLTableSectionElement> {}
+export type TableHeaderProps = HTMLAttributes<HTMLTableSectionElement>
 
 const TableHeader = forwardRef<HTMLTableSectionElement, TableHeaderProps>(
   ({ className, ...props }, ref) => (
-    <thead ref={ref} className={cn('border-b border-[var(--color-border)]', className)} {...props} />
+    <thead
+      ref={ref}
+      className={cn('border-b border-[var(--color-border)]', className)}
+      {...props}
+    />
   ),
 )
 TableHeader.displayName = 'TableHeader'
@@ -43,7 +52,7 @@ TableHeader.displayName = 'TableHeader'
 // TableBody
 // ---------------------------------------------------------------------------
 
-export interface TableBodyProps extends HTMLAttributes<HTMLTableSectionElement> {}
+export type TableBodyProps = HTMLAttributes<HTMLTableSectionElement>
 
 const TableBody = forwardRef<HTMLTableSectionElement, TableBodyProps>(
   ({ className, ...props }, ref) => (
@@ -56,20 +65,18 @@ TableBody.displayName = 'TableBody'
 // TableRow
 // ---------------------------------------------------------------------------
 
-export interface TableRowProps extends HTMLAttributes<HTMLTableRowElement> {}
+export type TableRowProps = HTMLAttributes<HTMLTableRowElement>
 
-const TableRow = forwardRef<HTMLTableRowElement, TableRowProps>(
-  ({ className, ...props }, ref) => (
-    <tr
-      ref={ref}
-      className={cn(
-        'border-b border-[var(--color-border)] transition-colors hover:bg-[var(--color-muted)]/50',
-        className,
-      )}
-      {...props}
-    />
-  ),
-)
+const TableRow = forwardRef<HTMLTableRowElement, TableRowProps>(({ className, ...props }, ref) => (
+  <tr
+    ref={ref}
+    className={cn(
+      'border-b border-[var(--color-border)] transition-colors hover:bg-[var(--color-muted)]/50',
+      className,
+    )}
+    {...props}
+  />
+))
 TableRow.displayName = 'TableRow'
 
 // ---------------------------------------------------------------------------
@@ -128,7 +135,7 @@ TableHead.displayName = 'TableHead'
 // TableCell
 // ---------------------------------------------------------------------------
 
-export interface TableCellProps extends TdHTMLAttributes<HTMLTableCellElement> {}
+export type TableCellProps = TdHTMLAttributes<HTMLTableCellElement>
 
 const TableCell = forwardRef<HTMLTableCellElement, TableCellProps>(
   ({ className, ...props }, ref) => (

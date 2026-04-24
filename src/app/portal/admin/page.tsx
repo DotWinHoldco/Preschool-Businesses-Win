@@ -4,21 +4,8 @@
 import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { createTenantAdminClient } from '@/lib/supabase/admin'
-import {
-  Users,
-  UserCheck,
-  DollarSign,
-  FileText,
-  ShieldAlert,
-  CheckCircle,
-} from 'lucide-react'
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  CardDescription,
-} from '@/components/ui/card'
+import { Users, UserCheck, DollarSign, FileText, ShieldAlert, CheckCircle } from 'lucide-react'
+import { Card, CardHeader, CardContent, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 
 export const metadata = {
@@ -139,9 +126,7 @@ export default async function AdminDashboardPage() {
   const totalStaff = staffCount ?? 0
 
   const attendancePct =
-    totalActiveStudents > 0
-      ? Math.round((totalTodayPresent / totalActiveStudents) * 100)
-      : 0
+    totalActiveStudents > 0 ? Math.round((totalTodayPresent / totalActiveStudents) * 100) : 0
 
   return (
     <div className="space-y-8">
@@ -237,7 +222,11 @@ export default async function AdminDashboardPage() {
         </h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { label: 'Review Applications', href: '/portal/admin/enrollment', count: totalPendingApplications },
+            {
+              label: 'Review Applications',
+              href: '/portal/admin/enrollment',
+              count: totalPendingApplications,
+            },
             { label: 'View Attendance', href: '/portal/admin/attendance', count: null },
             { label: 'Staff Scheduling', href: '/portal/admin/staff/scheduling', count: null },
             { label: 'Run Billing', href: '/portal/admin/billing', count: null },

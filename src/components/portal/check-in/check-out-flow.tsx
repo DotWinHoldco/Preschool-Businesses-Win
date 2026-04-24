@@ -7,7 +7,7 @@
 
 import { useCallback, useState } from 'react'
 import { cn } from '@/lib/cn'
-import { AlertTriangle, ArrowLeft, Check, Shield, ShieldAlert, User } from 'lucide-react'
+import { ArrowLeft, Check, Shield, ShieldAlert, User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { performCheckOut, type CheckOutResult } from '@/lib/actions/check-in/check-out'
 import { PickupVerification } from './pickup-verification'
@@ -37,8 +37,7 @@ export function CheckOutFlow({ students, className }: CheckOutFlowProps) {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<CheckOutResult | null>(null)
 
-  const displayName = (s: CheckedInStudent) =>
-    s.preferred_name ?? s.first_name
+  const displayName = (s: CheckedInStudent) => s.preferred_name ?? s.first_name
 
   const handleSelectStudent = (student: CheckedInStudent) => {
     setSelectedStudent(student)
@@ -80,12 +79,8 @@ export function CheckOutFlow({ students, className }: CheckOutFlowProps) {
   if (step === 'select_student') {
     return (
       <div className={cn('flex flex-col gap-4', className)}>
-        <h2 className="text-xl font-bold text-[var(--color-foreground)]">
-          Check Out
-        </h2>
-        <p className="text-[var(--color-muted-foreground)]">
-          Select a student to check out
-        </p>
+        <h2 className="text-xl font-bold text-[var(--color-foreground)]">Check Out</h2>
+        <p className="text-[var(--color-muted-foreground)]">Select a student to check out</p>
 
         {students.length === 0 ? (
           <p className="py-8 text-center text-[var(--color-muted-foreground)]">
@@ -182,10 +177,7 @@ export function CheckOutFlow({ students, className }: CheckOutFlowProps) {
           />
         </div>
 
-        <PickupVerification
-          idVerified={idVerified}
-          onIdVerifiedChange={setIdVerified}
-        />
+        <PickupVerification idVerified={idVerified} onIdVerifiedChange={setIdVerified} />
 
         <Button
           variant="primary"
@@ -216,9 +208,7 @@ export function CheckOutFlow({ students, className }: CheckOutFlowProps) {
           <p className="mt-2 text-[var(--color-muted-foreground)]">
             Picked up by {result.pickup_person_name}
           </p>
-          <p className="text-sm text-[var(--color-muted-foreground)]">
-            See you tomorrow!
-          </p>
+          <p className="text-sm text-[var(--color-muted-foreground)]">See you tomorrow!</p>
         </div>
         <Button variant="secondary" size="lg" onClick={handleReset}>
           Check Out Another Student
@@ -247,8 +237,7 @@ export function CheckOutFlow({ students, className }: CheckOutFlowProps) {
             PICKUP NOT AUTHORIZED
           </h2>
           <p className="mt-3 text-lg font-semibold text-[var(--color-foreground)]">
-            {result?.pickup_person_name} is not authorized to pick up{' '}
-            {result?.student_name}.
+            {result?.pickup_person_name} is not authorized to pick up {result?.student_name}.
           </p>
           {result?.unauthorized_reason && (
             <p className="mt-2 text-[var(--color-muted-foreground)]">

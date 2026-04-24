@@ -10,14 +10,10 @@ export async function GET(request: Request) {
   if (authError) return authError
 
   try {
-    console.log('[Cron] Email digest started')
-
     const summary = await runEmailDigestForAllTenants()
 
-    console.log('[Cron] Email digest complete:', summary)
     return NextResponse.json({ success: true, ...summary })
-  } catch (error) {
-    console.error('[Cron] Email digest error:', error)
+  } catch {
     return NextResponse.json({ error: 'Email digest failed' }, { status: 500 })
   }
 }

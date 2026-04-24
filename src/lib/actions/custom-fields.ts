@@ -2,16 +2,33 @@
 
 // @anchor: platform.custom-fields.actions
 
-import { CreateCustomFieldSchema, UpdateCustomFieldSchema, SetCustomFieldValueSchema } from '@/lib/schemas/custom-field'
-import type { CreateCustomFieldInput, UpdateCustomFieldInput, SetCustomFieldValueInput } from '@/lib/schemas/custom-field'
+import {
+  CreateCustomFieldSchema,
+  UpdateCustomFieldSchema,
+  SetCustomFieldValueSchema,
+} from '@/lib/schemas/custom-field'
+import type {
+  CreateCustomFieldInput,
+  UpdateCustomFieldInput,
+  SetCustomFieldValueInput,
+} from '@/lib/schemas/custom-field'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
 import { assertRole } from '@/lib/auth/session'
 
-type ActionResult = { ok: boolean; id?: string; error?: string; fieldErrors?: Record<string, string> }
+type ActionResult = {
+  ok: boolean
+  id?: string
+  error?: string
+  fieldErrors?: Record<string, string>
+}
 
 function slugify(text: string): string {
-  return text.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 60)
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_|_$/g, '')
+    .slice(0, 60)
 }
 
 export async function createCustomField(input: CreateCustomFieldInput): Promise<ActionResult> {
@@ -32,27 +49,34 @@ export async function createCustomField(input: CreateCustomFieldInput): Promise<
   const supabase = createAdminClient()
   const fieldKey = slugify(data.label)
 
-  const { data: field, error } = await supabase.from('custom_fields').insert({
-    tenant_id: tenantId,
-    entity_type: data.entity_type,
-    field_key: fieldKey,
-    label: data.label,
-    description: data.description,
-    field_type: data.field_type,
-    is_required: data.is_required,
-    is_searchable: data.is_searchable,
-    is_filterable: data.is_filterable,
-    is_visible_to_parents: data.is_visible_to_parents,
-    is_parent_editable: data.is_parent_editable,
-    default_value: data.default_value ?? null,
-    validation_rules: data.validation_rules,
-    section_label: data.section_label,
-    created_by: actorId,
-  }).select('id').single()
+  const { data: field, error } = await supabase
+    .from('custom_fields')
+    .insert({
+      tenant_id: tenantId,
+      entity_type: data.entity_type,
+      field_key: fieldKey,
+      label: data.label,
+      description: data.description,
+      field_type: data.field_type,
+      is_required: data.is_required,
+      is_searchable: data.is_searchable,
+      is_filterable: data.is_filterable,
+      is_visible_to_parents: data.is_visible_to_parents,
+      is_parent_editable: data.is_parent_editable,
+      default_value: data.default_value ?? null,
+      validation_rules: data.validation_rules,
+      section_label: data.section_label,
+      created_by: actorId,
+    })
+    .select('id')
+    .single()
 
   if (error) return { ok: false, error: error.message }
 
-  if (data.options?.length && (data.field_type === 'select' || data.field_type === 'multi_select')) {
+  if (
+    data.options?.length &&
+    (data.field_type === 'select' || data.field_type === 'multi_select')
+  ) {
     const optionRows = data.options.map((opt, i) => ({
       custom_field_id: field.id,
       label: opt.label,
@@ -86,9 +110,11 @@ export async function updateCustomField(input: UpdateCustomFieldInput): Promise<
   const actorId = await getActorId()
   const supabase = createAdminClient()
 
-  const { error } = await supabase.from('custom_fields')
+  const { error } = await supabase
+    .from('custom_fields')
     .update({ ...updates, updated_at: new Date().toISOString() })
-    .eq('id', id).eq('tenant_id', tenantId)
+    .eq('id', id)
+    .eq('tenant_id', tenantId)
 
   if (error) return { ok: false, error: error.message }
 
@@ -108,8 +134,12 @@ export async function updateCustomField(input: UpdateCustomFieldInput): Promise<
   }
 
   await supabase.from('audit_log').insert({
-    tenant_id: tenantId, actor_id: actorId, action: 'update',
-    entity_type: 'custom_field', entity_id: id, after_data: updates,
+    tenant_id: tenantId,
+    actor_id: actorId,
+    action: 'update',
+    entity_type: 'custom_field',
+    entity_id: id,
+    after_data: updates,
   })
 
   return { ok: true, id }
@@ -121,21 +151,27 @@ export async function deleteCustomField(id: string): Promise<ActionResult> {
   const actorId = await getActorId()
   const supabase = createAdminClient()
 
-  const { error } = await supabase.from('custom_fields')
+  const { error } = await supabase
+    .from('custom_fields')
     .update({ deleted_at: new Date().toISOString() })
-    .eq('id', id).eq('tenant_id', tenantId)
+    .eq('id', id)
+    .eq('tenant_id', tenantId)
 
   if (error) return { ok: false, error: error.message }
 
   await supabase.from('audit_log').insert({
-    tenant_id: tenantId, actor_id: actorId, action: 'soft_delete',
-    entity_type: 'custom_field', entity_id: id,
+    tenant_id: tenantId,
+    actor_id: actorId,
+    action: 'soft_delete',
+    entity_type: 'custom_field',
+    entity_id: id,
   })
 
   return { ok: true }
 }
 
 export async function setCustomFieldValue(input: SetCustomFieldValueInput): Promise<ActionResult> {
+  await assertRole('aide')
   const parsed = SetCustomFieldValueSchema.safeParse(input)
   if (!parsed.success) return { ok: false, error: 'Validation failed' }
 
@@ -143,8 +179,11 @@ export async function setCustomFieldValue(input: SetCustomFieldValueInput): Prom
   const actorId = await getActorId()
   const supabase = createAdminClient()
 
-  const { data: fieldDef } = await supabase.from('custom_fields')
-    .select('field_type').eq('id', parsed.data.custom_field_id).single()
+  const { data: fieldDef } = await supabase
+    .from('custom_fields')
+    .select('field_type')
+    .eq('id', parsed.data.custom_field_id)
+    .single()
   if (!fieldDef) return { ok: false, error: 'Field not found' }
 
   const valueRow: Record<string, unknown> = {
@@ -152,36 +191,60 @@ export async function setCustomFieldValue(input: SetCustomFieldValueInput): Prom
     custom_field_id: parsed.data.custom_field_id,
     entity_type: parsed.data.entity_type,
     entity_id: parsed.data.entity_id,
-    value_text: null, value_numeric: null, value_boolean: null,
-    value_date: null, value_json: null, value_file_path: null,
+    value_text: null,
+    value_numeric: null,
+    value_boolean: null,
+    value_date: null,
+    value_json: null,
+    value_file_path: null,
     updated_at: new Date().toISOString(),
   }
 
   const v = parsed.data.value
   switch (fieldDef.field_type) {
-    case 'text': case 'textarea': case 'email': case 'phone':
-    case 'url': case 'select': case 'color':
-      valueRow.value_text = String(v ?? ''); break
-    case 'number': case 'currency': case 'rating':
-      valueRow.value_numeric = Number(v); break
+    case 'text':
+    case 'textarea':
+    case 'email':
+    case 'phone':
+    case 'url':
+    case 'select':
+    case 'color':
+      valueRow.value_text = String(v ?? '')
+      break
+    case 'number':
+    case 'currency':
+    case 'rating':
+      valueRow.value_numeric = Number(v)
+      break
     case 'boolean':
-      valueRow.value_boolean = Boolean(v); break
-    case 'date': case 'datetime':
-      valueRow.value_date = String(v); break
-    case 'multi_select': case 'json':
-      valueRow.value_json = v; break
-    case 'file': case 'image':
-      valueRow.value_file_path = String(v ?? ''); break
+      valueRow.value_boolean = Boolean(v)
+      break
+    case 'date':
+    case 'datetime':
+      valueRow.value_date = String(v)
+      break
+    case 'multi_select':
+    case 'json':
+      valueRow.value_json = v
+      break
+    case 'file':
+    case 'image':
+      valueRow.value_file_path = String(v ?? '')
+      break
   }
 
-  const { error } = await supabase.from('custom_field_values')
+  const { error } = await supabase
+    .from('custom_field_values')
     .upsert(valueRow, { onConflict: 'tenant_id,custom_field_id,entity_id' })
 
   if (error) return { ok: false, error: error.message }
 
   await supabase.from('audit_log').insert({
-    tenant_id: tenantId, actor_id: actorId, action: 'set_custom_field_value',
-    entity_type: parsed.data.entity_type, entity_id: parsed.data.entity_id,
+    tenant_id: tenantId,
+    actor_id: actorId,
+    action: 'set_custom_field_value',
+    entity_type: parsed.data.entity_type,
+    entity_id: parsed.data.entity_id,
     after_data: { field_id: parsed.data.custom_field_id, value: v },
   })
 

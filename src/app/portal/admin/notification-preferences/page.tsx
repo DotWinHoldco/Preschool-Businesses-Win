@@ -215,16 +215,10 @@ export default function NotificationPreferencesPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1
-            className="text-2xl font-bold"
-            style={{ color: 'var(--color-foreground)' }}
-          >
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--color-foreground)' }}>
             Notification Preferences
           </h1>
-          <p
-            className="mt-1 text-sm"
-            style={{ color: 'var(--color-muted-foreground)' }}
-          >
+          <p className="mt-1 text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
             Choose which notifications you receive and how.
           </p>
         </div>
@@ -240,22 +234,16 @@ export default function NotificationPreferencesPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1
-          className="text-2xl font-bold"
-          style={{ color: 'var(--color-foreground)' }}
-        >
+        <h1 className="text-2xl font-bold" style={{ color: 'var(--color-foreground)' }}>
           Notification Preferences
         </h1>
-        <p
-          className="mt-1 text-sm"
-          style={{ color: 'var(--color-muted-foreground)' }}
-        >
+        <p className="mt-1 text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
           Choose which notifications you receive and how.
         </p>
       </div>
 
       {/* Sections */}
-      {SECTIONS.map((section, sectionIdx) => (
+      {SECTIONS.map((section) => (
         <div
           key={section.title}
           className="overflow-hidden rounded-xl"
@@ -271,16 +259,10 @@ export default function NotificationPreferencesPage() {
               borderBottom: '1px solid var(--color-border)',
             }}
           >
-            <h2
-              className="text-base font-semibold"
-              style={{ color: 'var(--color-foreground)' }}
-            >
+            <h2 className="text-base font-semibold" style={{ color: 'var(--color-foreground)' }}>
               {section.title}
             </h2>
-            <p
-              className="mt-0.5 text-sm"
-              style={{ color: 'var(--color-muted-foreground)' }}
-            >
+            <p className="mt-0.5 text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
               {section.description}
             </p>
           </div>
@@ -316,16 +298,10 @@ export default function NotificationPreferencesPage() {
               >
                 {/* Label + description */}
                 <div className="mb-3 sm:mb-0">
-                  <p
-                    className="text-sm font-medium"
-                    style={{ color: 'var(--color-foreground)' }}
-                  >
+                  <p className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
                     {row.label}
                   </p>
-                  <p
-                    className="mt-0.5 text-xs"
-                    style={{ color: 'var(--color-muted-foreground)' }}
-                  >
+                  <p className="mt-0.5 text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
                     {row.description}
                   </p>
                 </div>
@@ -362,10 +338,7 @@ export default function NotificationPreferencesPage() {
           Save preferences
         </Button>
         {saved && (
-          <span
-            className="text-sm font-medium"
-            style={{ color: 'var(--color-primary)' }}
-          >
+          <span className="text-sm font-medium" style={{ color: 'var(--color-primary)' }}>
             Preferences saved
           </span>
         )}

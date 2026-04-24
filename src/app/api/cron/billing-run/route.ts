@@ -11,14 +11,10 @@ export async function GET(request: Request) {
   if (authError) return authError
 
   try {
-    console.log('[Cron] Billing run started')
-
     const summary = await runBillingForAllTenants()
 
-    console.log('[Cron] Billing run complete:', summary)
     return NextResponse.json({ success: true, ...summary })
-  } catch (error) {
-    console.error('[Cron] Billing run error:', error)
+  } catch {
     return NextResponse.json({ error: 'Billing run failed' }, { status: 500 })
   }
 }

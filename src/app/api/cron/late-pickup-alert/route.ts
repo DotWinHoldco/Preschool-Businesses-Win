@@ -10,7 +10,6 @@ export async function GET(request: Request) {
   if (authError) return authError
 
   try {
-    console.log('[Cron] Late pickup check started')
     const summary = await runLatePickupAlertForAllTenants()
 
     return NextResponse.json({
@@ -18,8 +17,7 @@ export async function GET(request: Request) {
       message: 'Late pickup check complete',
       ...summary,
     })
-  } catch (error) {
-    console.error('[Cron] Late pickup check error:', error)
+  } catch {
     return NextResponse.json({ error: 'Late pickup check failed' }, { status: 500 })
   }
 }

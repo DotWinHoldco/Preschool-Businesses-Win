@@ -4,7 +4,6 @@ import {
   BillingPlanSchema,
   GenerateInvoicesSchema,
   GenerateTaxStatementSchema,
-  ManageSubscriptionSchema,
   invoiceStatusEnum,
   paymentMethodEnum,
   paymentStatusEnum,
@@ -30,7 +29,9 @@ describe('ProcessPaymentSchema', () => {
   })
 
   it('rejects invalid UUID', () => {
-    expect(ProcessPaymentSchema.safeParse({ ...valid, invoice_id: 'not-a-uuid' }).success).toBe(false)
+    expect(ProcessPaymentSchema.safeParse({ ...valid, invoice_id: 'not-a-uuid' }).success).toBe(
+      false,
+    )
   })
 
   it('rejects invalid payment method', () => {
@@ -123,17 +124,21 @@ describe('GenerateTaxStatementSchema', () => {
   })
 
   it('rejects year before 2020', () => {
-    expect(GenerateTaxStatementSchema.safeParse({
-      family_id: '550e8400-e29b-41d4-a716-446655440000',
-      tax_year: 2019,
-    }).success).toBe(false)
+    expect(
+      GenerateTaxStatementSchema.safeParse({
+        family_id: '550e8400-e29b-41d4-a716-446655440000',
+        tax_year: 2019,
+      }).success,
+    ).toBe(false)
   })
 
   it('rejects year after 2100', () => {
-    expect(GenerateTaxStatementSchema.safeParse({
-      family_id: '550e8400-e29b-41d4-a716-446655440000',
-      tax_year: 2101,
-    }).success).toBe(false)
+    expect(
+      GenerateTaxStatementSchema.safeParse({
+        family_id: '550e8400-e29b-41d4-a716-446655440000',
+        tax_year: 2101,
+      }).success,
+    ).toBe(false)
   })
 })
 

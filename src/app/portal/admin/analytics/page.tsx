@@ -8,19 +8,15 @@ import {
   Users,
   UserCheck,
   DollarSign,
-  FileText,
   CalendarCheck,
   CalendarPlus,
-  TrendingUp,
-  TrendingDown,
-  Minus,
   ArrowRight,
   BarChart3,
   PieChart,
   ShieldCheck,
   UserCog,
 } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 
 // ---------------------------------------------------------------------------
 // KPI type
@@ -123,21 +119,11 @@ export default async function AdminAnalyticsPage() {
   const supabase = await createTenantAdminClient(tenantId)
 
   const today = new Date().toISOString().split('T')[0]
-  const firstOfMonth = new Date(
-    new Date().getFullYear(),
-    new Date().getMonth(),
-    1,
-  )
+  const firstOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
     .toISOString()
     .split('T')[0]
 
-  const [
-    studentsRes,
-    staffRes,
-    paidInvoicesRes,
-    attendanceRes,
-    toursRes,
-  ] = await Promise.all([
+  const [studentsRes, staffRes, paidInvoicesRes, attendanceRes, toursRes] = await Promise.all([
     supabase
       .from('students')
       .select('id', { count: 'exact', head: true })
@@ -147,11 +133,7 @@ export default async function AdminAnalyticsPage() {
       .from('staff_profiles')
       .select('id', { count: 'exact', head: true })
       .eq('tenant_id', tenantId),
-    supabase
-      .from('invoices')
-      .select('total_cents')
-      .eq('tenant_id', tenantId)
-      .eq('status', 'paid'),
+    supabase.from('invoices').select('total_cents').eq('tenant_id', tenantId).eq('status', 'paid'),
     supabase
       .from('attendance_records')
       .select('id', { count: 'exact', head: true })
@@ -212,9 +194,7 @@ export default async function AdminAnalyticsPage() {
       {/* Header + date range */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">
-            Analytics Dashboard
-          </h1>
+          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Analytics Dashboard</h1>
           <p className="text-sm text-[var(--color-muted-foreground)]">
             Key metrics and insights for your center.
           </p>
@@ -238,9 +218,7 @@ export default async function AdminAnalyticsPage() {
                       <Icon size={20} style={{ color: kpi.color }} />
                     </div>
                     <div>
-                      <p className="text-sm text-[var(--color-muted-foreground)]">
-                        {kpi.label}
-                      </p>
+                      <p className="text-sm text-[var(--color-muted-foreground)]">{kpi.label}</p>
                       <p className="text-2xl font-bold text-[var(--color-foreground)]">
                         {kpi.value}
                       </p>

@@ -34,7 +34,7 @@ interface MessagingPageClientProps {
   classrooms: Classroom[]
 }
 
-export function MessagingPageClient({ conversations, classrooms }: MessagingPageClientProps) {
+export function MessagingPageClient({ conversations }: MessagingPageClientProps) {
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null)
   const [broadcastOpen, setBroadcastOpen] = useState(false)
   const [sentToast, setSentToast] = useState<string | null>(null)
@@ -130,11 +130,7 @@ export function MessagingPageClient({ conversations, classrooms }: MessagingPage
 
                   {/* Reply input */}
                   <div className="flex gap-2 pt-2 border-t border-[var(--color-border)]">
-                    <Input
-                      inputSize="sm"
-                      placeholder="Type a reply..."
-                      className="flex-1"
-                    />
+                    <Input inputSize="sm" placeholder="Type a reply..." className="flex-1" />
                     <Button size="sm">
                       <Send className="h-4 w-4" />
                     </Button>
@@ -158,7 +154,10 @@ export function MessagingPageClient({ conversations, classrooms }: MessagingPage
       {/* Broadcast Dialog */}
       <Dialog open={broadcastOpen} onOpenChange={setBroadcastOpen}>
         <DialogOverlay onClick={() => setBroadcastOpen(false)} />
-        <DialogContent title="Send Broadcast" description="Compose a message to send to multiple recipients at once.">
+        <DialogContent
+          title="Send Broadcast"
+          description="Compose a message to send to multiple recipients at once."
+        >
           <DialogClose onClick={() => setBroadcastOpen(false)} />
           <form onSubmit={handleSendBroadcast} className="space-y-4">
             <div>

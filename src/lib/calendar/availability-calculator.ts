@@ -110,7 +110,9 @@ export async function computeAvailableSlots(
   // Staff availability patterns (recurring weekly)
   let availabilityQuery = supabase
     .from('staff_availability')
-    .select('user_id, day_of_week, start_time, end_time, appointment_type_id, effective_from, effective_to')
+    .select(
+      'user_id, day_of_week, start_time, end_time, appointment_type_id, effective_from, effective_to',
+    )
     .eq('tenant_id', tenantId)
     .eq('day_of_week', targetDow)
     .lte('effective_from', dateStr)
@@ -147,7 +149,9 @@ export async function computeAvailableSlots(
   }
 
   // Date overrides
-  const staffUserIdsForOverrides = workIntervals.map((w) => w.user_id).filter((x): x is string => x !== null)
+  const staffUserIdsForOverrides = workIntervals
+    .map((w) => w.user_id)
+    .filter((x): x is string => x !== null)
   let overrides: OverrideRow[] = []
   if (staffUserIdsForOverrides.length > 0) {
     const { data: overrideRows } = await supabase
@@ -198,7 +202,7 @@ export async function computeAvailableSlots(
   }
 
   // External calendar busy times for these staff
-  let busyIntervals: Array<{ user_id: string; intervals: BusyInterval[] }> = []
+  const busyIntervals: Array<{ user_id: string; intervals: BusyInterval[] }> = []
   if (staffUserIdsForOverrides.length > 0) {
     const { data: connections } = await supabase
       .from('calendar_connections')

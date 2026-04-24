@@ -42,6 +42,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
     }
 
+    // Verify the authenticated user belongs to the invoice's family
+    const { data: membership } = await supabase
+      .from('family_members')
+      .select('id')
+      .eq('user_id', session.user.id)
+      .eq('family_id', invoice.family_id)
+      .limit(1)
+      .maybeSingle()
+
+    if (!membership) {
+      return NextResponse.json(
+        { error: 'You do not have permission to pay this invoice' },
+        { status: 403 },
+      )
+    }
+
     if (invoice.status === 'paid') {
       return NextResponse.json({ error: 'Invoice is already paid' }, { status: 400 })
     }

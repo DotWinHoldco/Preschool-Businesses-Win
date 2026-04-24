@@ -17,9 +17,7 @@ export default async function AppointmentTypesSettingsPage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <Settings className="h-5 w-5 text-[var(--color-primary)]" />
-            <h1 className="text-2xl font-bold text-[var(--color-foreground)]">
-              Appointment Types
-            </h1>
+            <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Appointment Types</h1>
           </div>
           <p className="text-sm text-[var(--color-muted-foreground)]">
             Configure the types of appointments parents and applicants can book
@@ -38,10 +36,11 @@ export default async function AppointmentTypesSettingsPage() {
                       {t.name as string}
                     </div>
                     <div className="text-xs text-[var(--color-muted-foreground)]">
-                      {t.duration_minutes as number} min ·{' '}
-                      {t.location_type as string} · {t.location as string | null} ·
-                      Booking window: {t.booking_window_days as number}d · Min notice:{' '}
-                      {t.min_notice_hours as number}h · Max/day: {(t.max_per_day as number | null) ?? '∞'}
+                      {t.duration_minutes as number} min · {t.location_type as string} ·{' '}
+                      {t.location as string | null} · Booking window:{' '}
+                      {t.booking_window_days as number}d · Min notice:{' '}
+                      {t.min_notice_hours as number}h · Max/day:{' '}
+                      {(t.max_per_day as number | null) ?? '∞'}
                     </div>
                   </div>
                   <span className="rounded-full bg-[var(--color-muted)] px-2 py-0.5 text-xs">
@@ -58,7 +57,8 @@ export default async function AppointmentTypesSettingsPage() {
           </ul>
         ) : (
           <div className="p-8 text-center text-sm text-[var(--color-muted-foreground)]">
-            No appointment types configured. The platform seeds "School Tour & Interview" for CCA.
+            No appointment types configured. The platform seeds &ldquo;School Tour &amp;
+            Interview&rdquo; for CCA.
           </div>
         )}
       </div>

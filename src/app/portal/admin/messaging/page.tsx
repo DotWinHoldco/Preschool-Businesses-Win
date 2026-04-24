@@ -22,7 +22,7 @@ export default async function AdminMessagingPage() {
 
   // Fetch the latest message per conversation
   const conversationIds = (dbConversations ?? []).map((c) => c.id)
-  let latestMessages: Record<string, { body: string; created_at: string }> = {}
+  const latestMessages: Record<string, { body: string; created_at: string }> = {}
 
   if (conversationIds.length > 0) {
     const { data: messages } = await supabase
@@ -69,16 +69,10 @@ export default async function AdminMessagingPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1
-            className="text-2xl font-bold"
-            style={{ color: 'var(--color-foreground)' }}
-          >
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--color-foreground)' }}>
             Messaging
           </h1>
-          <p
-            className="mt-1 text-sm"
-            style={{ color: 'var(--color-muted-foreground)' }}
-          >
+          <p className="mt-1 text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
             Send messages to parents, staff, and classrooms.
           </p>
         </div>
@@ -86,10 +80,7 @@ export default async function AdminMessagingPage() {
           className="flex flex-col items-center justify-center rounded-xl py-16"
           style={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)' }}
         >
-          <p
-            className="text-sm font-medium"
-            style={{ color: 'var(--color-muted-foreground)' }}
-          >
+          <p className="text-sm font-medium" style={{ color: 'var(--color-muted-foreground)' }}>
             No conversations yet.
           </p>
         </div>
@@ -97,10 +88,5 @@ export default async function AdminMessagingPage() {
     )
   }
 
-  return (
-    <MessagingPageClient
-      conversations={conversations}
-      classrooms={classrooms}
-    />
-  )
+  return <MessagingPageClient conversations={conversations} classrooms={classrooms} />
 }

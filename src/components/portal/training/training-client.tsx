@@ -4,24 +4,12 @@
 // Staff training matrix with status tracking, add requirement, record completion
 
 import { useState, useMemo, useCallback } from 'react'
-import {
-  Plus,
-  Award,
-  Search,
-  Upload,
-  Filter,
-} from 'lucide-react'
+import { Plus, Award, Search, Upload, Filter } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import {
-  Dialog,
-  DialogOverlay,
-  DialogContent,
-  DialogClose,
-} from '@/components/ui/dialog'
+import { Dialog, DialogOverlay, DialogContent, DialogClose } from '@/components/ui/dialog'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -67,29 +55,107 @@ const INITIAL_STAFF: StaffMember[] = [
 ]
 
 const INITIAL_TRAININGS: Training[] = [
-  { id: 'tr1', title: 'CPR/First Aid', cadence: 'annual', requiredHours: 8, requiredForRoles: ['Lead Teacher', 'Assistant Teacher', 'Director', 'Cook'] },
-  { id: 'tr2', title: 'Mandated Reporter', cadence: 'annual', requiredHours: 2, requiredForRoles: ['Lead Teacher', 'Assistant Teacher', 'Director'] },
-  { id: 'tr3', title: 'Food Safety', cadence: 'every_6_months', requiredHours: 4, requiredForRoles: ['Cook', 'Lead Teacher'] },
-  { id: 'tr4', title: 'Child Development', cadence: 'one_time', requiredHours: 12, requiredForRoles: ['Lead Teacher', 'Assistant Teacher'] },
+  {
+    id: 'tr1',
+    title: 'CPR/First Aid',
+    cadence: 'annual',
+    requiredHours: 8,
+    requiredForRoles: ['Lead Teacher', 'Assistant Teacher', 'Director', 'Cook'],
+  },
+  {
+    id: 'tr2',
+    title: 'Mandated Reporter',
+    cadence: 'annual',
+    requiredHours: 2,
+    requiredForRoles: ['Lead Teacher', 'Assistant Teacher', 'Director'],
+  },
+  {
+    id: 'tr3',
+    title: 'Food Safety',
+    cadence: 'every_6_months',
+    requiredHours: 4,
+    requiredForRoles: ['Cook', 'Lead Teacher'],
+  },
+  {
+    id: 'tr4',
+    title: 'Child Development',
+    cadence: 'one_time',
+    requiredHours: 12,
+    requiredForRoles: ['Lead Teacher', 'Assistant Teacher'],
+  },
 ]
 
 // Relative to today = 2026-04-20
 const INITIAL_COMPLETIONS: CompletionRecord[] = [
   // Jane Smith
-  { staffId: 's1', trainingId: 'tr1', completionDate: '2025-06-15', expiryDate: '2026-06-15', hours: 8 },
-  { staffId: 's1', trainingId: 'tr2', completionDate: '2025-09-01', expiryDate: '2026-09-01', hours: 2 },
-  { staffId: 's1', trainingId: 'tr3', completionDate: '2026-02-01', expiryDate: '2026-08-01', hours: 4 },
+  {
+    staffId: 's1',
+    trainingId: 'tr1',
+    completionDate: '2025-06-15',
+    expiryDate: '2026-06-15',
+    hours: 8,
+  },
+  {
+    staffId: 's1',
+    trainingId: 'tr2',
+    completionDate: '2025-09-01',
+    expiryDate: '2026-09-01',
+    hours: 2,
+  },
+  {
+    staffId: 's1',
+    trainingId: 'tr3',
+    completionDate: '2026-02-01',
+    expiryDate: '2026-08-01',
+    hours: 4,
+  },
   { staffId: 's1', trainingId: 'tr4', completionDate: '2024-01-10', expiryDate: null, hours: 12 },
   // Maria Garcia
-  { staffId: 's2', trainingId: 'tr1', completionDate: '2025-05-01', expiryDate: '2026-05-01', hours: 8 }, // expiring
-  { staffId: 's2', trainingId: 'tr2', completionDate: '2025-03-01', expiryDate: '2026-03-01', hours: 2 }, // expired
+  {
+    staffId: 's2',
+    trainingId: 'tr1',
+    completionDate: '2025-05-01',
+    expiryDate: '2026-05-01',
+    hours: 8,
+  }, // expiring
+  {
+    staffId: 's2',
+    trainingId: 'tr2',
+    completionDate: '2025-03-01',
+    expiryDate: '2026-03-01',
+    hours: 2,
+  }, // expired
   { staffId: 's2', trainingId: 'tr4', completionDate: '2024-06-15', expiryDate: null, hours: 12 },
   // Tom Wilson
-  { staffId: 's3', trainingId: 'tr1', completionDate: '2025-08-20', expiryDate: '2026-08-20', hours: 8 },
-  { staffId: 's3', trainingId: 'tr2', completionDate: '2026-01-10', expiryDate: '2027-01-10', hours: 2 },
+  {
+    staffId: 's3',
+    trainingId: 'tr1',
+    completionDate: '2025-08-20',
+    expiryDate: '2026-08-20',
+    hours: 8,
+  },
+  {
+    staffId: 's3',
+    trainingId: 'tr2',
+    completionDate: '2026-01-10',
+    expiryDate: '2027-01-10',
+    hours: 2,
+  },
   // Sarah Johnson
-  { staffId: 's4', trainingId: 'tr1', completionDate: '2025-02-01', expiryDate: '2026-02-01', hours: 8 }, // expired
-  { staffId: 's4', trainingId: 'tr2', completionDate: '2026-04-01', expiryDate: '2027-04-01', hours: 2 },
+  {
+    staffId: 's4',
+    trainingId: 'tr1',
+    completionDate: '2025-02-01',
+    expiryDate: '2026-02-01',
+    hours: 8,
+  }, // expired
+  {
+    staffId: 's4',
+    trainingId: 'tr2',
+    completionDate: '2026-04-01',
+    expiryDate: '2027-04-01',
+    hours: 2,
+  },
   { staffId: 's4', trainingId: 'tr4', completionDate: '2025-03-10', expiryDate: null, hours: 12 },
 ]
 
@@ -112,7 +178,7 @@ function getStatus(completion: CompletionRecord | undefined, cadence: Cadence): 
   return 'current'
 }
 
-const STATUS_COLORS: Record<TrainingStatus, string> = {
+const _STATUS_COLORS: Record<TrainingStatus, string> = {
   current: 'var(--color-success)',
   expiring: 'var(--color-warning)',
   expired: 'var(--color-destructive)',
@@ -163,9 +229,7 @@ export function TrainingClient() {
   const matrixData = useMemo(() => {
     return staff.map((s) => {
       const cells = trainings.map((t) => {
-        const comp = completions.find(
-          (c) => c.staffId === s.id && c.trainingId === t.id,
-        )
+        const comp = completions.find((c) => c.staffId === s.id && c.trainingId === t.id)
         const status = getStatus(comp, t.cadence)
         return { training: t, completion: comp, status }
       })
@@ -181,9 +245,7 @@ export function TrainingClient() {
       data = data.filter((row) => row.staff.name.toLowerCase().includes(q))
     }
     if (statusFilter !== 'all') {
-      data = data.filter((row) =>
-        row.cells.some((c) => c.status === statusFilter),
-      )
+      data = data.filter((row) => row.cells.some((c) => c.status === statusFilter))
     }
     return data
   }, [matrixData, search, statusFilter])
@@ -252,9 +314,7 @@ export function TrainingClient() {
   }, [compStaffId, compTrainingId, compDate, compHours, trainings])
 
   const toggleRole = (role: string) => {
-    setReqRoles((prev) =>
-      prev.includes(role) ? prev.filter((r) => r !== role) : [...prev, role],
-    )
+    setReqRoles((prev) => (prev.includes(role) ? prev.filter((r) => r !== role) : [...prev, role]))
   }
 
   return (
@@ -329,23 +389,16 @@ export function TrainingClient() {
                     className="border-b border-[var(--color-border)] last:border-b-0"
                   >
                     <td className="sticky left-0 bg-[var(--color-card)] px-4 py-3 z-10">
-                      <p className="font-medium text-[var(--color-foreground)]">
-                        {row.staff.name}
-                      </p>
+                      <p className="font-medium text-[var(--color-foreground)]">{row.staff.name}</p>
                       <p className="text-xs text-[var(--color-muted-foreground)]">
                         {row.staff.role}
                       </p>
                     </td>
                     {row.cells.map((cell) => {
-                      const applicable = cell.training.requiredForRoles.includes(
-                        row.staff.role,
-                      )
+                      const applicable = cell.training.requiredForRoles.includes(row.staff.role)
                       if (!applicable) {
                         return (
-                          <td
-                            key={cell.training.id}
-                            className="px-4 py-3 text-center"
-                          >
+                          <td key={cell.training.id} className="px-4 py-3 text-center">
                             <span className="text-xs text-[var(--color-muted-foreground)]">
                               N/A
                             </span>
@@ -353,10 +406,7 @@ export function TrainingClient() {
                         )
                       }
                       return (
-                        <td
-                          key={cell.training.id}
-                          className="px-4 py-3 text-center"
-                        >
+                        <td key={cell.training.id} className="px-4 py-3 text-center">
                           <div
                             className="inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-medium text-white"
                             style={{ backgroundColor: STATUS_BG[cell.status] }}
@@ -461,11 +511,7 @@ export function TrainingClient() {
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setShowAddReq(false)}
-              >
+              <Button variant="secondary" size="sm" onClick={() => setShowAddReq(false)}>
                 Cancel
               </Button>
               <Button
@@ -525,11 +571,7 @@ export function TrainingClient() {
                 <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
                   Completion Date
                 </label>
-                <Input
-                  type="date"
-                  value={compDate}
-                  onChange={(e) => setCompDate(e.target.value)}
-                />
+                <Input type="date" value={compDate} onChange={(e) => setCompDate(e.target.value)} />
               </div>
               <div>
                 <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
@@ -549,21 +591,14 @@ export function TrainingClient() {
                 Certificate Upload
               </label>
               <div className="flex items-center gap-3 rounded-[var(--radius,0.75rem)] border border-dashed border-[var(--color-border)] bg-[var(--color-muted)] px-4 py-6 text-center">
-                <Upload
-                  size={20}
-                  className="text-[var(--color-muted-foreground)] mx-auto"
-                />
+                <Upload size={20} className="text-[var(--color-muted-foreground)] mx-auto" />
                 <span className="text-sm text-[var(--color-muted-foreground)]">
                   Certificate upload placeholder
                 </span>
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setShowRecordComp(false)}
-              >
+              <Button variant="secondary" size="sm" onClick={() => setShowRecordComp(false)}>
                 Cancel
               </Button>
               <Button

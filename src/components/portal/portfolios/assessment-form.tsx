@@ -38,7 +38,7 @@ interface AssessmentFormProps {
   }) => void
 }
 
-export function AssessmentForm({ studentId, studentName, domains, onSubmit }: AssessmentFormProps) {
+export function AssessmentForm({ studentName, domains, onSubmit }: AssessmentFormProps) {
   const [periodStart, setPeriodStart] = useState('')
   const [periodEnd, setPeriodEnd] = useState('')
   const [ratings, setRatings] = useState<Record<string, RatingEntry>>({})
@@ -100,12 +100,15 @@ export function AssessmentForm({ studentId, studentName, domains, onSubmit }: As
           Developmental Assessment
         </h2>
         <p className="text-sm text-[var(--color-muted-foreground)] mb-4">
-          Assessing <span className="font-medium text-[var(--color-foreground)]">{studentName}</span>
+          Assessing{' '}
+          <span className="font-medium text-[var(--color-foreground)]">{studentName}</span>
         </p>
 
         <div className="grid gap-4 md:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-[var(--color-muted-foreground)] mb-1">Period Start</label>
+            <label className="block text-sm font-medium text-[var(--color-muted-foreground)] mb-1">
+              Period Start
+            </label>
             <input
               type="date"
               value={periodStart}
@@ -114,7 +117,9 @@ export function AssessmentForm({ studentId, studentName, domains, onSubmit }: As
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-[var(--color-muted-foreground)] mb-1">Period End</label>
+            <label className="block text-sm font-medium text-[var(--color-muted-foreground)] mb-1">
+              Period End
+            </label>
             <input
               type="date"
               value={periodEnd}
@@ -127,7 +132,10 @@ export function AssessmentForm({ studentId, studentName, domains, onSubmit }: As
 
       {/* Domains with ratings */}
       {Object.entries(grouped).map(([framework, domainGroups]) => (
-        <div key={framework} className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] overflow-hidden">
+        <div
+          key={framework}
+          className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] overflow-hidden"
+        >
           <div className="p-4 border-b border-[var(--color-border)] bg-[var(--color-muted)]">
             <h3 className="text-sm font-semibold text-[var(--color-foreground)]">
               {framework.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
@@ -152,7 +160,10 @@ export function AssessmentForm({ studentId, studentName, domains, onSubmit }: As
               {expandedDomains.has(`${framework}-${domainName}`) && (
                 <div className="px-3 pb-3 space-y-3">
                   {subDomains.map((domain) => (
-                    <div key={domain.id} className="rounded-[var(--radius)] border border-[var(--color-border)] p-3">
+                    <div
+                      key={domain.id}
+                      className="rounded-[var(--radius)] border border-[var(--color-border)] p-3"
+                    >
                       <div className="text-xs font-medium text-[var(--color-foreground)] mb-2">
                         {domain.subdomain_name ?? domain.domain_name}
                       </div>
@@ -167,7 +178,7 @@ export function AssessmentForm({ studentId, studentName, domains, onSubmit }: As
                               'rounded-full px-2.5 py-1 text-[10px] font-medium border transition-all',
                               ratings[domain.id]?.rating === r.value
                                 ? 'border-transparent text-white'
-                                : 'border-[var(--color-border)] text-[var(--color-muted-foreground)] hover:border-current'
+                                : 'border-[var(--color-border)] text-[var(--color-muted-foreground)] hover:border-current',
                             )}
                             style={
                               ratings[domain.id]?.rating === r.value

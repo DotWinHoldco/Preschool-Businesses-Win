@@ -1,7 +1,6 @@
 'use client'
 
 // @anchor: cca.enrollment.waitlist
-import { cn } from '@/lib/cn'
 import { GripVertical, ChevronUp, ChevronDown, CheckCircle, XCircle } from 'lucide-react'
 
 interface WaitlistEntry {
@@ -23,7 +22,13 @@ interface WaitlistManagerProps {
   onRemove?: (id: string) => void
 }
 
-export function WaitlistManager({ entries, onMoveUp, onMoveDown, onApprove, onRemove }: WaitlistManagerProps) {
+export function WaitlistManager({
+  entries,
+  onMoveUp,
+  onMoveDown,
+  onApprove,
+  onRemove,
+}: WaitlistManagerProps) {
   return (
     <div className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] overflow-hidden">
       <div className="p-4 border-b border-[var(--color-border)]">

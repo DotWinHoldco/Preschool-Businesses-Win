@@ -1,6 +1,6 @@
 // @anchor: cca.leads.detail
+import { Phone, Mail, Calendar, MessageSquare, Clock, CheckCircle } from 'lucide-react'
 import { cn } from '@/lib/cn'
-import { User, Phone, Mail, Calendar, MapPin, MessageSquare, Clock, CheckCircle } from 'lucide-react'
 
 interface LeadActivity {
   id: string
@@ -77,9 +77,12 @@ export function LeadDetail({ lead, activities }: LeadDetailProps) {
             <span
               className={cn(
                 'rounded-full px-2.5 py-1 text-xs font-medium',
-                lead.priority === 'hot' && 'bg-[var(--color-destructive)]/10 text-[var(--color-destructive)]',
-                lead.priority === 'warm' && 'bg-[var(--color-warning)]/10 text-[var(--color-warning)]',
-                lead.priority === 'cold' && 'bg-[var(--color-secondary)]/10 text-[var(--color-secondary)]'
+                lead.priority === 'hot' &&
+                  'bg-[var(--color-destructive)]/10 text-[var(--color-destructive)]',
+                lead.priority === 'warm' &&
+                  'bg-[var(--color-warning)]/10 text-[var(--color-warning)]',
+                lead.priority === 'cold' &&
+                  'bg-[var(--color-secondary)]/10 text-[var(--color-secondary)]',
               )}
             >
               {lead.priority}
@@ -106,19 +109,24 @@ export function LeadDetail({ lead, activities }: LeadDetailProps) {
               {lead.child_age_months !== null && (
                 <div>
                   <dt className="text-xs text-[var(--color-muted-foreground)]">Age</dt>
-                  <dd className="font-medium text-[var(--color-foreground)]">{lead.child_age_months} months</dd>
+                  <dd className="font-medium text-[var(--color-foreground)]">
+                    {lead.child_age_months} months
+                  </dd>
                 </div>
               )}
               {lead.program_interest && (
                 <div>
                   <dt className="text-xs text-[var(--color-muted-foreground)]">Program interest</dt>
-                  <dd className="font-medium text-[var(--color-foreground)]">{lead.program_interest}</dd>
+                  <dd className="font-medium text-[var(--color-foreground)]">
+                    {lead.program_interest}
+                  </dd>
                 </div>
               )}
               <div>
                 <dt className="text-xs text-[var(--color-muted-foreground)]">Source</dt>
                 <dd className="font-medium text-[var(--color-foreground)]">
-                  {lead.source}{lead.source_detail ? ` - ${lead.source_detail}` : ''}
+                  {lead.source}
+                  {lead.source_detail ? ` - ${lead.source_detail}` : ''}
                 </dd>
               </div>
               {lead.utm_source && (
@@ -141,17 +149,23 @@ export function LeadDetail({ lead, activities }: LeadDetailProps) {
           {lead.notes && (
             <div className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] p-4">
               <h3 className="text-sm font-semibold text-[var(--color-foreground)] mb-2">Notes</h3>
-              <p className="text-sm text-[var(--color-muted-foreground)] whitespace-pre-line">{lead.notes}</p>
+              <p className="text-sm text-[var(--color-muted-foreground)] whitespace-pre-line">
+                {lead.notes}
+              </p>
             </div>
           )}
         </div>
 
         {/* Activity timeline */}
         <div className="md:col-span-2 rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] p-4">
-          <h3 className="text-sm font-semibold text-[var(--color-foreground)] mb-4">Activity Timeline</h3>
+          <h3 className="text-sm font-semibold text-[var(--color-foreground)] mb-4">
+            Activity Timeline
+          </h3>
 
           {activities.length === 0 ? (
-            <p className="text-sm text-[var(--color-muted-foreground)] text-center py-8">No activity yet</p>
+            <p className="text-sm text-[var(--color-muted-foreground)] text-center py-8">
+              No activity yet
+            </p>
           ) : (
             <div className="relative space-y-4">
               <div className="absolute left-[15px] top-0 bottom-0 w-px bg-[var(--color-border)]" />
@@ -163,7 +177,9 @@ export function LeadDetail({ lead, activities }: LeadDetailProps) {
                       <Icon className="h-3.5 w-3.5 text-[var(--color-muted-foreground)]" />
                     </div>
                     <div className="flex-1 pt-0.5">
-                      <p className="text-sm text-[var(--color-foreground)]">{activity.description}</p>
+                      <p className="text-sm text-[var(--color-foreground)]">
+                        {activity.description}
+                      </p>
                       <div className="flex gap-2 mt-0.5">
                         <span className="text-xs text-[var(--color-muted-foreground)]">
                           {new Date(activity.performed_at).toLocaleString()}

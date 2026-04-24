@@ -6,6 +6,7 @@
 // Uses the Wizard UI component + react-hook-form + zod per step.
 
 import { useState, useCallback } from 'react'
+import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -20,16 +21,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import {
-  User,
-  Phone,
-  ShieldPlus,
-  Heart,
-  Upload,
-  FileSignature,
-  Plus,
-  Trash2,
-} from 'lucide-react'
+import { User, Phone, Heart, Upload, FileSignature, Plus, Trash2 } from 'lucide-react'
 
 // ---------------------------------------------------------------------------
 // Steps
@@ -59,13 +51,13 @@ const contactSchema = z.object({
 })
 type ContactData = z.infer<typeof contactSchema>
 
-const emergencyContactSchema = z.object({
+const _emergencyContactSchema = z.object({
   name: z.string().min(1, 'Name is required.'),
   relationship: z.string().min(1, 'Relationship is required.'),
   phone: z.string().min(10, 'Phone is required.'),
   canPickup: z.boolean(),
 })
-type EmergencyContact = z.infer<typeof emergencyContactSchema>
+type EmergencyContact = z.infer<typeof _emergencyContactSchema>
 
 const medicalSchema = z.object({
   allergies: z.string(),
@@ -82,7 +74,6 @@ type MedicalData = z.infer<typeof medicalSchema>
 // ---------------------------------------------------------------------------
 
 export default function ParentOnboardingPage() {
-  const [currentStepValid, setCurrentStepValid] = useState(false)
   const [emergencyContacts, setEmergencyContacts] = useState<EmergencyContact[]>([
     { name: '', relationship: '', phone: '', canPickup: false },
   ])
@@ -127,7 +118,7 @@ export default function ParentOnboardingPage() {
         case 1: {
           // At least one emergency contact with name and phone
           return emergencyContacts.some(
-            (c) => c.name.trim().length > 0 && c.phone.trim().length >= 10
+            (c) => c.name.trim().length > 0 && c.phone.trim().length >= 10,
           )
         }
         case 2: {
@@ -142,7 +133,7 @@ export default function ParentOnboardingPage() {
           return true
       }
     },
-    [contactForm, emergencyContacts]
+    [contactForm, emergencyContacts],
   )
 
   function handleSubmit() {
@@ -172,12 +163,11 @@ export default function ParentOnboardingPage() {
               Onboarding complete
             </h2>
             <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
-              Thank you for completing your onboarding. You can now access the
-              full parent portal. Your child&apos;s classroom teacher will reach out
-              soon.
+              Thank you for completing your onboarding. You can now access the full parent portal.
+              Your child&apos;s classroom teacher will reach out soon.
             </p>
             <Button asChild>
-              <a href="/portal/parent">Go to Dashboard</a>
+              <Link href="/portal/parent">Go to Dashboard</Link>
             </Button>
           </CardContent>
         </Card>
@@ -214,14 +204,20 @@ export default function ParentOnboardingPage() {
             <CardContent>
               <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <FieldWrapper label="First Name" error={contactForm.formState.errors.firstName?.message}>
+                  <FieldWrapper
+                    label="First Name"
+                    error={contactForm.formState.errors.firstName?.message}
+                  >
                     <Input
                       {...contactForm.register('firstName')}
                       error={!!contactForm.formState.errors.firstName}
                       placeholder="First name"
                     />
                   </FieldWrapper>
-                  <FieldWrapper label="Last Name" error={contactForm.formState.errors.lastName?.message}>
+                  <FieldWrapper
+                    label="Last Name"
+                    error={contactForm.formState.errors.lastName?.message}
+                  >
                     <Input
                       {...contactForm.register('lastName')}
                       error={!!contactForm.formState.errors.lastName}
@@ -302,11 +298,15 @@ export default function ParentOnboardingPage() {
                   style={{ borderColor: 'var(--color-border)' }}
                 >
                   <div className="flex items-center justify-between">
-                    <Badge variant="outline" size="sm">Contact {i + 1}</Badge>
+                    <Badge variant="outline" size="sm">
+                      Contact {i + 1}
+                    </Badge>
                     {emergencyContacts.length > 1 && (
                       <button
                         type="button"
-                        onClick={() => setEmergencyContacts((prev) => prev.filter((_, j) => j !== i))}
+                        onClick={() =>
+                          setEmergencyContacts((prev) => prev.filter((_, j) => j !== i))
+                        }
                         className="text-xs flex items-center gap-1 hover:underline"
                         style={{ color: 'var(--color-destructive)' }}
                       >
@@ -352,7 +352,10 @@ export default function ParentOnboardingPage() {
                       />
                     </FieldWrapper>
                     <div className="flex items-end pb-1">
-                      <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--color-foreground)' }}>
+                      <label
+                        className="flex items-center gap-2 text-sm"
+                        style={{ color: 'var(--color-foreground)' }}
+                      >
                         <input
                           type="checkbox"
                           checked={contact.canPickup}
@@ -449,10 +452,7 @@ export default function ParentOnboardingPage() {
                 </FieldWrapper>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <FieldWrapper label="Physician Name">
-                    <Input
-                      {...medicalForm.register('physicianName')}
-                      placeholder="Dr. Smith"
-                    />
+                    <Input {...medicalForm.register('physicianName')} placeholder="Dr. Smith" />
                   </FieldWrapper>
                   <FieldWrapper label="Physician Phone">
                     <Input
@@ -482,10 +482,26 @@ export default function ParentOnboardingPage() {
                 portal.
               </p>
               {[
-                { label: 'Immunization Records', required: true, description: 'Up-to-date shot records from your pediatrician.' },
-                { label: 'Birth Certificate', required: false, description: 'Copy of your child\'s birth certificate.' },
-                { label: 'Custody Documents', required: false, description: 'If applicable, court-ordered custody agreements.' },
-                { label: 'Insurance Card', required: false, description: 'Copy of your child\'s health insurance card.' },
+                {
+                  label: 'Immunization Records',
+                  required: true,
+                  description: 'Up-to-date shot records from your pediatrician.',
+                },
+                {
+                  label: 'Birth Certificate',
+                  required: false,
+                  description: "Copy of your child's birth certificate.",
+                },
+                {
+                  label: 'Custody Documents',
+                  required: false,
+                  description: 'If applicable, court-ordered custody agreements.',
+                },
+                {
+                  label: 'Insurance Card',
+                  required: false,
+                  description: "Copy of your child's health insurance card.",
+                },
               ].map((doc) => (
                 <div
                   key={doc.label}
@@ -496,12 +512,18 @@ export default function ParentOnboardingPage() {
                     <p className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
                       {doc.label}
                       {doc.required && (
-                        <span className="ml-1 text-xs" style={{ color: 'var(--color-destructive)' }}>
+                        <span
+                          className="ml-1 text-xs"
+                          style={{ color: 'var(--color-destructive)' }}
+                        >
                           Required
                         </span>
                       )}
                     </p>
-                    <p className="text-xs mt-0.5" style={{ color: 'var(--color-muted-foreground)' }}>
+                    <p
+                      className="text-xs mt-0.5"
+                      style={{ color: 'var(--color-muted-foreground)' }}
+                    >
                       {doc.description}
                     </p>
                   </div>
@@ -538,10 +560,9 @@ export default function ParentOnboardingPage() {
               >
                 <h3 className="font-semibold mb-2">Parent Handbook Summary</h3>
                 <p className="mb-3">
-                  By signing below, I acknowledge that I have received and reviewed
-                  the Parent Handbook for the current school year. I agree to abide by
-                  the policies and procedures outlined therein, including but not
-                  limited to:
+                  By signing below, I acknowledge that I have received and reviewed the Parent
+                  Handbook for the current school year. I agree to abide by the policies and
+                  procedures outlined therein, including but not limited to:
                 </p>
                 <ul className="list-disc pl-5 space-y-1.5">
                   <li>Drop-off and pick-up procedures and authorized pickup policies</li>
@@ -554,8 +575,8 @@ export default function ParentOnboardingPage() {
                   <li>Behavior guidance and discipline philosophy</li>
                 </ul>
                 <p className="mt-3">
-                  I understand that failure to comply with school policies may
-                  result in suspension or termination of enrollment.
+                  I understand that failure to comply with school policies may result in suspension
+                  or termination of enrollment.
                 </p>
               </div>
 
@@ -570,18 +591,15 @@ export default function ParentOnboardingPage() {
                   className="mt-1 h-5 w-5 rounded"
                 />
                 <span className="text-sm">
-                  I have read and agree to the Parent Handbook and the policies
-                  outlined above. I understand this serves as my electronic signature.
+                  I have read and agree to the Parent Handbook and the policies outlined above. I
+                  understand this serves as my electronic signature.
                 </span>
               </label>
             </CardContent>
           </Card>
         </WizardPanel>
 
-        <WizardNav
-          submitLabel="Complete Onboarding"
-          onSubmit={handleSubmit}
-        />
+        <WizardNav submitLabel="Complete Onboarding" onSubmit={handleSubmit} />
       </Wizard>
     </div>
   )

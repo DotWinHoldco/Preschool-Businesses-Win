@@ -1,6 +1,7 @@
 // @anchor: cca.billing.parent-overview
 // Parent billing overview — outstanding balance, recent invoices, payment methods.
 
+import Link from 'next/link'
 import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { getSession } from '@/lib/auth/session'
@@ -26,34 +27,37 @@ export default async function ParentBillingPage() {
     .select('family_id')
     .eq('user_id', userId)
     .eq('tenant_id', tenantId)
-  const familyIds = memberships?.map(m => m.family_id) ?? []
+  const familyIds = memberships?.map((m) => m.family_id) ?? []
 
   // Fetch invoices for this family
-  const { data: invoices } = familyIds.length > 0
-    ? await supabase
-        .from('invoices')
-        .select('id, invoice_number, period_start, period_end, total_cents, status, due_date, paid_at, created_at')
-        .eq('tenant_id', tenantId)
-        .in('family_id', familyIds)
-        .order('created_at', { ascending: false })
-    : { data: [] }
+  const { data: invoices } =
+    familyIds.length > 0
+      ? await supabase
+          .from('invoices')
+          .select(
+            'id, invoice_number, period_start, period_end, total_cents, status, due_date, paid_at, created_at',
+          )
+          .eq('tenant_id', tenantId)
+          .in('family_id', familyIds)
+          .order('created_at', { ascending: false })
+      : { data: [] }
 
   const invoiceList = invoices ?? []
 
   // Compute outstanding balance (draft + sent invoices)
   const outstandingCents = invoiceList
-    .filter(inv => inv.status === 'draft' || inv.status === 'sent' || inv.status === 'overdue')
+    .filter((inv) => inv.status === 'draft' || inv.status === 'sent' || inv.status === 'overdue')
     .reduce((sum, inv) => sum + inv.total_cents, 0)
 
   // Find next due date from outstanding invoices
   const outstandingInvoices = invoiceList
-    .filter(inv => inv.status === 'draft' || inv.status === 'sent' || inv.status === 'overdue')
+    .filter((inv) => inv.status === 'draft' || inv.status === 'sent' || inv.status === 'overdue')
     .sort((a, b) => (a.due_date ?? '').localeCompare(b.due_date ?? ''))
   const nextDueDate = outstandingInvoices[0]?.due_date ?? null
 
   // Find last payment date
   const lastPaidInvoice = invoiceList
-    .filter(inv => inv.status === 'paid' && inv.paid_at)
+    .filter((inv) => inv.status === 'paid' && inv.paid_at)
     .sort((a, b) => (b.paid_at ?? '').localeCompare(a.paid_at ?? ''))
   const lastPaymentDate = lastPaidInvoice[0]?.paid_at ?? null
 
@@ -61,16 +65,21 @@ export default async function ParentBillingPage() {
   const firstUnpaidInvoice = outstandingInvoices[0] ?? null
 
   function fmt(cents: number) {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents / 100)
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(
+      cents / 100,
+    )
   }
 
   function formatDate(dateStr: string) {
     try {
-      return new Date(dateStr + (dateStr.includes('T') ? '' : 'T12:00:00')).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      })
+      return new Date(dateStr + (dateStr.includes('T') ? '' : 'T12:00:00')).toLocaleDateString(
+        'en-US',
+        {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        },
+      )
     } catch {
       return dateStr
     }
@@ -99,9 +108,7 @@ export default async function ParentBillingPage() {
                   </p>
                 )}
                 {!nextDueDate && outstandingCents === 0 && (
-                  <p className="text-xs text-[var(--color-success)]">
-                    All paid up
-                  </p>
+                  <p className="text-xs text-[var(--color-success)]">All paid up</p>
                 )}
               </div>
             </div>
@@ -130,12 +137,12 @@ export default async function ParentBillingPage() {
             <p className="text-sm text-[var(--color-muted-foreground)]">
               Contact your school to set up online payments.
             </p>
-            <a
+            <Link
               href="/portal/parent/billing/payment-methods"
               className="text-xs text-[var(--color-primary)] hover:underline mt-1 inline-block"
             >
               Manage payment methods
-            </a>
+            </Link>
           </CardContent>
         </Card>
         <Card>
@@ -166,10 +173,7 @@ export default async function ParentBillingPage() {
         </CardHeader>
         <CardContent>
           {invoiceList.length > 0 ? (
-            <InvoiceList
-              invoices={invoiceList}
-              basePath="/portal/parent/billing/invoices"
-            />
+            <InvoiceList invoices={invoiceList} basePath="/portal/parent/billing/invoices" />
           ) : (
             <div className="rounded-[var(--radius,0.75rem)] border border-dashed border-[var(--color-border)] p-8 text-center">
               <FileText size={32} className="mx-auto mb-2 text-[var(--color-muted-foreground)]" />

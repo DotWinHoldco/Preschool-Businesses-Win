@@ -2,7 +2,10 @@
 
 import { headers } from 'next/headers'
 import { createTenantAdminClient } from '@/lib/supabase/admin'
-import { PipelineTimeline, type PipelineStep } from '@/components/portal/enrollment/pipeline-timeline'
+import {
+  PipelineTimeline,
+  type PipelineStep,
+} from '@/components/portal/enrollment/pipeline-timeline'
 import { PipelineStageBadge } from '@/components/portal/enrollment/pipeline-stage-badge'
 import { PipelineActions } from '@/components/portal/enrollment/pipeline-actions'
 import { PipelineProgress } from '@/components/portal/enrollment/pipeline-progress'
@@ -48,10 +51,10 @@ export default async function ApplicationDetailPage({
     .order('start_at', { ascending: true })
 
   // Resolve actor names for pipeline steps
-  const actorIds = [...new Set(
-    (steps ?? []).map((s) => s.completed_by).filter(Boolean) as string[]
-  )]
-  let actorMap = new Map<string, string>()
+  const actorIds = [
+    ...new Set((steps ?? []).map((s) => s.completed_by).filter(Boolean) as string[]),
+  ]
+  const actorMap = new Map<string, string>()
   if (actorIds.length > 0) {
     const { data: profiles } = await supabase
       .from('user_profiles')
@@ -65,7 +68,7 @@ export default async function ApplicationDetailPage({
   const enrichedSteps: PipelineStep[] = (steps ?? []).map((s) => ({
     ...s,
     metadata: (s.metadata ?? {}) as Record<string, unknown>,
-    actor_name: s.completed_by ? actorMap.get(s.completed_by) ?? null : null,
+    actor_name: s.completed_by ? (actorMap.get(s.completed_by) ?? null) : null,
   }))
 
   const meta = (application.application_metadata ?? {}) as Record<string, unknown>
@@ -112,16 +115,16 @@ export default async function ApplicationDetailPage({
                   <Mail className="h-3.5 w-3.5" />
                   {application.parent_email}
                 </span>
-                {application.parent_phone && (
-                  <span>{application.parent_phone}</span>
-                )}
+                {application.parent_phone && <span>{application.parent_phone}</span>}
               </div>
               <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-[var(--color-muted-foreground)]">
                 <span>DOB: {application.student_dob}</span>
                 <span>Program: {application.program_type?.replace(/_/g, ' ') ?? '—'}</span>
                 <span>Applied: {new Date(application.created_at).toLocaleDateString()}</span>
                 {application.triage_score !== null && (
-                  <Badge variant="outline" size="sm">Score: {application.triage_score}</Badge>
+                  <Badge variant="outline" size="sm">
+                    Score: {application.triage_score}
+                  </Badge>
                 )}
               </div>
             </div>
@@ -176,42 +179,61 @@ export default async function ApplicationDetailPage({
             <CardContent>
               <dl className="space-y-3 text-sm">
                 <div>
-                  <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">Invitation Sent</dt>
+                  <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">
+                    Invitation Sent
+                  </dt>
                   <dd className="text-[var(--color-foreground)]">
                     {invitedStep
-                      ? new Date(invitedStep.completed_at ?? invitedStep.created_at).toLocaleString()
+                      ? new Date(
+                          invitedStep.completed_at ?? invitedStep.created_at,
+                        ).toLocaleString()
                       : '—'}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">Appointment Booked</dt>
+                  <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">
+                    Appointment Booked
+                  </dt>
                   <dd className="text-[var(--color-foreground)]">
                     {hasAppointment ? (
                       <span className="inline-flex items-center gap-1.5">
                         <span className="h-2 w-2 rounded-full bg-[var(--color-primary)]" />
-                        {new Date(latestAppointment!.start_at).toLocaleString()} — {latestAppointment!.status}
+                        {new Date(latestAppointment!.start_at).toLocaleString()} —{' '}
+                        {latestAppointment!.status}
                       </span>
                     ) : (
-                      <span className="text-[var(--color-muted-foreground)]">No appointment yet</span>
+                      <span className="text-[var(--color-muted-foreground)]">
+                        No appointment yet
+                      </span>
                     )}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">Interview Completed</dt>
+                  <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">
+                    Interview Completed
+                  </dt>
                   <dd className="text-[var(--color-foreground)]">
                     {interviewCompleteStep
-                      ? new Date(interviewCompleteStep.completed_at ?? interviewCompleteStep.created_at).toLocaleString()
+                      ? new Date(
+                          interviewCompleteStep.completed_at ?? interviewCompleteStep.created_at,
+                        ).toLocaleString()
                       : '—'}
                   </dd>
                 </div>
                 {application.interview_notes && (
                   <div>
-                    <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">Interview Notes</dt>
-                    <dd className="whitespace-pre-wrap text-[var(--color-foreground)]">{application.interview_notes}</dd>
+                    <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">
+                      Interview Notes
+                    </dt>
+                    <dd className="whitespace-pre-wrap text-[var(--color-foreground)]">
+                      {application.interview_notes}
+                    </dd>
                   </div>
                 )}
                 <div>
-                  <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">Offer Sent</dt>
+                  <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">
+                    Offer Sent
+                  </dt>
                   <dd className="text-[var(--color-foreground)]">
                     {offerStep
                       ? new Date(offerStep.completed_at ?? offerStep.created_at).toLocaleString()
@@ -235,20 +257,30 @@ export default async function ApplicationDetailPage({
             <CardContent>
               <dl className="space-y-3 text-sm">
                 <div>
-                  <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">Application Fee</dt>
+                  <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">
+                    Application Fee
+                  </dt>
                   <dd className="text-[var(--color-foreground)]">
                     {paymentIntentId ? (
-                      <Badge variant="success" size="sm">Paid</Badge>
+                      <Badge variant="success" size="sm">
+                        Paid
+                      </Badge>
                     ) : (
-                      <Badge variant="outline" size="sm">Not collected</Badge>
+                      <Badge variant="outline" size="sm">
+                        Not collected
+                      </Badge>
                     )}
                   </dd>
                 </div>
                 {application.offer_accepted_at && (
                   <div>
-                    <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">Enrollment Deposit</dt>
+                    <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">
+                      Enrollment Deposit
+                    </dt>
                     <dd className="text-[var(--color-foreground)]">
-                      <Badge variant="outline" size="sm">Pending setup</Badge>
+                      <Badge variant="outline" size="sm">
+                        Pending setup
+                      </Badge>
                     </dd>
                   </div>
                 )}
@@ -268,23 +300,35 @@ export default async function ApplicationDetailPage({
               <dl className="space-y-3 text-sm">
                 {meta.family_name && (
                   <div>
-                    <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">Family</dt>
+                    <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">
+                      Family
+                    </dt>
                     <dd className="text-[var(--color-foreground)]">{String(meta.family_name)}</dd>
                   </div>
                 )}
                 <div>
-                  <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">How Heard</dt>
-                  <dd className="text-[var(--color-foreground)]">{(application.how_heard ?? '—').replace(/_/g, ' ')}</dd>
+                  <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">
+                    How Heard
+                  </dt>
+                  <dd className="text-[var(--color-foreground)]">
+                    {(application.how_heard ?? '—').replace(/_/g, ' ')}
+                  </dd>
                 </div>
                 {application.faith_community && (
                   <div>
-                    <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">Faith Community</dt>
-                    <dd className="text-[var(--color-foreground)]">{application.faith_community}</dd>
+                    <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">
+                      Faith Community
+                    </dt>
+                    <dd className="text-[var(--color-foreground)]">
+                      {application.faith_community}
+                    </dd>
                   </div>
                 )}
                 {application.converted_to_student_id && (
                   <div>
-                    <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">Converted To</dt>
+                    <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">
+                      Converted To
+                    </dt>
                     <dd>
                       <Link
                         href={`/portal/admin/students/${application.converted_to_student_id}`}
@@ -310,7 +354,9 @@ export default async function ApplicationDetailPage({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <ApplicationFormView application={application as Parameters<typeof ApplicationFormView>[0]['application']} />
+          <ApplicationFormView
+            application={application as Parameters<typeof ApplicationFormView>[0]['application']}
+          />
         </CardContent>
       </Card>
     </div>

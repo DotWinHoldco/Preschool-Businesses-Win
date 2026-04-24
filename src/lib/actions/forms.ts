@@ -2,17 +2,37 @@
 
 // @anchor: platform.form-builder.actions
 
-import { CreateFormSchema, UpdateFormSchema, CreateFormFieldSchema, SpawnFormInstanceSchema } from '@/lib/schemas/form'
-import type { CreateFormInput, UpdateFormInput, CreateFormFieldInput, SpawnFormInstanceInput } from '@/lib/schemas/form'
+import {
+  CreateFormSchema,
+  UpdateFormSchema,
+  CreateFormFieldSchema,
+  SpawnFormInstanceSchema,
+} from '@/lib/schemas/form'
+import type {
+  CreateFormInput,
+  UpdateFormInput,
+  CreateFormFieldInput,
+  SpawnFormInstanceInput,
+} from '@/lib/schemas/form'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
 import { assertRole } from '@/lib/auth/session'
 import { spawnFormInstance } from '@/lib/forms/seed-system-forms'
 
-type ActionResult = { ok: boolean; id?: string; slug?: string; error?: string; fieldErrors?: Record<string, string> }
+type ActionResult = {
+  ok: boolean
+  id?: string
+  slug?: string
+  error?: string
+  fieldErrors?: Record<string, string>
+}
 
 function slugify(text: string): string {
-  return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80)
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 80)
 }
 
 export async function createForm(input: CreateFormInput): Promise<ActionResult> {
@@ -32,15 +52,19 @@ export async function createForm(input: CreateFormInput): Promise<ActionResult> 
   const supabase = createAdminClient()
   const slug = slugify(parsed.data.title) + '-' + Date.now().toString(36)
 
-  const { data: form, error } = await supabase.from('forms').insert({
-    tenant_id: tenantId,
-    title: parsed.data.title,
-    slug,
-    description: parsed.data.description,
-    mode: parsed.data.mode,
-    access_control: parsed.data.access_control,
-    created_by: actorId,
-  }).select('id, slug').single()
+  const { data: form, error } = await supabase
+    .from('forms')
+    .insert({
+      tenant_id: tenantId,
+      title: parsed.data.title,
+      slug,
+      description: parsed.data.description,
+      mode: parsed.data.mode,
+      access_control: parsed.data.access_control,
+      created_by: actorId,
+    })
+    .select('id, slug')
+    .single()
 
   if (error) return { ok: false, error: error.message }
 
@@ -52,8 +76,12 @@ export async function createForm(input: CreateFormInput): Promise<ActionResult> 
   })
 
   await supabase.from('audit_log').insert({
-    tenant_id: tenantId, actor_id: actorId, action: 'create',
-    entity_type: 'form', entity_id: form.id, after_data: parsed.data,
+    tenant_id: tenantId,
+    actor_id: actorId,
+    action: 'create',
+    entity_type: 'form',
+    entity_id: form.id,
+    after_data: parsed.data,
   })
 
   return { ok: true, id: form.id, slug: form.slug }
@@ -74,14 +102,21 @@ export async function updateForm(input: UpdateFormInput): Promise<ActionResult> 
     updateData.published_at = new Date().toISOString()
   }
 
-  const { error } = await supabase.from('forms')
-    .update(updateData).eq('id', id).eq('tenant_id', tenantId)
+  const { error } = await supabase
+    .from('forms')
+    .update(updateData)
+    .eq('id', id)
+    .eq('tenant_id', tenantId)
 
   if (error) return { ok: false, error: error.message }
 
   await supabase.from('audit_log').insert({
-    tenant_id: tenantId, actor_id: actorId, action: 'update',
-    entity_type: 'form', entity_id: id, after_data: updates,
+    tenant_id: tenantId,
+    actor_id: actorId,
+    action: 'update',
+    entity_type: 'form',
+    entity_id: id,
+    after_data: updates,
   })
 
   return { ok: true, id }
@@ -146,6 +181,19 @@ export async function updateFormSection(
   const actorId = await getActorId()
   const supabase = createAdminClient()
 
+  // Verify section belongs to a form owned by this tenant
+  const { data: section } = await supabase
+    .from('form_sections')
+    .select('form_id, forms!inner(tenant_id)')
+    .eq('id', id)
+    .single()
+  if (
+    !section ||
+    (section as unknown as { forms: { tenant_id: string } }).forms?.tenant_id !== tenantId
+  ) {
+    return { ok: false, error: 'Section not found' }
+  }
+
   const { error } = await supabase.from('form_sections').update(updates).eq('id', id)
   if (error) return { ok: false, error: error.message }
 
@@ -167,6 +215,19 @@ export async function deleteFormSection(id: string): Promise<ActionResult> {
   const actorId = await getActorId()
   const supabase = createAdminClient()
 
+  // Verify section belongs to a form owned by this tenant
+  const { data: section } = await supabase
+    .from('form_sections')
+    .select('form_id, forms!inner(tenant_id)')
+    .eq('id', id)
+    .single()
+  if (
+    !section ||
+    (section as unknown as { forms: { tenant_id: string } }).forms?.tenant_id !== tenantId
+  ) {
+    return { ok: false, error: 'Section not found' }
+  }
+
   // Unlink fields in this section (set section_id = null) before deleting
   await supabase.from('form_fields').update({ section_id: null }).eq('section_id', id)
 
@@ -187,7 +248,8 @@ export async function deleteFormSection(id: string): Promise<ActionResult> {
 export async function createFormInstance(input: SpawnFormInstanceInput): Promise<ActionResult> {
   await assertRole('admin')
   const parsed = SpawnFormInstanceSchema.safeParse(input)
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' }
+  if (!parsed.success)
+    return { ok: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' }
 
   const tenantId = await getTenantId()
   const actorId = await getActorId()
@@ -201,9 +263,15 @@ export async function createFormInstance(input: SpawnFormInstanceInput): Promise
       feeDescription: parsed.data.fee_description ?? null,
     })
     await supabase.from('audit_log').insert({
-      tenant_id: tenantId, actor_id: actorId, action: 'form.spawn_instance',
-      entity_type: 'form', entity_id: result.id,
-      after_data: { source_form_id: parsed.data.source_form_id, instance_label: parsed.data.instance_label },
+      tenant_id: tenantId,
+      actor_id: actorId,
+      action: 'form.spawn_instance',
+      entity_type: 'form',
+      entity_id: result.id,
+      after_data: {
+        source_form_id: parsed.data.source_form_id,
+        instance_label: parsed.data.instance_label,
+      },
     })
     return { ok: true, id: result.id, slug: result.slug }
   } catch (err) {
@@ -232,15 +300,20 @@ export async function deleteForm(id: string): Promise<ActionResult> {
     }
   }
 
-  const { error } = await supabase.from('forms')
+  const { error } = await supabase
+    .from('forms')
     .update({ status: 'archived', updated_at: new Date().toISOString() })
-    .eq('id', id).eq('tenant_id', tenantId)
+    .eq('id', id)
+    .eq('tenant_id', tenantId)
 
   if (error) return { ok: false, error: error.message }
 
   await supabase.from('audit_log').insert({
-    tenant_id: tenantId, actor_id: actorId, action: 'archive',
-    entity_type: 'form', entity_id: id,
+    tenant_id: tenantId,
+    actor_id: actorId,
+    action: 'archive',
+    entity_type: 'form',
+    entity_id: id,
   })
 
   return { ok: true }
@@ -283,7 +356,10 @@ export async function revertSystemForm(
   const { SYSTEM_FORM_TEMPLATES } = await import('@/lib/forms/system-forms')
   const template = SYSTEM_FORM_TEMPLATES.find((t) => t.key === form.system_form_key)
   if (!template) {
-    return { ok: false, error: `No template registered for system_form_key=${form.system_form_key}` }
+    return {
+      ok: false,
+      error: `No template registered for system_form_key=${form.system_form_key}`,
+    }
   }
 
   const sectionIds: Record<number, string> = {}
@@ -356,8 +432,11 @@ export async function createFormField(input: CreateFormFieldInput): Promise<Acti
   if (!parsed.success) return { ok: false, error: 'Validation failed' }
 
   const supabase = createAdminClient()
-  const { data: field, error } = await supabase.from('form_fields')
-    .insert(parsed.data).select('id').single()
+  const { data: field, error } = await supabase
+    .from('form_fields')
+    .insert(parsed.data)
+    .select('id')
+    .single()
 
   if (error) return { ok: false, error: error.message }
   return { ok: true, id: field.id }
@@ -365,13 +444,26 @@ export async function createFormField(input: CreateFormFieldInput): Promise<Acti
 
 export async function updateFormField(
   fieldId: string,
-  updates: Partial<CreateFormFieldInput>
+  updates: Partial<CreateFormFieldInput>,
 ): Promise<ActionResult> {
   await assertRole('admin')
+  const tenantId = await getTenantId()
   const supabase = createAdminClient()
 
-  const { error } = await supabase.from('form_fields')
-    .update(updates).eq('id', fieldId)
+  // Verify field belongs to a form owned by this tenant
+  const { data: field } = await supabase
+    .from('form_fields')
+    .select('form_id, forms!inner(tenant_id)')
+    .eq('id', fieldId)
+    .single()
+  if (
+    !field ||
+    (field as unknown as { forms: { tenant_id: string } }).forms?.tenant_id !== tenantId
+  ) {
+    return { ok: false, error: 'Field not found' }
+  }
+
+  const { error } = await supabase.from('form_fields').update(updates).eq('id', fieldId)
 
   if (error) return { ok: false, error: error.message }
   return { ok: true, id: fieldId }
@@ -379,10 +471,23 @@ export async function updateFormField(
 
 export async function deleteFormField(fieldId: string): Promise<ActionResult> {
   await assertRole('admin')
+  const tenantId = await getTenantId()
   const supabase = createAdminClient()
 
-  const { error } = await supabase.from('form_fields')
-    .delete().eq('id', fieldId)
+  // Verify field belongs to a form owned by this tenant
+  const { data: field } = await supabase
+    .from('form_fields')
+    .select('form_id, forms!inner(tenant_id)')
+    .eq('id', fieldId)
+    .single()
+  if (
+    !field ||
+    (field as unknown as { forms: { tenant_id: string } }).forms?.tenant_id !== tenantId
+  ) {
+    return { ok: false, error: 'Field not found' }
+  }
+
+  const { error } = await supabase.from('form_fields').delete().eq('id', fieldId)
 
   if (error) return { ok: false, error: error.message }
   return { ok: true }
@@ -390,15 +495,29 @@ export async function deleteFormField(fieldId: string): Promise<ActionResult> {
 
 export async function reorderFormFields(
   formId: string,
-  fieldOrder: { id: string; sort_order: number }[]
+  fieldOrder: { id: string; sort_order: number }[],
 ): Promise<ActionResult> {
   await assertRole('admin')
+  const tenantId = await getTenantId()
   const supabase = createAdminClient()
 
+  // Verify the form belongs to this tenant before modifying fields
+  const { data: form } = await supabase
+    .from('forms')
+    .select('id')
+    .eq('id', formId)
+    .eq('tenant_id', tenantId)
+    .single()
+  if (!form) {
+    return { ok: false, error: 'Form not found' }
+  }
+
   for (const item of fieldOrder) {
-    await supabase.from('form_fields')
+    await supabase
+      .from('form_fields')
       .update({ sort_order: item.sort_order })
-      .eq('id', item.id).eq('form_id', formId)
+      .eq('id', item.id)
+      .eq('form_id', formId)
   }
 
   return { ok: true }
@@ -410,44 +529,55 @@ export async function duplicateForm(formId: string): Promise<ActionResult> {
   const actorId = await getActorId()
   const supabase = createAdminClient()
 
-  const { data: original } = await supabase.from('forms')
+  const { data: original } = await supabase
+    .from('forms')
     .select('*, form_fields(*), form_sections(*), form_submission_actions(*)')
-    .eq('id', formId).eq('tenant_id', tenantId).single()
+    .eq('id', formId)
+    .eq('tenant_id', tenantId)
+    .single()
 
   if (!original) return { ok: false, error: 'Form not found' }
 
   const newSlug = original.slug + '-copy-' + Date.now().toString(36)
-  const { data: newForm, error } = await supabase.from('forms').insert({
-    tenant_id: tenantId,
-    title: original.title + ' (Copy)',
-    slug: newSlug,
-    description: original.description,
-    mode: original.mode,
-    status: 'draft',
-    access_control: original.access_control,
-    theme_overrides: original.theme_overrides,
-    header_config: original.header_config,
-    footer_config: original.footer_config,
-    background_config: original.background_config,
-    custom_css: original.custom_css,
-    thank_you_title: original.thank_you_title,
-    thank_you_message: original.thank_you_message,
-    created_by: actorId,
-  }).select('id, slug').single()
+  const { data: newForm, error } = await supabase
+    .from('forms')
+    .insert({
+      tenant_id: tenantId,
+      title: original.title + ' (Copy)',
+      slug: newSlug,
+      description: original.description,
+      mode: original.mode,
+      status: 'draft',
+      access_control: original.access_control,
+      theme_overrides: original.theme_overrides,
+      header_config: original.header_config,
+      footer_config: original.footer_config,
+      background_config: original.background_config,
+      custom_css: original.custom_css,
+      thank_you_title: original.thank_you_title,
+      thank_you_message: original.thank_you_message,
+      created_by: actorId,
+    })
+    .select('id, slug')
+    .single()
 
   if (error || !newForm) return { ok: false, error: error?.message || 'Failed to duplicate' }
 
   if (original.form_sections?.length) {
     const sectionMap = new Map<string, string>()
     for (const sec of original.form_sections) {
-      const { data: newSec } = await supabase.from('form_sections').insert({
-        form_id: newForm.id,
-        title: sec.title,
-        description: sec.description,
-        sort_order: sec.sort_order,
-        page_number: sec.page_number,
-        logic_rules: sec.logic_rules,
-      }).select('id').single()
+      const { data: newSec } = await supabase
+        .from('form_sections')
+        .insert({
+          form_id: newForm.id,
+          title: sec.title,
+          description: sec.description,
+          sort_order: sec.sort_order,
+          page_number: sec.page_number,
+          logic_rules: sec.logic_rules,
+        })
+        .select('id')
+        .single()
       if (newSec) sectionMap.set(sec.id, newSec.id)
     }
 
@@ -455,7 +585,7 @@ export async function duplicateForm(formId: string): Promise<ActionResult> {
       for (const field of original.form_fields) {
         await supabase.from('form_fields').insert({
           form_id: newForm.id,
-          section_id: field.section_id ? sectionMap.get(field.section_id) ?? null : null,
+          section_id: field.section_id ? (sectionMap.get(field.section_id) ?? null) : null,
           field_key: field.field_key,
           field_type: field.field_type,
           label: field.label,

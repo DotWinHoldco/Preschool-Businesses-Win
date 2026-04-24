@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 
-const SUPABASE_URL = 'https://oajfxyiqjqymuvevnoui.supabase.co'
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 
 /**
  * Admin / service-role Supabase client.
@@ -12,7 +12,7 @@ export function createAdminClient() {
   if (!serviceKey || serviceKey === 'PLACEHOLDER_ADD_AFTER_BUILD') {
     throw new Error(
       'SUPABASE_SERVICE_ROLE_KEY is not configured. ' +
-      'Admin client requires the service role key to bypass RLS.'
+        'Admin client requires the service role key to bypass RLS.',
     )
   }
 

@@ -67,7 +67,7 @@ export default async function StaffMySchedulePage() {
     if (start && end) {
       const [sh, sm] = start.split(':').map(Number)
       const [eh, em] = end.split(':').map(Number)
-      scheduledHours += (eh + em / 60) - (sh + sm / 60)
+      scheduledHours += eh + em / 60 - (sh + sm / 60)
     }
   }
 
@@ -78,11 +78,13 @@ export default async function StaffMySchedulePage() {
     .eq('user_id', userId)
     .eq('tenant_id', tenantId)
 
-  const classroomIds = (assignments ?? []).map((a: Record<string, unknown>) => a.classroom_id as string)
+  const classroomIds = (assignments ?? []).map(
+    (a: Record<string, unknown>) => a.classroom_id as string,
+  )
 
   // --- Upcoming events ---
   const now = new Date().toISOString()
-  let upcomingQuery = supabase
+  const upcomingQuery = supabase
     .from('calendar_events')
     .select('id, title, start_at, end_at, scope, classroom_id')
     .eq('tenant_id', tenantId)
@@ -93,21 +95,31 @@ export default async function StaffMySchedulePage() {
   const { data: eventRows } = await upcomingQuery
 
   // Filter events: school-wide, staff-only, or in assigned classrooms
-  const upcomingEvents = (eventRows ?? []).filter((e: Record<string, unknown>) => {
-    const scope = e.scope as string
-    if (scope === 'school_wide' || scope === 'staff_only') return true
-    if (scope === 'classroom' && classroomIds.includes(e.classroom_id as string)) return true
-    return false
-  }).map((e: Record<string, unknown>) => {
-    const startDate = new Date(e.start_at as string)
-    return {
-      date: startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', weekday: 'short' }),
-      event: e.title as string,
-      time: e.end_at
-        ? `${startDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })} - ${new Date(e.end_at as string).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`
-        : startDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
-    }
-  })
+  const upcomingEvents = (eventRows ?? [])
+    .filter((e: Record<string, unknown>) => {
+      const scope = e.scope as string
+      if (scope === 'school_wide' || scope === 'staff_only') return true
+      if (scope === 'classroom' && classroomIds.includes(e.classroom_id as string)) return true
+      return false
+    })
+    .map((e: Record<string, unknown>) => {
+      const startDate = new Date(e.start_at as string)
+      return {
+        date: startDate.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          weekday: 'short',
+        }),
+        event: e.title as string,
+        time: e.end_at
+          ? `${startDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })} - ${new Date(e.end_at as string).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`
+          : startDate.toLocaleTimeString('en-US', {
+              hour: 'numeric',
+              minute: '2-digit',
+              hour12: true,
+            }),
+      }
+    })
 
   // --- Time entries for worked hours this week ---
   const weekStart = new Date()
@@ -124,7 +136,8 @@ export default async function StaffMySchedulePage() {
   for (const entry of timeEntries ?? []) {
     const e = entry as Record<string, unknown>
     if (e.clock_in_at && e.clock_out_at) {
-      const diff = new Date(e.clock_out_at as string).getTime() - new Date(e.clock_in_at as string).getTime()
+      const diff =
+        new Date(e.clock_out_at as string).getTime() - new Date(e.clock_in_at as string).getTime()
       workedHours += diff / 3600000
     }
   }
@@ -164,7 +177,10 @@ export default async function StaffMySchedulePage() {
           </button>
           <button
             className="rounded-lg px-4 py-2 text-sm font-medium"
-            style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-primary-foreground)' }}
+            style={{
+              backgroundColor: 'var(--color-primary)',
+              color: 'var(--color-primary-foreground)',
+            }}
           >
             Request PTO
           </button>
@@ -182,10 +198,17 @@ export default async function StaffMySchedulePage() {
           <div
             key={stat.label}
             className="rounded-xl p-4"
-            style={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)' }}
+            style={{
+              backgroundColor: 'var(--color-card)',
+              border: '1px solid var(--color-border)',
+            }}
           >
-            <p className="text-xs font-medium" style={{ color: 'var(--color-muted-foreground)' }}>{stat.label}</p>
-            <p className="mt-1 text-xl font-bold" style={{ color: 'var(--color-foreground)' }}>{stat.value}</p>
+            <p className="text-xs font-medium" style={{ color: 'var(--color-muted-foreground)' }}>
+              {stat.label}
+            </p>
+            <p className="mt-1 text-xl font-bold" style={{ color: 'var(--color-foreground)' }}>
+              {stat.value}
+            </p>
           </div>
         ))}
       </div>
@@ -206,23 +229,40 @@ export default async function StaffMySchedulePage() {
             <div
               key={day.day}
               className="rounded-xl p-4"
-              style={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)' }}
+              style={{
+                backgroundColor: 'var(--color-card)',
+                border: '1px solid var(--color-border)',
+              }}
             >
-              <h3 className="text-sm font-semibold" style={{ color: 'var(--color-foreground)' }}>{day.day}</h3>
+              <h3 className="text-sm font-semibold" style={{ color: 'var(--color-foreground)' }}>
+                {day.day}
+              </h3>
               <div className="mt-2 space-y-2">
                 {day.shifts.length === 0 ? (
-                  <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>Off</p>
+                  <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
+                    Off
+                  </p>
                 ) : (
                   day.shifts.map((shift, i) => (
                     <div key={i} className="flex items-center gap-4">
-                      <span className="w-36 text-sm font-mono" style={{ color: 'var(--color-muted-foreground)' }}>{shift.time}</span>
+                      <span
+                        className="w-36 text-sm font-mono"
+                        style={{ color: 'var(--color-muted-foreground)' }}
+                      >
+                        {shift.time}
+                      </span>
                       <span
                         className="rounded-full px-3 py-0.5 text-xs font-medium"
-                        style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-primary-foreground)' }}
+                        style={{
+                          backgroundColor: 'var(--color-primary)',
+                          color: 'var(--color-primary-foreground)',
+                        }}
                       >
                         {shift.classroom}
                       </span>
-                      <span className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>{shift.role}</span>
+                      <span className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
+                        {shift.role}
+                      </span>
                     </div>
                   ))
                 )}
@@ -247,10 +287,23 @@ export default async function StaffMySchedulePage() {
             </p>
           ) : (
             upcomingEvents.map((event, i) => (
-              <div key={i} className="flex items-center gap-4" style={{ borderBottom: '1px solid var(--color-border)', paddingBottom: '0.75rem' }}>
-                <span className="w-28 text-sm" style={{ color: 'var(--color-muted-foreground)' }}>{event.date}</span>
-                <span className="flex-1 text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>{event.event}</span>
-                <span className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>{event.time}</span>
+              <div
+                key={i}
+                className="flex items-center gap-4"
+                style={{ borderBottom: '1px solid var(--color-border)', paddingBottom: '0.75rem' }}
+              >
+                <span className="w-28 text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
+                  {event.date}
+                </span>
+                <span
+                  className="flex-1 text-sm font-medium"
+                  style={{ color: 'var(--color-foreground)' }}
+                >
+                  {event.event}
+                </span>
+                <span className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
+                  {event.time}
+                </span>
               </div>
             ))
           )}

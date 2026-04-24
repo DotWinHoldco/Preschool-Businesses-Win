@@ -1,9 +1,9 @@
 // @anchor: cca.food-program.menu-planner
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
+import { Plus, Check, AlertTriangle, Save } from 'lucide-react'
 import { cn } from '@/lib/cn'
-import { Plus, Check, AlertTriangle, Copy, Save } from 'lucide-react'
 
 const MEAL_TYPES = [
   { key: 'breakfast', label: 'Breakfast' },
@@ -37,7 +37,9 @@ interface MenuPlannerProps {
 
 export function MenuPlanner({ weekStartDate, initialMeals = [], onSave }: MenuPlannerProps) {
   const [meals, setMeals] = useState<MealPlan[]>(initialMeals)
-  const [editingMeal, setEditingMeal] = useState<{ dayIndex: number; mealType: string } | null>(null)
+  const [editingMeal, setEditingMeal] = useState<{ dayIndex: number; mealType: string } | null>(
+    null,
+  )
   const [currentItems, setCurrentItems] = useState<string[]>([])
   const [currentComponents, setCurrentComponents] = useState<Record<string, boolean>>({})
   const [newItem, setNewItem] = useState('')
@@ -65,7 +67,7 @@ export function MenuPlanner({ weekStartDate, initialMeals = [], onSave }: MenuPl
 
     setMeals((prev) => {
       const filtered = prev.filter(
-        (m) => !(m.date === dateStr && m.meal_type === editingMeal.mealType)
+        (m) => !(m.date === dateStr && m.meal_type === editingMeal.mealType),
       )
       return [
         ...filtered,
@@ -89,10 +91,18 @@ export function MenuPlanner({ weekStartDate, initialMeals = [], onSave }: MenuPl
 
   const checkCACFPCompliance = (mealType: string, components: Record<string, boolean>): boolean => {
     if (mealType === 'breakfast') {
-      return !!components.grains && !!components.milk && (!!components.fruit || !!components.vegetable)
+      return (
+        !!components.grains && !!components.milk && (!!components.fruit || !!components.vegetable)
+      )
     }
     if (mealType === 'lunch' || mealType === 'supper') {
-      return !!components.grains && !!components.meat_alt && !!components.vegetable && !!components.fruit && !!components.milk
+      return (
+        !!components.grains &&
+        !!components.meat_alt &&
+        !!components.vegetable &&
+        !!components.fruit &&
+        !!components.milk
+      )
     }
     // Snacks need at least 2 components
     const count = Object.values(components).filter(Boolean).length
@@ -120,7 +130,10 @@ export function MenuPlanner({ weekStartDate, initialMeals = [], onSave }: MenuPl
             <tr>
               <th className="w-24 p-2 text-left text-xs font-medium text-[var(--color-muted-foreground)]" />
               {DAYS.map((day) => (
-                <th key={day} className="p-2 text-center text-xs font-semibold text-[var(--color-foreground)]">
+                <th
+                  key={day}
+                  className="p-2 text-center text-xs font-semibold text-[var(--color-foreground)]"
+                >
                   {day}
                 </th>
               ))}
@@ -134,7 +147,9 @@ export function MenuPlanner({ weekStartDate, initialMeals = [], onSave }: MenuPl
                 </td>
                 {DAYS.map((_, dayIndex) => {
                   const meal = getMeal(dayIndex, mt.key)
-                  const compliant = meal ? checkCACFPCompliance(mt.key, meal.food_components) : false
+                  const compliant = meal
+                    ? checkCACFPCompliance(mt.key, meal.food_components)
+                    : false
 
                   return (
                     <td key={dayIndex} className="p-1 align-top">
@@ -146,7 +161,7 @@ export function MenuPlanner({ weekStartDate, initialMeals = [], onSave }: MenuPl
                             ? compliant
                               ? 'border-[var(--color-primary)]/30 bg-[var(--color-primary)]/5'
                               : 'border-[var(--color-warning)]/30 bg-[var(--color-warning)]/5'
-                            : 'border-dashed border-[var(--color-border)] hover:border-[var(--color-primary)]'
+                            : 'border-dashed border-[var(--color-border)] hover:border-[var(--color-primary)]',
                         )}
                       >
                         {meal ? (
@@ -185,12 +200,15 @@ export function MenuPlanner({ weekStartDate, initialMeals = [], onSave }: MenuPl
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-md rounded-[var(--radius)] bg-[var(--color-card)] p-6 shadow-xl">
             <h3 className="text-lg font-semibold text-[var(--color-foreground)] mb-4">
-              {DAYS[editingMeal.dayIndex]} - {MEAL_TYPES.find((m) => m.key === editingMeal.mealType)?.label}
+              {DAYS[editingMeal.dayIndex]} -{' '}
+              {MEAL_TYPES.find((m) => m.key === editingMeal.mealType)?.label}
             </h3>
 
             {/* Items */}
             <div className="space-y-2 mb-4">
-              <label className="text-sm font-medium text-[var(--color-muted-foreground)]">Menu Items</label>
+              <label className="text-sm font-medium text-[var(--color-muted-foreground)]">
+                Menu Items
+              </label>
               {currentItems.map((item, i) => (
                 <div key={i} className="flex items-center gap-2">
                   <span className="flex-1 text-sm text-[var(--color-foreground)]">{item}</span>
@@ -210,7 +228,10 @@ export function MenuPlanner({ weekStartDate, initialMeals = [], onSave }: MenuPl
                   placeholder="Add item..."
                   className="flex-1 rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
                 />
-                <button onClick={addItem} className="rounded-[var(--radius)] bg-[var(--color-primary)] px-3 py-1.5 text-sm text-[var(--color-primary-foreground)]">
+                <button
+                  onClick={addItem}
+                  className="rounded-[var(--radius)] bg-[var(--color-primary)] px-3 py-1.5 text-sm text-[var(--color-primary-foreground)]"
+                >
                   Add
                 </button>
               </div>
@@ -233,19 +254,20 @@ export function MenuPlanner({ weekStartDate, initialMeals = [], onSave }: MenuPl
                       'rounded-full px-3 py-1 text-xs font-medium border transition-colors',
                       currentComponents[fc.key]
                         ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-primary-foreground)]'
-                        : 'border-[var(--color-border)] text-[var(--color-muted-foreground)] hover:border-[var(--color-primary)]'
+                        : 'border-[var(--color-border)] text-[var(--color-muted-foreground)] hover:border-[var(--color-primary)]',
                     )}
                   >
                     {fc.label}
                   </button>
                 ))}
               </div>
-              {!checkCACFPCompliance(editingMeal.mealType, currentComponents) && currentItems.length > 0 && (
-                <p className="mt-2 flex items-center gap-1 text-xs text-[var(--color-warning)]">
-                  <AlertTriangle className="h-3 w-3" />
-                  Missing required CACFP food components
-                </p>
-              )}
+              {!checkCACFPCompliance(editingMeal.mealType, currentComponents) &&
+                currentItems.length > 0 && (
+                  <p className="mt-2 flex items-center gap-1 text-xs text-[var(--color-warning)]">
+                    <AlertTriangle className="h-3 w-3" />
+                    Missing required CACFP food components
+                  </p>
+                )}
             </div>
 
             <div className="flex justify-end gap-2">

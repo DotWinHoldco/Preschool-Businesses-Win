@@ -1,6 +1,7 @@
 // @anchor: cca.billing.parent-invoice
 // Parent invoice view with payment option.
 
+import Link from 'next/link'
 import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { getSession } from '@/lib/auth/session'
@@ -31,14 +32,16 @@ export default async function ParentInvoiceDetailPage({
     .select('family_id')
     .eq('user_id', userId)
     .eq('tenant_id', tenantId)
-  const familyIds = memberships?.map(m => m.family_id) ?? []
+  const familyIds = memberships?.map((m) => m.family_id) ?? []
 
   if (familyIds.length === 0) notFound()
 
   // Fetch the invoice — must belong to one of this user's families
   const { data: invoice } = await supabase
     .from('invoices')
-    .select('id, invoice_number, family_id, period_start, period_end, due_date, status, subtotal_cents, discounts_cents, tax_cents, total_cents, paid_at')
+    .select(
+      'id, invoice_number, family_id, period_start, period_end, due_date, status, subtotal_cents, discounts_cents, tax_cents, total_cents, paid_at',
+    )
     .eq('id', id)
     .eq('tenant_id', tenantId)
     .in('family_id', familyIds)
@@ -74,12 +77,12 @@ export default async function ParentInvoiceDetailPage({
 
   return (
     <div className="flex flex-col gap-6 max-w-3xl mx-auto">
-      <a
+      <Link
         href="/portal/parent/billing"
         className="text-sm text-[var(--color-primary)] hover:underline"
       >
         &larr; Back to billing
-      </a>
+      </Link>
 
       <InvoiceDetail
         invoiceNumber={invoice.invoice_number ?? `INV-${invoice.id.slice(0, 8).toUpperCase()}`}
@@ -88,7 +91,7 @@ export default async function ParentInvoiceDetailPage({
         periodEnd={invoice.period_end ?? ''}
         dueDate={invoice.due_date ?? ''}
         status={invoice.status}
-        lineItems={(lineItems ?? []).map(li => ({
+        lineItems={(lineItems ?? []).map((li) => ({
           id: li.id,
           description: li.description ?? '',
           quantity: li.quantity ?? 1,
@@ -106,27 +109,40 @@ export default async function ParentInvoiceDetailPage({
       {/* Payment history */}
       {(payments ?? []).length > 0 && (
         <div className="rounded-[var(--radius,0.75rem)] border border-[var(--color-border)] bg-[var(--color-card)] p-6">
-          <h3 className="text-lg font-semibold text-[var(--color-foreground)] mb-4">Payment History</h3>
+          <h3 className="text-lg font-semibold text-[var(--color-foreground)] mb-4">
+            Payment History
+          </h3>
           <div className="flex flex-col gap-2">
-            {(payments ?? []).map(p => (
-              <div key={p.id} className="flex items-center justify-between text-sm border-b border-[var(--color-border)]/50 pb-2 last:border-0">
+            {(payments ?? []).map((p) => (
+              <div
+                key={p.id}
+                className="flex items-center justify-between text-sm border-b border-[var(--color-border)]/50 pb-2 last:border-0"
+              >
                 <div>
                   <p className="text-[var(--color-foreground)] capitalize">{p.method}</p>
                   {p.paid_at && (
                     <p className="text-xs text-[var(--color-muted-foreground)]">
-                      {new Date(p.paid_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      {new Date(p.paid_at).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
                     </p>
                   )}
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-[var(--color-foreground)]">
-                    {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(p.amount_cents / 100)}
+                    {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(
+                      p.amount_cents / 100,
+                    )}
                   </span>
-                  <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
-                    p.status === 'completed' || p.status === 'succeeded'
-                      ? 'bg-[var(--color-success)]/10 text-[var(--color-success)]'
-                      : 'bg-[var(--color-muted)] text-[var(--color-muted-foreground)]'
-                  }`}>
+                  <span
+                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
+                      p.status === 'completed' || p.status === 'succeeded'
+                        ? 'bg-[var(--color-success)]/10 text-[var(--color-success)]'
+                        : 'bg-[var(--color-muted)] text-[var(--color-muted-foreground)]'
+                    }`}
+                  >
                     {p.status}
                   </span>
                 </div>
@@ -136,12 +152,7 @@ export default async function ParentInvoiceDetailPage({
         </div>
       )}
 
-      {needsPayment && (
-        <PaymentForm
-          invoiceId={id}
-          amountCents={invoice.total_cents}
-        />
-      )}
+      {needsPayment && <PaymentForm invoiceId={id} amountCents={invoice.total_cents} />}
     </div>
   )
 }

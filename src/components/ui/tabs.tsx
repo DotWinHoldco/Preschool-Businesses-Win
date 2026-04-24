@@ -62,64 +62,61 @@ function Tabs({ defaultValue, value, onValueChange, children, className }: TabsP
 // TabList
 // ---------------------------------------------------------------------------
 
-export interface TabListProps extends HTMLAttributes<HTMLDivElement> {}
+export type TabListProps = HTMLAttributes<HTMLDivElement>
 
-const TabList = forwardRef<HTMLDivElement, TabListProps>(({ className, children, ...props }, ref) => {
-  const listRef = useRef<HTMLDivElement | null>(null)
+const TabList = forwardRef<HTMLDivElement, TabListProps>(
+  ({ className, children, ...props }, ref) => {
+    const listRef = useRef<HTMLDivElement | null>(null)
 
-  const setRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      listRef.current = node
-      if (typeof ref === 'function') ref(node)
-      else if (ref) ref.current = node
-    },
-    [ref],
-  )
-
-  const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-    const el = listRef.current
-    if (!el) return
-    const tabs = Array.from(
-      el.querySelectorAll<HTMLElement>('[role="tab"]:not([disabled])'),
+    const setRef = useCallback(
+      (node: HTMLDivElement | null) => {
+        listRef.current = node
+        if (typeof ref === 'function') ref(node)
+        else if (ref) ref.current = node
+      },
+      [ref],
     )
-    const idx = tabs.indexOf(document.activeElement as HTMLElement)
 
-    let nextIdx = idx
-    if (e.key === 'ArrowRight') {
-      e.preventDefault()
-      nextIdx = (idx + 1) % tabs.length
-    } else if (e.key === 'ArrowLeft') {
-      e.preventDefault()
-      nextIdx = (idx - 1 + tabs.length) % tabs.length
-    } else if (e.key === 'Home') {
-      e.preventDefault()
-      nextIdx = 0
-    } else if (e.key === 'End') {
-      e.preventDefault()
-      nextIdx = tabs.length - 1
+    const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+      const el = listRef.current
+      if (!el) return
+      const tabs = Array.from(el.querySelectorAll<HTMLElement>('[role="tab"]:not([disabled])'))
+      const idx = tabs.indexOf(document.activeElement as HTMLElement)
+
+      let nextIdx = idx
+      if (e.key === 'ArrowRight') {
+        e.preventDefault()
+        nextIdx = (idx + 1) % tabs.length
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault()
+        nextIdx = (idx - 1 + tabs.length) % tabs.length
+      } else if (e.key === 'Home') {
+        e.preventDefault()
+        nextIdx = 0
+      } else if (e.key === 'End') {
+        e.preventDefault()
+        nextIdx = tabs.length - 1
+      }
+
+      if (nextIdx !== idx) {
+        tabs[nextIdx]?.focus()
+        tabs[nextIdx]?.click()
+      }
     }
 
-    if (nextIdx !== idx) {
-      tabs[nextIdx]?.focus()
-      tabs[nextIdx]?.click()
-    }
-  }
-
-  return (
-    <div
-      ref={setRef}
-      role="tablist"
-      className={cn(
-        'flex border-b border-[var(--color-border)]',
-        className,
-      )}
-      onKeyDown={handleKeyDown}
-      {...props}
-    >
-      {children}
-    </div>
-  )
-})
+    return (
+      <div
+        ref={setRef}
+        role="tablist"
+        className={cn('flex border-b border-[var(--color-border)]', className)}
+        onKeyDown={handleKeyDown}
+        {...props}
+      >
+        {children}
+      </div>
+    )
+  },
+)
 TabList.displayName = 'TabList'
 
 // ---------------------------------------------------------------------------

@@ -1,5 +1,6 @@
 // @anchor: cca.family.parent-page
 
+import Link from 'next/link'
 import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { getSession } from '@/lib/auth/session'
@@ -28,7 +29,7 @@ export default async function ParentFamilyPage() {
     .select('family_id')
     .eq('user_id', userId)
     .eq('tenant_id', tenantId)
-  const familyIds = memberships?.map(m => m.family_id) ?? []
+  const familyIds = memberships?.map((m) => m.family_id) ?? []
 
   if (familyIds.length === 0) {
     return (
@@ -83,12 +84,17 @@ export default async function ParentFamilyPage() {
   // Family members with user profile details
   const { data: familyMembersRaw } = await supabase
     .from('family_members')
-    .select('user_id, relationship_type, relationship_label, is_primary_contact, is_billing_responsible, can_pickup_default, user_profiles(first_name, last_name)')
+    .select(
+      'user_id, relationship_type, relationship_label, is_primary_contact, is_billing_responsible, can_pickup_default, user_profiles(first_name, last_name)',
+    )
     .in('family_id', familyIds)
     .eq('tenant_id', tenantId)
 
-  const familyMembers = (familyMembersRaw ?? []).map(m => {
-    const profile = m.user_profiles as unknown as { first_name: string | null; last_name: string | null } | null
+  const familyMembers = (familyMembersRaw ?? []).map((m) => {
+    const profile = m.user_profiles as unknown as {
+      first_name: string | null
+      last_name: string | null
+    } | null
     return {
       name: profile ? `${profile.first_name ?? ''} ${profile.last_name ?? ''}`.trim() : 'Unknown',
       relationship: m.relationship_label ?? m.relationship_type,
@@ -104,26 +110,28 @@ export default async function ParentFamilyPage() {
     .select('student_id')
     .in('family_id', familyIds)
     .eq('tenant_id', tenantId)
-  const studentIds = (studentLinks ?? []).map(l => l.student_id)
+  const studentIds = (studentLinks ?? []).map((l) => l.student_id)
 
-  const { data: studentsRaw } = studentIds.length > 0
-    ? await supabase
-        .from('students')
-        .select('id, first_name, last_name, date_of_birth, enrollment_status')
-        .in('id', studentIds)
-        .eq('tenant_id', tenantId)
-        .is('deleted_at', null)
-    : { data: [] }
+  const { data: studentsRaw } =
+    studentIds.length > 0
+      ? await supabase
+          .from('students')
+          .select('id, first_name, last_name, date_of_birth, enrollment_status')
+          .in('id', studentIds)
+          .eq('tenant_id', tenantId)
+          .is('deleted_at', null)
+      : { data: [] }
 
   // Classroom assignments
-  const { data: classroomAssignments } = studentIds.length > 0
-    ? await supabase
-        .from('student_classroom_assignments')
-        .select('student_id, classrooms(name)')
-        .in('student_id', studentIds)
-        .eq('tenant_id', tenantId)
-        .is('assigned_to', null)
-    : { data: [] }
+  const { data: classroomAssignments } =
+    studentIds.length > 0
+      ? await supabase
+          .from('student_classroom_assignments')
+          .select('student_id, classrooms(name)')
+          .in('student_id', studentIds)
+          .eq('tenant_id', tenantId)
+          .is('assigned_to', null)
+      : { data: [] }
 
   function computeAge(dob: string): string {
     const birth = new Date(dob)
@@ -132,17 +140,23 @@ export default async function ParentFamilyPage() {
     const monthDiff = now.getMonth() - birth.getMonth()
     if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < birth.getDate())) years--
     if (years < 1) {
-      let months = (now.getFullYear() - birth.getFullYear()) * 12 + now.getMonth() - birth.getMonth()
+      let months =
+        (now.getFullYear() - birth.getFullYear()) * 12 + now.getMonth() - birth.getMonth()
       if (now.getDate() < birth.getDate()) months--
       return months === 1 ? '1 month' : `${months} months`
     }
     return years === 1 ? '1 year' : `${years} years`
   }
 
-  const childrenList = (studentsRaw ?? []).map(s => {
-    const assignment = (classroomAssignments ?? []).find(a => a.student_id === s.id)
-    const classroomObj = assignment?.classrooms as unknown as { name: string } | { name: string }[] | null
-    const classroomName = Array.isArray(classroomObj) ? classroomObj[0]?.name ?? 'Unassigned' : classroomObj?.name ?? 'Unassigned'
+  const childrenList = (studentsRaw ?? []).map((s) => {
+    const assignment = (classroomAssignments ?? []).find((a) => a.student_id === s.id)
+    const classroomObj = assignment?.classrooms as unknown as
+      | { name: string }
+      | { name: string }[]
+      | null
+    const classroomName = Array.isArray(classroomObj)
+      ? (classroomObj[0]?.name ?? 'Unassigned')
+      : (classroomObj?.name ?? 'Unassigned')
     return {
       id: s.id,
       name: `${s.first_name} ${s.last_name}`,
@@ -156,7 +170,9 @@ export default async function ParentFamilyPage() {
   const addressParts = [
     family.mailing_address_line1,
     family.mailing_address_line2,
-    family.mailing_city ? `${family.mailing_city}, ${family.mailing_state ?? ''} ${family.mailing_zip ?? ''}`.trim() : null,
+    family.mailing_city
+      ? `${family.mailing_city}, ${family.mailing_state ?? ''} ${family.mailing_zip ?? ''}`.trim()
+      : null,
   ].filter(Boolean)
   const address = addressParts.length > 0 ? addressParts.join(', ') : 'No address on file'
 
@@ -173,7 +189,10 @@ export default async function ParentFamilyPage() {
         </div>
         <button
           className="rounded-lg px-4 py-2 text-sm font-medium"
-          style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-primary-foreground)' }}
+          style={{
+            backgroundColor: 'var(--color-primary)',
+            color: 'var(--color-primary-foreground)',
+          }}
         >
           Edit Family Info
         </button>
@@ -184,7 +203,10 @@ export default async function ParentFamilyPage() {
         className="rounded-xl p-5"
         style={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)' }}
       >
-        <h2 className="text-sm font-semibold uppercase tracking-wider" style={{ color: 'var(--color-muted-foreground)' }}>
+        <h2
+          className="text-sm font-semibold uppercase tracking-wider"
+          style={{ color: 'var(--color-muted-foreground)' }}
+        >
           Household Information
         </h2>
         <dl className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -195,8 +217,15 @@ export default async function ParentFamilyPage() {
             ['Auto-Pay', family.auto_pay_enabled ? 'Enabled' : 'Disabled'],
           ].map(([label, value]) => (
             <div key={label as string}>
-              <dt className="text-xs font-medium" style={{ color: 'var(--color-muted-foreground)' }}>{label}</dt>
-              <dd className="text-sm" style={{ color: 'var(--color-foreground)' }}>{value}</dd>
+              <dt
+                className="text-xs font-medium"
+                style={{ color: 'var(--color-muted-foreground)' }}
+              >
+                {label}
+              </dt>
+              <dd className="text-sm" style={{ color: 'var(--color-foreground)' }}>
+                {value}
+              </dd>
             </div>
           ))}
         </dl>
@@ -207,7 +236,10 @@ export default async function ParentFamilyPage() {
         className="rounded-xl p-5"
         style={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)' }}
       >
-        <h2 className="text-sm font-semibold uppercase tracking-wider" style={{ color: 'var(--color-muted-foreground)' }}>
+        <h2
+          className="text-sm font-semibold uppercase tracking-wider"
+          style={{ color: 'var(--color-muted-foreground)' }}
+        >
           Children
         </h2>
         {childrenList.length > 0 ? (
@@ -219,14 +251,19 @@ export default async function ParentFamilyPage() {
                 style={{ backgroundColor: 'var(--color-muted)' }}
               >
                 <div>
-                  <p className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>{child.name}</p>
+                  <p className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
+                    {child.name}
+                  </p>
                   <p className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
                     {child.age} &middot; {child.classroom}
                   </p>
                 </div>
                 <span
                   className="rounded-full px-2.5 py-0.5 text-xs font-medium"
-                  style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-primary-foreground)' }}
+                  style={{
+                    backgroundColor: 'var(--color-primary)',
+                    color: 'var(--color-primary-foreground)',
+                  }}
                 >
                   {child.status}
                 </span>
@@ -246,7 +283,10 @@ export default async function ParentFamilyPage() {
         style={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)' }}
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wider" style={{ color: 'var(--color-muted-foreground)' }}>
+          <h2
+            className="text-sm font-semibold uppercase tracking-wider"
+            style={{ color: 'var(--color-muted-foreground)' }}
+          >
             Family Members
           </h2>
           <button
@@ -268,7 +308,9 @@ export default async function ParentFamilyPage() {
                   <p className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
                     {member.name}
                     {member.role === 'Primary Contact' && (
-                      <span className="ml-2 text-xs" style={{ color: 'var(--color-primary)' }}>(Primary)</span>
+                      <span className="ml-2 text-xs" style={{ color: 'var(--color-primary)' }}>
+                        (Primary)
+                      </span>
                     )}
                   </p>
                   <p className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
@@ -277,12 +319,24 @@ export default async function ParentFamilyPage() {
                 </div>
                 <div className="flex gap-2">
                   {member.canPickup && (
-                    <span className="rounded-full px-2 py-0.5 text-xs" style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-primary-foreground)' }}>
+                    <span
+                      className="rounded-full px-2 py-0.5 text-xs"
+                      style={{
+                        backgroundColor: 'var(--color-primary)',
+                        color: 'var(--color-primary-foreground)',
+                      }}
+                    >
                       Pickup
                     </span>
                   )}
                   {member.billing && (
-                    <span className="rounded-full px-2 py-0.5 text-xs" style={{ backgroundColor: 'var(--color-secondary)', color: 'var(--color-secondary-foreground)' }}>
+                    <span
+                      className="rounded-full px-2 py-0.5 text-xs"
+                      style={{
+                        backgroundColor: 'var(--color-secondary)',
+                        color: 'var(--color-secondary-foreground)',
+                      }}
+                    >
                       Billing
                     </span>
                   )}
@@ -298,7 +352,7 @@ export default async function ParentFamilyPage() {
       </div>
 
       {/* Authorized pickups link */}
-      <a
+      <Link
         href="/portal/parent/family/pickups"
         className="block rounded-xl p-5 transition-shadow hover:shadow-md"
         style={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)' }}
@@ -314,7 +368,7 @@ export default async function ParentFamilyPage() {
           </div>
           <span style={{ color: 'var(--color-primary)', fontSize: '1.25rem' }}>&rarr;</span>
         </div>
-      </a>
+      </Link>
     </div>
   )
 }

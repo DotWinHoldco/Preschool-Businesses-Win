@@ -48,10 +48,12 @@ export async function runRatioCheckForAllTenants(): Promise<RatioCheckSummary> {
       // (b) Get today's checked-in (not checked-out) students with classroom assignment
       const { data: checkedIn } = await supabase
         .from('attendance_records')
-        .select(`
+        .select(
+          `
           student_id,
           student_classroom_assignments!inner(classroom_id)
-        `)
+        `,
+        )
         .eq('date', today)
         .not('check_in_id', 'is', null)
         .is('check_out_id', null)
@@ -71,24 +73,16 @@ export async function runRatioCheckForAllTenants(): Promise<RatioCheckSummary> {
         const assignments = record.student_classroom_assignments as unknown as
           | { classroom_id: string }
           | { classroom_id: string }[]
-        const assignmentList = Array.isArray(assignments)
-          ? assignments
-          : [assignments]
+        const assignmentList = Array.isArray(assignments) ? assignments : [assignments]
         for (const a of assignmentList) {
-          studentCounts.set(
-            a.classroom_id,
-            (studentCounts.get(a.classroom_id) ?? 0) + 1,
-          )
+          studentCounts.set(a.classroom_id, (studentCounts.get(a.classroom_id) ?? 0) + 1)
         }
       }
 
       // Group staff counts by classroom
       const staffCounts = new Map<string, number>()
       for (const sa of staffAssignments ?? []) {
-        staffCounts.set(
-          sa.classroom_id,
-          (staffCounts.get(sa.classroom_id) ?? 0) + 1,
-        )
+        staffCounts.set(sa.classroom_id, (staffCounts.get(sa.classroom_id) ?? 0) + 1)
       }
 
       // Evaluate each classroom
@@ -106,7 +100,8 @@ export async function runRatioCheckForAllTenants(): Promise<RatioCheckSummary> {
         const staffCount = staffCounts.get(classroom.id) ?? 0
         const requiredRatio = ratioMap.get(classroom.age_group) ?? 10 // default fallback
 
-        const actualRatio = staffCount > 0 ? studentCount / staffCount : (studentCount > 0 ? Infinity : 0)
+        const actualRatio =
+          staffCount > 0 ? studentCount / staffCount : studentCount > 0 ? Infinity : 0
         const isCompliant = actualRatio <= requiredRatio
 
         complianceLogs.push({
@@ -133,16 +128,7 @@ export async function runRatioCheckForAllTenants(): Promise<RatioCheckSummary> {
 
       // (g) Batch insert compliance logs
       if (complianceLogs.length > 0) {
-        const { error: insertError } = await supabase
-          .from('ratio_compliance_log')
-          .insert(complianceLogs)
-
-        if (insertError) {
-          console.error(
-            `[cron:ratio-check] Log insert failed for tenant ${tenant.slug}:`,
-            insertError.message,
-          )
-        }
+        await supabase.from('ratio_compliance_log').insert(complianceLogs)
       }
 
       // (h) Notify admins about violations
@@ -162,17 +148,10 @@ export async function runRatioCheckForAllTenants(): Promise<RatioCheckSummary> {
           })
         }
       }
-    } catch (err) {
-      console.error(
-        `[cron:ratio-check] Error processing tenant ${tenant.slug}:`,
-        err,
-      )
+    } catch {
+      // Error processing tenant
     }
   }
-
-  console.log(
-    `[cron:ratio-check] Done — ${summary.tenants_checked} tenants, ${summary.classrooms_checked} classrooms, ${summary.violations} violations`,
-  )
 
   return summary
 }

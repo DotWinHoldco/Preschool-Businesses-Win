@@ -7,7 +7,7 @@ import { redirect } from 'next/navigation'
 import { createServerClient } from '@supabase/ssr'
 import { type Role, requireRole as checkRole } from './permissions'
 
-const SUPABASE_URL = 'https://oajfxyiqjqymuvevnoui.supabase.co'
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 
 /**
  * Build a Supabase server client from async cookies (Next.js 16).
@@ -15,26 +15,20 @@ const SUPABASE_URL = 'https://oajfxyiqjqymuvevnoui.supabase.co'
 async function buildServerClient() {
   const cookieStore = await cookies()
 
-  return createServerClient(
-    SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          } catch {
-            // Safe to ignore in Server Components (read-only context)
-          }
-        },
+  return createServerClient(SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll()
       },
-    }
-  )
+      setAll(cookiesToSet) {
+        try {
+          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
+        } catch {
+          // Safe to ignore in Server Components (read-only context)
+        }
+      },
+    },
+  })
 }
 
 export interface SessionUser {
@@ -82,7 +76,7 @@ export interface UserMembership {
  */
 export async function getUserMembership(
   userId: string,
-  tenantId: string
+  tenantId: string,
 ): Promise<UserMembership | null> {
   const supabase = await buildServerClient()
 

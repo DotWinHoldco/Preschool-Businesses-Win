@@ -11,7 +11,10 @@ import type { DocumentType, DocumentEntityType } from '@/lib/schemas/document'
 interface DocumentUploaderProps {
   entityType: DocumentEntityType
   entityId: string
-  onUpload: (file: File, metadata: { title: string; document_type: DocumentType; expiry_date?: string }) => void
+  onUpload: (
+    file: File,
+    metadata: { title: string; document_type: DocumentType; expiry_date?: string },
+  ) => void
   uploading?: boolean
   accept?: string
 }
@@ -33,8 +36,6 @@ const DOC_TYPE_OPTIONS: Array<{ value: DocumentType; label: string }> = [
 ]
 
 export function DocumentUploader({
-  entityType,
-  entityId,
   onUpload,
   uploading = false,
   accept = '.pdf,.jpg,.jpeg,.png,.doc,.docx',
@@ -56,16 +57,19 @@ export function DocumentUploader({
     }
   }, [])
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setDragActive(false)
-    const file = e.dataTransfer.files?.[0]
-    if (file) {
-      setSelectedFile(file)
-      if (!title) setTitle(file.name.replace(/\.[^.]+$/, ''))
-    }
-  }, [title])
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setDragActive(false)
+      const file = e.dataTransfer.files?.[0]
+      if (file) {
+        setSelectedFile(file)
+        if (!title) setTitle(file.name.replace(/\.[^.]+$/, ''))
+      }
+    },
+    [title],
+  )
 
   const handleFileSelect = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -100,7 +104,9 @@ export function DocumentUploader({
         className="rounded-lg border-2 border-dashed p-8 text-center transition-colors"
         style={{
           borderColor: dragActive ? 'var(--color-primary)' : 'var(--color-border)',
-          backgroundColor: dragActive ? 'var(--color-primary-50, #EFF6FF)' : 'var(--color-background)',
+          backgroundColor: dragActive
+            ? 'var(--color-primary-50, #EFF6FF)'
+            : 'var(--color-background)',
         }}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
@@ -118,13 +124,22 @@ export function DocumentUploader({
                 {(selectedFile.size / 1024).toFixed(1)} KB
               </p>
             </div>
-            <button type="button" onClick={clearFile} className="p-1 rounded hover:bg-gray-100" aria-label="Remove file">
+            <button
+              type="button"
+              onClick={clearFile}
+              className="p-1 rounded hover:bg-gray-100"
+              aria-label="Remove file"
+            >
               <X size={16} style={{ color: 'var(--color-muted-foreground)' }} />
             </button>
           </div>
         ) : (
           <>
-            <Upload size={32} className="mx-auto mb-2" style={{ color: 'var(--color-muted-foreground)' }} />
+            <Upload
+              size={32}
+              className="mx-auto mb-2"
+              style={{ color: 'var(--color-muted-foreground)' }}
+            />
             <p className="text-sm" style={{ color: 'var(--color-foreground)' }}>
               Drag and drop a file, or{' '}
               <button
@@ -153,9 +168,16 @@ export function DocumentUploader({
 
       {/* Metadata form */}
       {selectedFile && (
-        <div className="rounded-lg border p-4 space-y-3" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-card)' }}>
+        <div
+          className="rounded-lg border p-4 space-y-3"
+          style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-card)' }}
+        >
           <div>
-            <label htmlFor="doc-title" className="block text-sm font-medium mb-1" style={{ color: 'var(--color-foreground)' }}>
+            <label
+              htmlFor="doc-title"
+              className="block text-sm font-medium mb-1"
+              style={{ color: 'var(--color-foreground)' }}
+            >
               Document Title
             </label>
             <input
@@ -168,7 +190,11 @@ export function DocumentUploader({
             />
           </div>
           <div>
-            <label htmlFor="doc-type" className="block text-sm font-medium mb-1" style={{ color: 'var(--color-foreground)' }}>
+            <label
+              htmlFor="doc-type"
+              className="block text-sm font-medium mb-1"
+              style={{ color: 'var(--color-foreground)' }}
+            >
               Document Type
             </label>
             <select
@@ -179,12 +205,18 @@ export function DocumentUploader({
               style={{ borderColor: 'var(--color-border)', color: 'var(--color-foreground)' }}
             >
               {DOC_TYPE_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
               ))}
             </select>
           </div>
           <div>
-            <label htmlFor="doc-expiry" className="block text-sm font-medium mb-1" style={{ color: 'var(--color-foreground)' }}>
+            <label
+              htmlFor="doc-expiry"
+              className="block text-sm font-medium mb-1"
+              style={{ color: 'var(--color-foreground)' }}
+            >
               Expiry Date (optional)
             </label>
             <input

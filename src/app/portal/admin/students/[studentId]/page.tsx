@@ -14,14 +14,13 @@ import { AllergyBadge } from '@/components/portal/students/allergy-badge'
 import { SectionEditButton } from '@/components/portal/students/section-edit-button'
 import { StudentFamilyLinks } from '@/components/portal/families/student-family-linker'
 import type { AllergySeverity } from '@/components/portal/students/allergy-badge'
-import type { AllergyData, MedicalProfileData } from '@/components/portal/students/medical-profile'
+import type { MedicalProfileData } from '@/components/portal/students/medical-profile'
 
 function calculateAge(dob: string): string {
   const birth = new Date(dob)
   const now = new Date()
   const months =
-    (now.getFullYear() - birth.getFullYear()) * 12 +
-    (now.getMonth() - birth.getMonth())
+    (now.getFullYear() - birth.getFullYear()) * 12 + (now.getMonth() - birth.getMonth())
   if (months < 24) return `${months} months`
   const years = Math.floor(months / 12)
   const rem = months % 12
@@ -143,9 +142,7 @@ export default async function StudentDetailPage({
 
   const displayName = student.preferred_name || student.first_name
   const age = calculateAge(student.date_of_birth)
-  const hasLifeThreatening = allergies?.some(
-    (a) => a.severity === 'life_threatening',
-  )
+  const hasLifeThreatening = allergies?.some((a) => a.severity === 'life_threatening')
 
   const classroomName = classroomAssignment
     ? (classroomAssignment as Record<string, unknown>).classrooms
@@ -165,7 +162,12 @@ export default async function StudentDetailPage({
         >
           <svg
             className="h-6 w-6 shrink-0 text-red-600"
-            viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           >
             <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
             <line x1="12" y1="9" x2="12" y2="13" />
@@ -192,7 +194,8 @@ export default async function StudentDetailPage({
             />
           ) : (
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--color-muted)] text-lg font-semibold text-[var(--color-muted-foreground)]">
-              {student.first_name[0]}{student.last_name[0]}
+              {student.first_name[0]}
+              {student.last_name[0]}
             </div>
           )}
           <div>
@@ -215,7 +218,11 @@ export default async function StudentDetailPage({
                 {student.enrollment_status}
               </Badge>
               {allergies?.map((a) => (
-                <AllergyBadge key={a.id} allergen={a.allergen} severity={a.severity as AllergySeverity} />
+                <AllergyBadge
+                  key={a.id}
+                  allergen={a.allergen}
+                  severity={a.severity as AllergySeverity}
+                />
               ))}
             </div>
           </div>
@@ -251,35 +258,55 @@ export default async function StudentDetailPage({
             <CardContent>
               <dl className="grid gap-3 sm:grid-cols-2">
                 <div>
-                  <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">First Name</dt>
+                  <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">
+                    First Name
+                  </dt>
                   <dd className="text-sm text-[var(--color-foreground)]">{student.first_name}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">Last Name</dt>
+                  <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">
+                    Last Name
+                  </dt>
                   <dd className="text-sm text-[var(--color-foreground)]">{student.last_name}</dd>
                 </div>
                 {student.preferred_name && (
                   <div>
-                    <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">Preferred Name</dt>
-                    <dd className="text-sm text-[var(--color-foreground)]">{student.preferred_name}</dd>
+                    <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">
+                      Preferred Name
+                    </dt>
+                    <dd className="text-sm text-[var(--color-foreground)]">
+                      {student.preferred_name}
+                    </dd>
                   </div>
                 )}
                 {student.gender && (
                   <div>
-                    <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">Gender</dt>
-                    <dd className="text-sm text-[var(--color-foreground)] capitalize">{student.gender.replace(/_/g, ' ')}</dd>
+                    <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">
+                      Gender
+                    </dt>
+                    <dd className="text-sm text-[var(--color-foreground)] capitalize">
+                      {student.gender.replace(/_/g, ' ')}
+                    </dd>
                   </div>
                 )}
                 {student.enrollment_date && (
                   <div>
-                    <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">Enrollment Date</dt>
-                    <dd className="text-sm text-[var(--color-foreground)]">{new Date(student.enrollment_date).toLocaleDateString()}</dd>
+                    <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">
+                      Enrollment Date
+                    </dt>
+                    <dd className="text-sm text-[var(--color-foreground)]">
+                      {new Date(student.enrollment_date).toLocaleDateString()}
+                    </dd>
                   </div>
                 )}
                 {student.notes_internal && (
                   <div className="sm:col-span-2">
-                    <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">Internal Notes</dt>
-                    <dd className="text-sm text-[var(--color-foreground)] whitespace-pre-wrap">{student.notes_internal}</dd>
+                    <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">
+                      Internal Notes
+                    </dt>
+                    <dd className="text-sm text-[var(--color-foreground)] whitespace-pre-wrap">
+                      {student.notes_internal}
+                    </dd>
                   </div>
                 )}
               </dl>
@@ -339,8 +366,10 @@ export default async function StudentDetailPage({
               </div>
             </CardHeader>
             <CardContent>
-              {(!portfolioEntries || portfolioEntries.length === 0) ? (
-                <p className="text-sm text-[var(--color-muted-foreground)]">No observations or portfolio entries yet</p>
+              {!portfolioEntries || portfolioEntries.length === 0 ? (
+                <p className="text-sm text-[var(--color-muted-foreground)]">
+                  No observations or portfolio entries yet
+                </p>
               ) : (
                 <div className="space-y-3">
                   {portfolioEntries.map((entry) => {
@@ -355,17 +384,25 @@ export default async function StudentDetailPage({
                     return (
                       <div key={entry.id} className="border-l-2 border-[var(--color-primary)] pl-3">
                         <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium text-[var(--color-foreground)]">{entry.title}</p>
-                          <Badge variant="outline" size="sm">{typeLabels[entry.entry_type] ?? entry.entry_type}</Badge>
+                          <p className="text-sm font-medium text-[var(--color-foreground)]">
+                            {entry.title}
+                          </p>
+                          <Badge variant="outline" size="sm">
+                            {typeLabels[entry.entry_type] ?? entry.entry_type}
+                          </Badge>
                           {entry.visibility === 'staff_only' && (
-                            <Badge variant="warning" size="sm">Staff only</Badge>
+                            <Badge variant="warning" size="sm">
+                              Staff only
+                            </Badge>
                           )}
                         </div>
                         <p className="text-xs text-[var(--color-muted-foreground)] mt-0.5">
                           {new Date(entry.created_at).toLocaleDateString()}
                         </p>
                         {entry.narrative && (
-                          <p className="text-sm text-[var(--color-foreground)] mt-1 line-clamp-2">{entry.narrative}</p>
+                          <p className="text-sm text-[var(--color-foreground)] mt-1 line-clamp-2">
+                            {entry.narrative}
+                          </p>
                         )}
                       </div>
                     )
@@ -381,23 +418,35 @@ export default async function StudentDetailPage({
               <CardTitle>Immunizations</CardTitle>
             </CardHeader>
             <CardContent>
-              {(!immunizations || immunizations.length === 0) ? (
-                <p className="text-sm text-[var(--color-muted-foreground)]">No immunization records on file</p>
+              {!immunizations || immunizations.length === 0 ? (
+                <p className="text-sm text-[var(--color-muted-foreground)]">
+                  No immunization records on file
+                </p>
               ) : (
                 <div className="space-y-2">
                   {immunizations.map((imm) => (
-                    <div key={imm.id} className="flex items-center justify-between rounded-lg border border-[var(--color-border)] p-3">
+                    <div
+                      key={imm.id}
+                      className="flex items-center justify-between rounded-lg border border-[var(--color-border)] p-3"
+                    >
                       <div>
-                        <p className="text-sm font-medium text-[var(--color-foreground)]">{imm.vaccine_name}</p>
+                        <p className="text-sm font-medium text-[var(--color-foreground)]">
+                          {imm.vaccine_name}
+                        </p>
                         <p className="text-xs text-[var(--color-muted-foreground)]">
-                          Dose {imm.dose_number} · {new Date(imm.administered_date).toLocaleDateString()}
+                          Dose {imm.dose_number} ·{' '}
+                          {new Date(imm.administered_date).toLocaleDateString()}
                           {imm.provider && ` · ${imm.provider}`}
                         </p>
                       </div>
                       {imm.verified_at ? (
-                        <Badge variant="success" size="sm">Verified</Badge>
+                        <Badge variant="success" size="sm">
+                          Verified
+                        </Badge>
                       ) : (
-                        <Badge variant="warning" size="sm">Unverified</Badge>
+                        <Badge variant="warning" size="sm">
+                          Unverified
+                        </Badge>
                       )}
                     </div>
                   ))}
@@ -430,17 +479,31 @@ export default async function StudentDetailPage({
                   className="flex items-center justify-between rounded-lg border border-[var(--color-border)] p-3 transition-colors hover:bg-[var(--color-muted)]/50"
                 >
                   <div>
-                    <p className="text-sm font-medium text-[var(--color-foreground)]">{classroomName}</p>
+                    <p className="text-sm font-medium text-[var(--color-foreground)]">
+                      {classroomName}
+                    </p>
                     <p className="text-xs text-[var(--color-muted-foreground)] capitalize">
                       {classroomAssignment?.program_type?.replace(/_/g, ' ') ?? 'full day'}
                     </p>
                   </div>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--color-muted-foreground)]">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-[var(--color-muted-foreground)]"
+                  >
                     <polyline points="9 18 15 12 9 6" />
                   </svg>
                 </a>
               ) : (
-                <p className="text-sm text-[var(--color-muted-foreground)]">Not assigned to a classroom</p>
+                <p className="text-sm text-[var(--color-muted-foreground)]">
+                  Not assigned to a classroom
+                </p>
               )}
             </CardContent>
           </Card>
@@ -449,7 +512,10 @@ export default async function StudentDetailPage({
           <StudentFamilyLinks
             studentId={studentId}
             links={(familyLinks ?? []).map((link) => {
-              const family = (link as Record<string, unknown>).families as { id: string; family_name: string } | null
+              const family = (link as Record<string, unknown>).families as {
+                id: string
+                family_name: string
+              } | null
               return {
                 id: link.id,
                 student_id: studentId,
@@ -472,17 +538,25 @@ export default async function StudentDetailPage({
               <CardTitle>Emergency Contacts</CardTitle>
             </CardHeader>
             <CardContent>
-              {(!emergencyContacts || emergencyContacts.length === 0) ? (
-                <p className="text-sm text-[var(--color-muted-foreground)]">No emergency contacts on file</p>
+              {!emergencyContacts || emergencyContacts.length === 0 ? (
+                <p className="text-sm text-[var(--color-muted-foreground)]">
+                  No emergency contacts on file
+                </p>
               ) : (
                 <div className="space-y-2">
                   {emergencyContacts.map((ec) => (
                     <div key={ec.id} className="rounded-lg border border-[var(--color-border)] p-3">
-                      <p className="text-sm font-medium text-[var(--color-foreground)]">{ec.name}</p>
-                      <p className="text-xs text-[var(--color-muted-foreground)]">{ec.relationship}</p>
+                      <p className="text-sm font-medium text-[var(--color-foreground)]">
+                        {ec.name}
+                      </p>
+                      <p className="text-xs text-[var(--color-muted-foreground)]">
+                        {ec.relationship}
+                      </p>
                       <p className="text-xs text-[var(--color-foreground)]">{ec.phone_primary}</p>
                       {ec.can_pickup && (
-                        <Badge variant="success" size="sm" className="mt-1">Can pickup</Badge>
+                        <Badge variant="success" size="sm" className="mt-1">
+                          Can pickup
+                        </Badge>
                       )}
                     </div>
                   ))}
@@ -497,7 +571,7 @@ export default async function StudentDetailPage({
               <CardTitle>Notes</CardTitle>
             </CardHeader>
             <CardContent>
-              {(!notes || notes.length === 0) ? (
+              {!notes || notes.length === 0 ? (
                 <p className="text-sm text-[var(--color-muted-foreground)]">No notes</p>
               ) : (
                 <div className="space-y-3">
@@ -506,10 +580,14 @@ export default async function StudentDetailPage({
                       <p className="text-xs text-[var(--color-muted-foreground)]">
                         {new Date(note.created_at).toLocaleDateString()} · {note.note_type}
                         {note.visibility === 'staff_only' && (
-                          <Badge variant="outline" size="sm" className="ml-1">Staff only</Badge>
+                          <Badge variant="outline" size="sm" className="ml-1">
+                            Staff only
+                          </Badge>
                         )}
                       </p>
-                      <p className="mt-0.5 text-sm text-[var(--color-foreground)]">{note.content}</p>
+                      <p className="mt-0.5 text-sm text-[var(--color-foreground)]">
+                        {note.content}
+                      </p>
                     </div>
                   ))}
                 </div>

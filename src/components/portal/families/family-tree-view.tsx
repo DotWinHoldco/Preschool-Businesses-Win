@@ -2,7 +2,6 @@
 // Visual relationship tree for blended families.
 // Shows which parents/guardians are connected to which students across households.
 
-import { cn } from '@/lib/cn'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 
@@ -41,12 +40,7 @@ function formatRelationship(type: string, label?: string | null): string {
   return type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
-export function FamilyTreeView({
-  familyName,
-  members,
-  students,
-  className,
-}: FamilyTreeViewProps) {
+export function FamilyTreeView({ familyName, members, students, className }: FamilyTreeViewProps) {
   return (
     <Card className={className}>
       <CardHeader>
@@ -74,10 +68,7 @@ export function FamilyTreeView({
                       {member.first_name} {member.last_name}
                     </p>
                     <p className="text-xs text-[var(--color-muted-foreground)]">
-                      {formatRelationship(
-                        member.relationship_type,
-                        member.relationship_label,
-                      )}
+                      {formatRelationship(member.relationship_type, member.relationship_label)}
                     </p>
                     <div className="mt-1 flex flex-wrap gap-1">
                       {member.is_primary_contact && (
@@ -99,9 +90,7 @@ export function FamilyTreeView({
                     {(member.phone || member.email) && (
                       <div className="mt-1 text-xs text-[var(--color-muted-foreground)]">
                         {member.phone && <span>{member.phone}</span>}
-                        {member.phone && member.email && (
-                          <span> · </span>
-                        )}
+                        {member.phone && member.email && <span> · </span>}
                         {member.email && <span>{member.email}</span>}
                       </div>
                     )}
@@ -145,21 +134,14 @@ export function FamilyTreeView({
                     </p>
                     <div className="mt-0.5 flex items-center gap-2 text-xs text-[var(--color-muted-foreground)]">
                       <Badge
-                        variant={
-                          student.enrollment_status === 'active'
-                            ? 'success'
-                            : 'outline'
-                        }
+                        variant={student.enrollment_status === 'active' ? 'success' : 'outline'}
                         size="sm"
                       >
                         {student.enrollment_status}
                       </Badge>
-                      {student.billing_split_pct != null &&
-                        student.billing_split_pct < 100 && (
-                          <span>
-                            {student.billing_split_pct}% billing
-                          </span>
-                        )}
+                      {student.billing_split_pct != null && student.billing_split_pct < 100 && (
+                        <span>{student.billing_split_pct}% billing</span>
+                      )}
                       {student.is_primary_family && (
                         <Badge variant="default" size="sm">
                           Primary

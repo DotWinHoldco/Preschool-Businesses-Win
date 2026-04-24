@@ -45,8 +45,9 @@ export async function sendNotification({
           }))
           const { error } = await supabase.from('notifications').insert(rows)
           if (error) {
-            console.error('[notify:in_app] Insert failed:', error.message)
-            Sentry.captureException(error, { tags: { subsystem: 'notification', channel: 'in_app' } })
+            Sentry.captureException(error, {
+              tags: { subsystem: 'notification', channel: 'in_app' },
+            })
           }
           break
         }
@@ -76,12 +77,10 @@ export async function sendNotification({
 
         case 'push':
           // TODO: Send via web-push / FCM
-          console.log(`[notify:push] template=${template} urgency=${urgency} to=${recipients.join(',')}`)
           break
 
         case 'sms':
           // TODO: Send via Twilio
-          console.log(`[notify:sms] template=${template} urgency=${urgency} to=${recipients.join(',')}`)
           break
       }
     } catch (err) {

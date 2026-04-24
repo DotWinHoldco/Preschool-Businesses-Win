@@ -1,6 +1,7 @@
 // @anchor: cca.billing.admin-invoice-detail
 // Admin invoice detail page.
 
+import Link from 'next/link'
 import { InvoiceDetail } from '@/components/portal/billing/invoice-detail'
 
 export default async function AdminInvoiceDetailPage({
@@ -19,9 +20,30 @@ export default async function AdminInvoiceDetailPage({
     dueDate: '2026-04-30',
     status: 'sent',
     lineItems: [
-      { id: '1', description: 'Pre-K Full Day - April 2026', quantity: 1, unit_amount_cents: 95000, total_cents: 95000, category: 'tuition' },
-      { id: '2', description: 'Before Care - April 2026', quantity: 1, unit_amount_cents: 25000, total_cents: 25000, category: 'tuition' },
-      { id: '3', description: 'Spring Supply Fee', quantity: 1, unit_amount_cents: 5000, total_cents: 5000, category: 'supplies' },
+      {
+        id: '1',
+        description: 'Pre-K Full Day - April 2026',
+        quantity: 1,
+        unit_amount_cents: 95000,
+        total_cents: 95000,
+        category: 'tuition',
+      },
+      {
+        id: '2',
+        description: 'Before Care - April 2026',
+        quantity: 1,
+        unit_amount_cents: 25000,
+        total_cents: 25000,
+        category: 'tuition',
+      },
+      {
+        id: '3',
+        description: 'Spring Supply Fee',
+        quantity: 1,
+        unit_amount_cents: 5000,
+        total_cents: 5000,
+        category: 'supplies',
+      },
     ],
     subtotalCents: 125000,
     discountsCents: 0,
@@ -32,12 +54,12 @@ export default async function AdminInvoiceDetailPage({
 
   return (
     <div className="flex flex-col gap-6 max-w-3xl mx-auto">
-      <a
+      <Link
         href="/portal/admin/billing"
         className="text-sm text-[var(--color-primary)] hover:underline"
       >
         &larr; Back to billing
-      </a>
+      </Link>
 
       <InvoiceDetail {...invoice} />
 

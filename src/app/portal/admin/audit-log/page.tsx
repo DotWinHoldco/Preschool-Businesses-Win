@@ -36,7 +36,7 @@ export default async function AdminAuditLogPage({
 
   // Fetch actor names from user_profiles
   const actorIds = [...new Set(entries.map((e) => e.actor_id).filter(Boolean))]
-  let actorMap: Record<string, string> = {}
+  const actorMap: Record<string, string> = {}
 
   if (actorIds.length > 0) {
     const { data: profiles } = await supabase
@@ -61,9 +61,13 @@ export default async function AdminAuditLogPage({
       ? `${entry.entity_type}${entry.entity_id ? `: ${entry.entity_id}` : ''}`
       : '—',
     details: entry.after_data
-      ? (typeof entry.after_data === 'string' ? entry.after_data : JSON.stringify(entry.after_data))
+      ? typeof entry.after_data === 'string'
+        ? entry.after_data
+        : JSON.stringify(entry.after_data)
       : entry.before_data
-        ? (typeof entry.before_data === 'string' ? entry.before_data : JSON.stringify(entry.before_data))
+        ? typeof entry.before_data === 'string'
+          ? entry.before_data
+          : JSON.stringify(entry.before_data)
         : '—',
   }))
 
@@ -85,7 +89,11 @@ export default async function AdminAuditLogPage({
       >
         <select
           className="rounded-lg border px-3 py-2 text-sm"
-          style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-background)', color: 'var(--color-foreground)' }}
+          style={{
+            borderColor: 'var(--color-border)',
+            backgroundColor: 'var(--color-background)',
+            color: 'var(--color-foreground)',
+          }}
         >
           <option>All Actions</option>
           <option>check_in</option>
@@ -99,24 +107,39 @@ export default async function AdminAuditLogPage({
         </select>
         <select
           className="rounded-lg border px-3 py-2 text-sm"
-          style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-background)', color: 'var(--color-foreground)' }}
+          style={{
+            borderColor: 'var(--color-border)',
+            backgroundColor: 'var(--color-background)',
+            color: 'var(--color-foreground)',
+          }}
         >
           <option>All Users</option>
         </select>
         <input
           type="date"
           className="rounded-lg border px-3 py-2 text-sm"
-          style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-background)', color: 'var(--color-foreground)' }}
+          style={{
+            borderColor: 'var(--color-border)',
+            backgroundColor: 'var(--color-background)',
+            color: 'var(--color-foreground)',
+          }}
         />
         <input
           type="text"
           placeholder="Search entities..."
           className="flex-1 rounded-lg border px-3 py-2 text-sm"
-          style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-background)', color: 'var(--color-foreground)' }}
+          style={{
+            borderColor: 'var(--color-border)',
+            backgroundColor: 'var(--color-background)',
+            color: 'var(--color-foreground)',
+          }}
         />
         <button
           className="rounded-lg px-4 py-2 text-sm font-medium"
-          style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-primary-foreground)' }}
+          style={{
+            backgroundColor: 'var(--color-primary)',
+            color: 'var(--color-primary-foreground)',
+          }}
         >
           Filter
         </button>
@@ -139,7 +162,11 @@ export default async function AdminAuditLogPage({
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
                   {['Timestamp', 'Actor', 'Action', 'Entity', 'Details'].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left font-medium" style={{ color: 'var(--color-muted-foreground)' }}>
+                    <th
+                      key={h}
+                      className="px-4 py-3 text-left font-medium"
+                      style={{ color: 'var(--color-muted-foreground)' }}
+                    >
                       {h}
                     </th>
                   ))}
@@ -148,22 +175,36 @@ export default async function AdminAuditLogPage({
               <tbody>
                 {displayEntries.map((entry) => (
                   <tr key={entry.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                    <td className="whitespace-nowrap px-4 py-3 font-mono text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
+                    <td
+                      className="whitespace-nowrap px-4 py-3 font-mono text-xs"
+                      style={{ color: 'var(--color-muted-foreground)' }}
+                    >
                       {entry.timestamp}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 font-medium" style={{ color: 'var(--color-foreground)' }}>
+                    <td
+                      className="whitespace-nowrap px-4 py-3 font-medium"
+                      style={{ color: 'var(--color-foreground)' }}
+                    >
                       {entry.actor}
                     </td>
                     <td className="px-4 py-3">
                       <span
                         className="inline-flex rounded px-2 py-0.5 font-mono text-xs"
-                        style={{ backgroundColor: 'var(--color-muted)', color: 'var(--color-foreground)' }}
+                        style={{
+                          backgroundColor: 'var(--color-muted)',
+                          color: 'var(--color-foreground)',
+                        }}
                       >
                         {entry.action}
                       </span>
                     </td>
-                    <td className="px-4 py-3" style={{ color: 'var(--color-foreground)' }}>{entry.entity}</td>
-                    <td className="max-w-xs truncate px-4 py-3 text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
+                    <td className="px-4 py-3" style={{ color: 'var(--color-foreground)' }}>
+                      {entry.entity}
+                    </td>
+                    <td
+                      className="max-w-xs truncate px-4 py-3 text-xs"
+                      style={{ color: 'var(--color-muted-foreground)' }}
+                    >
                       {entry.details}
                     </td>
                   </tr>
@@ -174,7 +215,12 @@ export default async function AdminAuditLogPage({
         )}
       </div>
 
-      <Pagination page={page} perPage={perPage} total={count ?? 0} basePath="/portal/admin/audit-log" />
+      <Pagination
+        page={page}
+        perPage={perPage}
+        total={count ?? 0}
+        basePath="/portal/admin/audit-log"
+      />
     </div>
   )
 }

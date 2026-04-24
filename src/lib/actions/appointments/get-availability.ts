@@ -4,10 +4,7 @@
 // Public server action returning available slots for a tenant's appointment type.
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import {
-  computeAvailableSlots,
-  type TimeSlot,
-} from '@/lib/calendar/availability-calculator'
+import { computeAvailableSlots, type TimeSlot } from '@/lib/calendar/availability-calculator'
 
 interface AppointmentTypeRow {
   id: string
@@ -23,10 +20,16 @@ interface AppointmentTypeRow {
   round_robin: boolean
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
+
 export async function getAvailableSlots(
   appointmentTypeId: string,
   dateIso: string,
 ): Promise<TimeSlot[]> {
+  if (!UUID_RE.test(appointmentTypeId)) return []
+  if (!DATE_RE.test(dateIso) || isNaN(Date.parse(dateIso))) return []
+
   const supabase = createAdminClient()
 
   const { data: apptType } = await supabase
@@ -62,6 +65,9 @@ export async function getAvailableDates(
   appointmentTypeId: string,
   monthStartIso: string,
 ): Promise<string[]> {
+  if (!UUID_RE.test(appointmentTypeId)) return []
+  if (!DATE_RE.test(monthStartIso) || isNaN(Date.parse(monthStartIso))) return []
+
   const supabase = createAdminClient()
 
   const { data: apptType } = await supabase
@@ -81,11 +87,7 @@ export async function getAvailableDates(
   const windowEnd = new Date(now)
   windowEnd.setDate(windowEnd.getDate() + apptType.booking_window_days)
 
-  const daysInMonth = new Date(
-    monthStart.getFullYear(),
-    monthStart.getMonth() + 1,
-    0,
-  ).getDate()
+  const daysInMonth = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0).getDate()
 
   for (let d = 1; d <= daysInMonth; d += 1) {
     const check = new Date(monthStart.getFullYear(), monthStart.getMonth(), d)

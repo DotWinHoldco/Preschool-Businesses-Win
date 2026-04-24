@@ -3,7 +3,7 @@
 // @anchor: cca.checklist.checklists-client
 // Checklists admin — Templates + Runs tabs with full CRUD
 
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useState, useCallback } from 'react'
 import {
   ClipboardList,
   Plus,
@@ -12,7 +12,6 @@ import {
   ChevronRight,
   Play,
   CheckCircle2,
-  Circle,
   Clock,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
@@ -20,12 +19,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import {
-  Dialog,
-  DialogOverlay,
-  DialogContent,
-  DialogClose,
-} from '@/components/ui/dialog'
+import { Dialog, DialogOverlay, DialogContent, DialogClose } from '@/components/ui/dialog'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -304,10 +298,7 @@ export function ChecklistsClient() {
                   >
                     <CardContent className="p-4 flex items-center gap-3">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)]/10">
-                        <ClipboardList
-                          size={20}
-                          className="text-[var(--color-primary)]"
-                        />
+                        <ClipboardList size={20} className="text-[var(--color-primary)]" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-[var(--color-foreground)] truncate">
@@ -317,9 +308,7 @@ export function ChecklistsClient() {
                           {tmpl.items.length} item{tmpl.items.length !== 1 && 's'}
                         </p>
                       </div>
-                      <Badge variant={FREQ_VARIANT[tmpl.frequency]}>
-                        {tmpl.frequency}
-                      </Badge>
+                      <Badge variant={FREQ_VARIANT[tmpl.frequency]}>{tmpl.frequency}</Badge>
                       {expanded ? (
                         <ChevronDown
                           size={18}
@@ -430,11 +419,7 @@ export function ChecklistsClient() {
                         {newItems.length > 1 && (
                           <button
                             type="button"
-                            onClick={() =>
-                              setNewItems((prev) =>
-                                prev.filter((_, i) => i !== idx),
-                              )
-                            }
+                            onClick={() => setNewItems((prev) => prev.filter((_, i) => i !== idx))}
                             className="shrink-0 p-1 text-[var(--color-destructive)] hover:bg-[var(--color-muted)] rounded"
                           >
                             <Trash2 size={16} />
@@ -466,10 +451,7 @@ export function ChecklistsClient() {
                   <Button
                     size="sm"
                     onClick={handleCreateTemplate}
-                    disabled={
-                      !newTitle.trim() ||
-                      newItems.filter((i) => i.trim()).length === 0
-                    }
+                    disabled={!newTitle.trim() || newItems.filter((i) => i.trim()).length === 0}
                   >
                     Create Template
                   </Button>
@@ -515,15 +497,9 @@ export function ChecklistsClient() {
                         )}
                       >
                         {run.status === 'complete' ? (
-                          <CheckCircle2
-                            size={20}
-                            className="text-[var(--color-success)]"
-                          />
+                          <CheckCircle2 size={20} className="text-[var(--color-success)]" />
                         ) : (
-                          <Clock
-                            size={20}
-                            className="text-[var(--color-warning)]"
-                          />
+                          <Clock size={20} className="text-[var(--color-warning)]" />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -535,16 +511,10 @@ export function ChecklistsClient() {
                         </p>
                       </div>
                       <div className="text-right shrink-0">
-                        <Badge
-                          variant={
-                            run.status === 'complete' ? 'success' : 'warning'
-                          }
-                        >
+                        <Badge variant={run.status === 'complete' ? 'success' : 'warning'}>
                           {run.status === 'complete' ? 'Complete' : 'In Progress'}
                         </Badge>
-                        <p className="text-xs text-[var(--color-muted-foreground)] mt-1">
-                          {pct}%
-                        </p>
+                        <p className="text-xs text-[var(--color-muted-foreground)] mt-1">{pct}%</p>
                       </div>
                     </div>
 
@@ -631,11 +601,7 @@ export function ChecklistsClient() {
                   >
                     Cancel
                   </Button>
-                  <Button
-                    size="sm"
-                    onClick={handleStartRun}
-                    disabled={!selectedTemplateId}
-                  >
+                  <Button size="sm" onClick={handleStartRun} disabled={!selectedTemplateId}>
                     <Play size={16} />
                     Start Run
                   </Button>

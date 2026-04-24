@@ -1,5 +1,4 @@
 // @anchor: cca.food-program.kitchen-prep
-import { cn } from '@/lib/cn'
 import { UtensilsCrossed, Users, AlertTriangle, ShieldAlert, Clock } from 'lucide-react'
 
 interface ClassroomMealInfo {
@@ -33,8 +32,8 @@ const mealTypeLabels: Record<string, string> = {
 export function KitchenPrepView({ date, meals, classrooms, totalStudents }: KitchenPrepViewProps) {
   // Collect all allergies across classrooms
   const allAllergies = classrooms.flatMap((c) => c.allergies)
-  const lifeThreateningAllergies = allAllergies.filter((a) =>
-    a.severity === 'life_threatening' || a.severity === 'severe'
+  const lifeThreateningAllergies = allAllergies.filter(
+    (a) => a.severity === 'life_threatening' || a.severity === 'severe',
   )
 
   return (
@@ -69,8 +68,12 @@ export function KitchenPrepView({ date, meals, classrooms, totalStudents }: Kitc
           <div className="space-y-1">
             {lifeThreateningAllergies.map((a, i) => (
               <div key={i} className="flex items-center gap-2 text-sm">
-                <span className="font-medium text-[var(--color-foreground)]">{a.student_name}:</span>
-                <span className="text-[var(--color-destructive)] font-semibold">{a.allergens.join(', ')}</span>
+                <span className="font-medium text-[var(--color-foreground)]">
+                  {a.student_name}:
+                </span>
+                <span className="text-[var(--color-destructive)] font-semibold">
+                  {a.allergens.join(', ')}
+                </span>
               </div>
             ))}
           </div>
@@ -80,7 +83,10 @@ export function KitchenPrepView({ date, meals, classrooms, totalStudents }: Kitc
       {/* Today's meals */}
       <div className="grid gap-4 md:grid-cols-2">
         {meals.map((meal, i) => (
-          <div key={i} className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] p-4">
+          <div
+            key={i}
+            className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] p-4"
+          >
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold text-[var(--color-foreground)]">
                 {mealTypeLabels[meal.meal_type] ?? meal.meal_type}
@@ -91,7 +97,10 @@ export function KitchenPrepView({ date, meals, classrooms, totalStudents }: Kitc
             </div>
             <ul className="space-y-1 mb-3">
               {meal.items.map((item, j) => (
-                <li key={j} className="text-sm text-[var(--color-foreground)] flex items-center gap-2">
+                <li
+                  key={j}
+                  className="text-sm text-[var(--color-foreground)] flex items-center gap-2"
+                >
                   <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-primary)]" />
                   {item}
                 </li>
@@ -116,13 +125,17 @@ export function KitchenPrepView({ date, meals, classrooms, totalStudents }: Kitc
       {/* Headcount by classroom */}
       <div className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] overflow-hidden">
         <div className="p-4 border-b border-[var(--color-border)]">
-          <h3 className="text-sm font-semibold text-[var(--color-foreground)]">Headcount by Classroom</h3>
+          <h3 className="text-sm font-semibold text-[var(--color-foreground)]">
+            Headcount by Classroom
+          </h3>
         </div>
         <div className="divide-y divide-[var(--color-border)]">
           {classrooms.map((cr, i) => (
             <div key={i} className="flex items-center justify-between p-3">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-[var(--color-foreground)]">{cr.classroom_name}</span>
+                <span className="text-sm font-medium text-[var(--color-foreground)]">
+                  {cr.classroom_name}
+                </span>
                 {cr.allergies.length > 0 && (
                   <span className="inline-flex items-center gap-0.5 rounded-full bg-[var(--color-warning)]/10 px-1.5 py-0.5 text-[10px] font-medium text-[var(--color-warning)]">
                     <AlertTriangle className="h-2.5 w-2.5" />
@@ -130,7 +143,9 @@ export function KitchenPrepView({ date, meals, classrooms, totalStudents }: Kitc
                   </span>
                 )}
               </div>
-              <span className="text-sm font-semibold text-[var(--color-foreground)]">{cr.student_count}</span>
+              <span className="text-sm font-semibold text-[var(--color-foreground)]">
+                {cr.student_count}
+              </span>
             </div>
           ))}
         </div>

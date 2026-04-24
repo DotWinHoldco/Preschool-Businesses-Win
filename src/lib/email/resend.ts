@@ -20,7 +20,7 @@ export function getResendClient(): Resend | null {
 
 /**
  * Send an email via Resend
- * Falls back to console.log if no API key is configured
+ * Returns a mock ID if no API key is configured
  */
 export async function sendEmail({
   to,
@@ -46,7 +46,6 @@ export async function sendEmail({
   }
 
   if (!client) {
-    console.log('[Email Mock]', { to: emailData.to, subject })
     return { id: `mock-${Date.now()}` }
   }
 

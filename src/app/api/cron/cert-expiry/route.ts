@@ -11,7 +11,6 @@ export async function GET(request: Request) {
   if (authError) return authError
 
   try {
-    console.log('[Cron] Certification expiry check started')
     const summary = await runCertExpiryCheckForAllTenants()
 
     return NextResponse.json({
@@ -19,8 +18,7 @@ export async function GET(request: Request) {
       message: 'Cert expiry check complete',
       ...summary,
     })
-  } catch (error) {
-    console.error('[Cron] Cert expiry check error:', error)
+  } catch {
     return NextResponse.json({ error: 'Check failed' }, { status: 500 })
   }
 }

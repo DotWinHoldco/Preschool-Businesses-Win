@@ -1,6 +1,6 @@
 import { createBrowserClient } from '@supabase/ssr'
 
-const SUPABASE_URL = 'https://oajfxyiqjqymuvevnoui.supabase.co'
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 
 let client: ReturnType<typeof createBrowserClient> | null = null
 
@@ -11,10 +11,7 @@ let client: ReturnType<typeof createBrowserClient> | null = null
 export function getSupabaseBrowserClient() {
   if (client) return client
 
-  client = createBrowserClient(
-    SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  client = createBrowserClient(SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
   return client
 }

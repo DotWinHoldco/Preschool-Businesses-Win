@@ -60,8 +60,10 @@ export default async function ClassroomDailyReportsPage({
   }
 
   // Get entry counts for each report
-  const reportIds = (reports ?? []).map((r: Record<string, unknown>) => r.id as string).filter(Boolean)
-  let entryCounts = new Map<string, number>()
+  const reportIds = (reports ?? [])
+    .map((r: Record<string, unknown>) => r.id as string)
+    .filter(Boolean)
+  const entryCounts = new Map<string, number>()
   if (reportIds.length > 0) {
     const { data: entries } = await supabase
       .from('daily_report_entries')
@@ -98,9 +100,7 @@ export default async function ClassroomDailyReportsPage({
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold text-[var(--color-foreground)]">
-          Daily Reports
-        </h1>
+        <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Daily Reports</h1>
         <p className="text-sm text-[var(--color-muted-foreground)]">
           {classroom.name} &mdash;{' '}
           {new Date(today + 'T12:00:00').toLocaleDateString('en-US', {
@@ -116,7 +116,11 @@ export default async function ClassroomDailyReportsPage({
           className="rounded-xl p-8 text-center"
           style={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)' }}
         >
-          <ClipboardList size={32} className="mx-auto mb-2" style={{ color: 'var(--color-muted-foreground)' }} />
+          <ClipboardList
+            size={32}
+            className="mx-auto mb-2"
+            style={{ color: 'var(--color-muted-foreground)' }}
+          />
           <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
             No students in this classroom.
           </p>

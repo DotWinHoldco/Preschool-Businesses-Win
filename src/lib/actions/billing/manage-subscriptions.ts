@@ -77,18 +77,18 @@ export async function pauseSubscription(
       return { ok: false, error: 'Enrollment ID is required' }
     }
 
+    const tenantId = await getTenantId()
     const supabase = await createTenantServerClient()
 
     const { error } = await supabase
       .from('family_billing_enrollments')
       .update({ status: 'paused' })
       .eq('id', enrollmentId)
+      .eq('tenant_id', tenantId)
 
     if (error) {
       return { ok: false, error: error.message }
     }
-
-    const tenantId = await getTenantId()
     const actorId = await getActorId()
     await writeAudit(supabase, {
       tenantId,
@@ -117,6 +117,7 @@ export async function cancelSubscription(
       return { ok: false, error: 'Enrollment ID is required' }
     }
 
+    const tenantId = await getTenantId()
     const supabase = await createTenantServerClient()
 
     const endDate = new Date().toISOString().split('T')[0]
@@ -127,12 +128,11 @@ export async function cancelSubscription(
         end_date: endDate,
       })
       .eq('id', enrollmentId)
+      .eq('tenant_id', tenantId)
 
     if (error) {
       return { ok: false, error: error.message }
     }
-
-    const tenantId = await getTenantId()
     const actorId = await getActorId()
     await writeAudit(supabase, {
       tenantId,

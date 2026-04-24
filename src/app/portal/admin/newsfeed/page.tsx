@@ -35,7 +35,7 @@ export default async function AdminNewsfeedPage({
 
   // Fetch author names from user_profiles
   const authorIds = [...new Set(posts.map((p) => p.author_id).filter(Boolean))]
-  let authorMap: Record<string, string> = {}
+  const authorMap: Record<string, string> = {}
 
   if (authorIds.length > 0) {
     const { data: profiles } = await supabase
@@ -49,7 +49,7 @@ export default async function AdminNewsfeedPage({
   }
 
   // Fetch reaction counts per post
-  let reactionCountMap: Record<string, number> = {}
+  const reactionCountMap: Record<string, number> = {}
   const postIds = posts.map((p) => p.id)
 
   if (postIds.length > 0) {
@@ -105,7 +105,8 @@ export default async function AdminNewsfeedPage({
             Newsfeed
           </h1>
           <p className="mt-1 text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
-            Manage school-wide and classroom announcements. Parents see posts for their child&apos;s classroom.
+            Manage school-wide and classroom announcements. Parents see posts for their child&apos;s
+            classroom.
           </p>
         </div>
         <ComposePostButton />
@@ -117,13 +118,20 @@ export default async function AdminNewsfeedPage({
           <CardContent className="flex items-center gap-4 p-6">
             <div
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
-              style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-primary-foreground)' }}
+              style={{
+                backgroundColor: 'var(--color-primary)',
+                color: 'var(--color-primary-foreground)',
+              }}
             >
               <Newspaper size={20} />
             </div>
             <div>
-              <p className="text-2xl font-bold" style={{ color: 'var(--color-foreground)' }}>{postsThisMonth ?? 0}</p>
-              <p className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>Posts This Month</p>
+              <p className="text-2xl font-bold" style={{ color: 'var(--color-foreground)' }}>
+                {postsThisMonth ?? 0}
+              </p>
+              <p className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
+                Posts This Month
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -131,13 +139,20 @@ export default async function AdminNewsfeedPage({
           <CardContent className="flex items-center gap-4 p-6">
             <div
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
-              style={{ backgroundColor: 'var(--color-accent, var(--color-primary))', color: 'var(--color-primary-foreground)' }}
+              style={{
+                backgroundColor: 'var(--color-accent, var(--color-primary))',
+                color: 'var(--color-primary-foreground)',
+              }}
             >
               <Heart size={20} />
             </div>
             <div>
-              <p className="text-2xl font-bold" style={{ color: 'var(--color-foreground)' }}>{reactionsThisMonth ?? 0}</p>
-              <p className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>Reactions This Month</p>
+              <p className="text-2xl font-bold" style={{ color: 'var(--color-foreground)' }}>
+                {reactionsThisMonth ?? 0}
+              </p>
+              <p className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
+                Reactions This Month
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -145,13 +160,20 @@ export default async function AdminNewsfeedPage({
           <CardContent className="flex items-center gap-4 p-6">
             <div
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
-              style={{ backgroundColor: 'var(--color-secondary, var(--color-primary))', color: 'var(--color-primary-foreground)' }}
+              style={{
+                backgroundColor: 'var(--color-secondary, var(--color-primary))',
+                color: 'var(--color-primary-foreground)',
+              }}
             >
               <MessageSquare size={20} />
             </div>
             <div>
-              <p className="text-2xl font-bold" style={{ color: 'var(--color-foreground)' }}>—</p>
-              <p className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>Comments This Month</p>
+              <p className="text-2xl font-bold" style={{ color: 'var(--color-foreground)' }}>
+                —
+              </p>
+              <p className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
+                Comments This Month
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -177,28 +199,38 @@ export default async function AdminNewsfeedPage({
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm" style={{ color: 'var(--color-foreground)' }}>
+                        <span
+                          className="font-medium text-sm"
+                          style={{ color: 'var(--color-foreground)' }}
+                        >
                           {post.author}
                         </span>
-                        <span className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
+                        <span
+                          className="text-xs"
+                          style={{ color: 'var(--color-muted-foreground)' }}
+                        >
                           &middot; {post.scope}
                         </span>
-                        {post.pinned && (
-                          <Pin size={12} style={{ color: 'var(--color-primary)' }} />
-                        )}
+                        {post.pinned && <Pin size={12} style={{ color: 'var(--color-primary)' }} />}
                       </div>
                       <p className="mt-1 text-sm" style={{ color: 'var(--color-foreground)' }}>
                         {post.content}
                       </p>
                       <div className="mt-2 flex items-center gap-4">
-                        <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
+                        <span
+                          className="flex items-center gap-1 text-xs"
+                          style={{ color: 'var(--color-muted-foreground)' }}
+                        >
                           <Heart size={12} /> {post.reactions}
                         </span>
                       </div>
                     </div>
                     <span
                       className="inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize"
-                      style={{ backgroundColor: 'var(--color-muted)', color: 'var(--color-muted-foreground)' }}
+                      style={{
+                        backgroundColor: 'var(--color-muted)',
+                        color: 'var(--color-muted-foreground)',
+                      }}
                     >
                       {post.type}
                     </span>
@@ -210,7 +242,12 @@ export default async function AdminNewsfeedPage({
         </CardContent>
       </Card>
 
-      <Pagination page={page} perPage={perPage} total={count ?? 0} basePath="/portal/admin/newsfeed" />
+      <Pagination
+        page={page}
+        perPage={perPage}
+        total={count ?? 0}
+        basePath="/portal/admin/newsfeed"
+      />
     </div>
   )
 }

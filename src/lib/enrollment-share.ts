@@ -1,12 +1,21 @@
 import { createHmac } from 'crypto'
 
-const SECRET = process.env.CRON_SECRET ?? process.env.NEXTAUTH_SECRET ?? 'enrollment-share-fallback-key'
 const DEFAULT_TTL_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
+
+function getSigningSecret(): string {
+  const s = process.env.CRON_SECRET ?? process.env.NEXTAUTH_SECRET
+  if (!s)
+    throw new Error('CRON_SECRET or NEXTAUTH_SECRET must be configured for enrollment share tokens')
+  return s
+}
 
 export function generateShareToken(applicationId: string, ttlMs = DEFAULT_TTL_MS): string {
   const expiresAt = Date.now() + ttlMs
   const payload = `${applicationId}:${expiresAt}`
-  const signature = createHmac('sha256', SECRET).update(payload).digest('hex').slice(0, 16)
+  const signature = createHmac('sha256', getSigningSecret())
+    .update(payload)
+    .digest('hex')
+    .slice(0, 16)
   return Buffer.from(`${payload}:${signature}`).toString('base64url')
 }
 
@@ -25,7 +34,7 @@ export function verifyShareToken(token: string): { applicationId: string; valid:
       return { applicationId, valid: false }
     }
 
-    const expected = createHmac('sha256', SECRET)
+    const expected = createHmac('sha256', getSigningSecret())
       .update(`${applicationId}:${expiresAt}`)
       .digest('hex')
       .slice(0, 16)

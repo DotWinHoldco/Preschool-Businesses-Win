@@ -7,16 +7,11 @@ import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { redirect } from 'next/navigation'
 
-export default async function StaffLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default async function StaffLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession()
 
-  // In development without auth, allow access
   if (!session) {
-    return <>{children}</>
+    redirect('/portal/login')
   }
 
   const headerStore = await headers()
@@ -29,8 +24,7 @@ export default async function StaffLayout({
     redirect('/portal/login')
   }
 
-  // Staff roles: aide and above (not parent/guardian)
-  if (!requireRole(membership.role, 'parent')) {
+  if (!requireRole(membership.role, 'aide')) {
     redirect('/portal')
   }
 

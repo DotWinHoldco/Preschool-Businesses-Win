@@ -75,7 +75,7 @@ function DropdownMenu({ children }: DropdownMenuProps) {
 // Trigger
 // ---------------------------------------------------------------------------
 
-export interface DropdownMenuTriggerProps extends ButtonHTMLAttributes<HTMLButtonElement> {}
+export type DropdownMenuTriggerProps = ButtonHTMLAttributes<HTMLButtonElement>
 
 const DropdownMenuTrigger = forwardRef<HTMLButtonElement, DropdownMenuTriggerProps>(
   ({ className, ...props }, ref) => {
@@ -109,7 +109,7 @@ export interface DropdownMenuContentProps extends HTMLAttributes<HTMLDivElement>
 
 const DropdownMenuContent = forwardRef<HTMLDivElement, DropdownMenuContentProps>(
   ({ align = 'start', className, children, ...props }, ref) => {
-    const { open, close } = useContext(Ctx)
+    const { open, close: _close } = useContext(Ctx)
     const menuRef = useRef<HTMLDivElement | null>(null)
 
     const setRef = useCallback(
@@ -126,8 +126,7 @@ const DropdownMenuContent = forwardRef<HTMLDivElement, DropdownMenuContentProps>
       const el = menuRef.current
       if (!open || !el) return
 
-      const items = () =>
-        el.querySelectorAll<HTMLElement>('[role="menuitem"]:not([disabled])')
+      const items = () => el.querySelectorAll<HTMLElement>('[role="menuitem"]:not([disabled])')
 
       const handler = (e: KeyboardEvent) => {
         const list = Array.from(items())
@@ -222,12 +221,7 @@ DropdownMenuItem.displayName = 'DropdownMenuItem'
 // ---------------------------------------------------------------------------
 
 function DropdownMenuSeparator({ className }: { className?: string }) {
-  return (
-    <div
-      role="separator"
-      className={cn('my-1 h-px bg-[var(--color-border)]', className)}
-    />
-  )
+  return <div role="separator" className={cn('my-1 h-px bg-[var(--color-border)]', className)} />
 }
 
 // ---------------------------------------------------------------------------

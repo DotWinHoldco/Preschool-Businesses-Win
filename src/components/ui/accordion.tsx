@@ -5,12 +5,9 @@ import {
   forwardRef,
   useCallback,
   useContext,
-  useId,
   useRef,
   useState,
   type HTMLAttributes,
-  type KeyboardEvent,
-  type ReactNode,
 } from 'react'
 import { cn } from '@/lib/cn'
 
@@ -130,10 +127,7 @@ const AccordionTrigger = forwardRef<HTMLButtonElement, AccordionTriggerProps>(
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className={cn(
-              'shrink-0 transition-transform duration-200',
-              isOpen && 'rotate-180',
-            )}
+            className={cn('shrink-0 transition-transform duration-200', isOpen && 'rotate-180')}
             aria-hidden="true"
           >
             <path d="m6 9 6 6 6-6" />
@@ -173,7 +167,10 @@ const AccordionContent = forwardRef<HTMLDivElement, AccordionContentProps>(
         )}
         {...props}
       >
-        <div ref={innerRef} className={cn('pb-4 text-sm text-[var(--color-muted-foreground)]', className)}>
+        <div
+          ref={innerRef}
+          className={cn('pb-4 text-sm text-[var(--color-muted-foreground)]', className)}
+        >
           {children}
         </div>
       </div>

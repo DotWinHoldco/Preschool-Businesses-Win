@@ -81,10 +81,7 @@ export async function runDataRetentionForAllTenants(): Promise<RetentionSummary>
               updated_at: string
             } | null
             if (!student) return false
-            return (
-              student.enrollment_status === 'withdrawn' &&
-              student.updated_at < cutoffIso
-            )
+            return student.enrollment_status === 'withdrawn' && student.updated_at < cutoffIso
           })
 
           if (!allWithdrawnAndExpired) continue
@@ -158,30 +155,14 @@ export async function runDataRetentionForAllTenants(): Promise<RetentionSummary>
           })
 
           summary.families_anonymized++
-
-          console.log(
-            `[cron:data-retention] Anonymized family ${familyId} in tenant ${tenant.slug} (${studentIds.length} students)`,
-          )
-        } catch (err) {
+        } catch {
           summary.errors++
-          console.error(
-            `[cron:data-retention] Error processing family ${family.id} in tenant ${tenant.slug}:`,
-            err,
-          )
         }
       }
-    } catch (err) {
+    } catch {
       summary.errors++
-      console.error(
-        `[cron:data-retention] Error processing tenant ${tenant.slug}:`,
-        err,
-      )
     }
   }
-
-  console.log(
-    `[cron:data-retention] Done — ${summary.tenants_checked} tenants checked, ${summary.families_anonymized} families anonymized, ${summary.errors} errors`,
-  )
 
   return summary
 }

@@ -15,16 +15,13 @@ interface ActiveTenant {
 /**
  * Return all tenants whose status is 'active' or 'trial'.
  */
-export async function getActiveTenants(
-  supabase: SupabaseClient,
-): Promise<ActiveTenant[]> {
+export async function getActiveTenants(supabase: SupabaseClient): Promise<ActiveTenant[]> {
   const { data, error } = await supabase
     .from('tenants')
     .select('id, name, slug')
     .in('status', ['active', 'trial'])
 
   if (error) {
-    console.error('[cron:helpers] getActiveTenants error:', error.message)
     return []
   }
 
@@ -46,7 +43,6 @@ export async function getAdminUserIds(
     .eq('status', 'active')
 
   if (error) {
-    console.error('[cron:helpers] getAdminUserIds error:', error.message)
     return []
   }
 
@@ -69,9 +65,7 @@ export async function deduplicateNotification(
   supabase: SupabaseClient,
   opts: DeduplicateOpts,
 ): Promise<boolean> {
-  const cutoff = new Date(
-    Date.now() - opts.withinHours * 60 * 60 * 1000,
-  ).toISOString()
+  const cutoff = new Date(Date.now() - opts.withinHours * 60 * 60 * 1000).toISOString()
 
   let query = supabase
     .from('notifications')
@@ -88,7 +82,6 @@ export async function deduplicateNotification(
   const { count, error } = await query
 
   if (error) {
-    console.error('[cron:helpers] deduplicateNotification error:', error.message)
     // On error, assume not sent — better to double-notify than miss one
     return false
   }

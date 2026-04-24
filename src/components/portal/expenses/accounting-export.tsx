@@ -1,7 +1,6 @@
 'use client'
 
 // @anchor: cca.accounting.export-dialog
-import { cn } from '@/lib/cn'
 import { Download, FileSpreadsheet } from 'lucide-react'
 
 interface AccountingExportProps {
@@ -26,7 +25,9 @@ export function AccountingExport({ exports, onExport }: AccountingExportProps) {
   return (
     <div className="space-y-4">
       <div className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] p-6">
-        <h2 className="text-lg font-semibold text-[var(--color-foreground)] mb-1">Accounting Export</h2>
+        <h2 className="text-lg font-semibold text-[var(--color-foreground)] mb-1">
+          Accounting Export
+        </h2>
         <p className="text-sm text-[var(--color-muted-foreground)] mb-4">
           Export expenses and revenue data for your accounting software
         </p>
@@ -42,7 +43,11 @@ export function AccountingExport({ exports, onExport }: AccountingExportProps) {
               <div>
                 <p className="text-sm font-medium text-[var(--color-foreground)]">{label}</p>
                 <p className="text-xs text-[var(--color-muted-foreground)]">
-                  {key === 'quickbooks_csv' ? 'QBO import format' : key === 'xero_csv' ? 'Xero import format' : 'Standard GL format'}
+                  {key === 'quickbooks_csv'
+                    ? 'QBO import format'
+                    : key === 'xero_csv'
+                      ? 'Xero import format'
+                      : 'Standard GL format'}
                 </p>
               </div>
             </button>
