@@ -20,7 +20,7 @@ export default async function AppointmentTypesSettingsPage() {
   const { data: types } = await supabase
     .from('appointment_types')
     .select(
-      'id, name, slug, description, duration_minutes, buffer_before_minutes, buffer_after_minutes, color, location, location_type, virtual_meeting_url, booking_window_days, min_notice_hours, max_per_day, max_per_slot, assigned_staff, round_robin, require_confirmation, auto_confirm, confirmation_message, reminder_hours, linked_pipeline_stage, is_active',
+      'id, name, slug, description, duration_minutes, buffer_before_minutes, buffer_after_minutes, color, location, location_type, virtual_meeting_url, booking_window_days, min_notice_hours, max_per_day, max_per_slot, assigned_staff, round_robin, require_confirmation, auto_confirm, confirmation_message, reminder_hours, linked_pipeline_stage, price_cents, is_active',
     )
     .eq('tenant_id', tenantId)
     .order('created_at', { ascending: false })
@@ -55,7 +55,7 @@ export default async function AppointmentTypesSettingsPage() {
     confirmation_message: (t.confirmation_message as string | null) ?? null,
     reminder_hours: (t.reminder_hours as number[]) ?? [24, 1],
     linked_pipeline_stage: (t.linked_pipeline_stage as string | null) ?? null,
-    price_cents: ((t as Record<string, unknown>).price_cents as number | null) ?? null,
+    price_cents: (t.price_cents as number | null) ?? null,
     is_active: (t.is_active as boolean) ?? true,
   }))
 
