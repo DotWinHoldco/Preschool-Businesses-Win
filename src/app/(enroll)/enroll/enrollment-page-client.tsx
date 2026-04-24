@@ -300,36 +300,47 @@ export function EnrollmentPageClient(props: Props) {
     }
   }
 
+  // Each step subtly tints the page background a different color from the
+  // logo. Colors pulled from the CCA palette in globals.css.
+  const STEP_PALETTE = [
+    { color: '#3b70b0', name: 'blue' }, // step 1
+    { color: '#5cb961', name: 'green' }, // step 2
+    { color: '#f2b020', name: 'yellow' }, // step 3
+    { color: '#f878af', name: 'pink' }, // step 4
+    { color: '#4abdac', name: 'teal' }, // step 5
+    { color: '#f15a50', name: 'coral' }, // step 6
+  ]
+  const stepTint = STEP_PALETTE[step % STEP_PALETTE.length]
+
   return (
     <>
       {/* === DECORATIVE BACKGROUND === */}
+      {/* Cream base */}
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-0 -z-10"
-        style={{
-          background:
-            'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(242,176,32,0.08), transparent 60%), radial-gradient(ellipse 60% 40% at 90% 10%, rgba(248,120,175,0.06), transparent 60%), radial-gradient(ellipse 60% 40% at 10% 5%, rgba(74,189,172,0.05), transparent 60%), linear-gradient(180deg, #faf9f5 0%, #ffffff 40%)',
-        }}
+        className="pointer-events-none fixed inset-0 -z-20"
+        style={{ backgroundColor: '#faf9f5' }}
       />
-      <Image
-        src="/cca-assets/crandall-sunshine.png"
-        alt=""
+      {/* Per-step colored wash — transitions smoothly as the form advances. */}
+      <div
         aria-hidden
-        width={320}
-        height={320}
-        className="pointer-events-none fixed -top-16 -right-16 w-64 md:w-80 opacity-[0.14] -z-10 select-none"
+        className="pointer-events-none fixed inset-0 -z-10 transition-[background-color,opacity] duration-700 ease-out"
+        style={{
+          backgroundColor: submitted ? '#fffbeb' : stepTint.color,
+          opacity: submitted ? 0.18 : 0.06,
+        }}
       />
 
       {/* === STICKY MINI-HEADER (compact, always present) === */}
-      <header className="sticky top-0 z-50 bg-white/70 backdrop-blur-lg border-b border-cca-ink/5">
-        <div className="max-w-3xl mx-auto px-5 py-3 flex items-center justify-between">
-          <a href={WEBSITE_URL} className="flex-shrink-0 flex items-center gap-2">
+      <header className="sticky top-0 z-50 bg-white/75 backdrop-blur-lg border-b border-cca-ink/5">
+        <div className="max-w-3xl mx-auto px-5 py-3 flex items-center justify-between gap-3">
+          <a href={WEBSITE_URL} className="flex-shrink-0 flex items-center gap-2.5">
             <Image
-              src="/marketing/shared/cca-logo-small.png"
-              alt="Crandall Christian Academy"
-              width={48}
-              height={48}
-              className="h-10 w-auto"
+              src="/cca-assets/cca-full-with-tagline.png"
+              alt="Crandall Christian Academy — Where Little Minds Shine"
+              width={200}
+              height={89}
+              className="h-11 w-auto"
               priority
             />
             <span className="hidden sm:inline font-kollektif text-sm text-cca-ink/70">
@@ -337,35 +348,40 @@ export function EnrollmentPageClient(props: Props) {
             </span>
           </a>
           {!submitted && !noForm && (
-            <button
-              onClick={handleSave}
-              className="flex items-center gap-2 bg-cca-blue text-white font-kollektif text-sm px-5 py-2.5 rounded-full hover:bg-cca-blue/90 transition-all shadow-[0_4px_14px_-4px_rgba(59,112,176,0.4)] hover:shadow-[0_6px_20px_-4px_rgba(59,112,176,0.5)] hover:-translate-y-0.5"
-            >
-              <Save className="w-4 h-4" />
-              <span className="hidden sm:inline">Save Progress</span>
-              <span className="sm:hidden">Save</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <Image
+                src="/cca-assets/crandall-sunshine.png"
+                alt=""
+                aria-hidden
+                width={64}
+                height={64}
+                className="h-9 w-9 md:h-10 md:w-10 select-none animate-[spin_60s_linear_infinite]"
+              />
+              <button
+                onClick={handleSave}
+                className="flex items-center gap-2 bg-cca-blue text-white font-kollektif text-sm px-5 py-2.5 rounded-full hover:bg-cca-blue/90 transition-all shadow-[0_4px_14px_-4px_rgba(59,112,176,0.4)] hover:shadow-[0_6px_20px_-4px_rgba(59,112,176,0.5)] hover:-translate-y-0.5"
+              >
+                <Save className="w-4 h-4" />
+                <span className="hidden sm:inline">Save Progress</span>
+                <span className="sm:hidden">Save</span>
+              </button>
+            </div>
           )}
         </div>
       </header>
 
       {/* === HERO === */}
       {!submitted && !noForm && (
-        <section className="relative pt-8 md:pt-14 pb-4 md:pb-6 px-5">
+        <section className="relative pt-10 md:pt-16 pb-4 md:pb-6 px-5">
           <div className="max-w-3xl mx-auto text-center">
-            <div className="inline-block relative mb-4 md:mb-6">
-              <Image
-                src="/marketing/shared/cca-logo-full.png"
-                alt="Crandall Christian Academy"
-                width={338}
-                height={118}
-                className="h-32 md:h-44 w-auto mx-auto drop-shadow-[0_8px_24px_rgba(59,112,176,0.12)]"
-                priority
-              />
-            </div>
-            <p className="font-[family-name:var(--font-signature)] text-lg md:text-2xl text-cca-blue/80 mb-3 md:mb-4">
-              Where Little Minds Shine
-            </p>
+            <Image
+              src="/cca-assets/cca-full-with-tagline.png"
+              alt="Crandall Christian Academy — Where Little Minds Shine"
+              width={400}
+              height={178}
+              className="h-40 md:h-56 w-auto mx-auto mb-6 md:mb-8 drop-shadow-[0_12px_32px_rgba(59,112,176,0.15)]"
+              priority
+            />
             <h1 className="font-kollektif text-2xl md:text-4xl text-cca-ink mb-3 text-balance">
               We&rsquo;re so glad you&rsquo;re here.
             </h1>
