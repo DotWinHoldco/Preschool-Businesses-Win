@@ -35,6 +35,7 @@ export function InstallForm({ site, collectorBase }: Props) {
   const [pending, startTransition] = useTransition()
   const [copied, setCopied] = useState<string | null>(null)
   const [togglePending, setTogglePending] = useState(false)
+  const [lastSaveMsg, setLastSaveMsg] = useState<{ ok: boolean; text: string } | null>(null)
 
   async function saveNow(next: Site, label?: string) {
     const clean = {
@@ -43,12 +44,14 @@ export function InstallForm({ site, collectorBase }: Props) {
     }
     const result = await updateAnalyticsSite(clean)
     if (result.ok) {
+      setLastSaveMsg({ ok: true, text: result.debug ?? 'Saved.' })
       toast({
         variant: 'success',
         title: label ?? 'Saved',
         description: result.debug ?? 'Analytics site updated.',
       })
     } else {
+      setLastSaveMsg({ ok: false, text: result.error ?? 'Unknown error' })
       toast({ variant: 'error', title: 'Save failed', description: result.error })
     }
     return result.ok
@@ -215,6 +218,20 @@ export function InstallForm({ site, collectorBase }: Props) {
                 : ' pbw-consent.js is omitted and pbw-analytics.js runs with data-consent="off".'}
             </p>
           </div>
+          {lastSaveMsg && (
+            <div
+              className={`rounded-md border p-3 text-xs font-mono break-all ${
+                lastSaveMsg.ok
+                  ? 'border-green-500/40 bg-green-500/10 text-green-900 dark:text-green-300'
+                  : 'border-red-500/40 bg-red-500/10 text-red-900 dark:text-red-300'
+              }`}
+            >
+              <span className="font-semibold">
+                {lastSaveMsg.ok ? 'SAVE OK · ' : 'SAVE FAILED · '}
+              </span>
+              {lastSaveMsg.text}
+            </div>
+          )}
         </CardContent>
       </Card>
 

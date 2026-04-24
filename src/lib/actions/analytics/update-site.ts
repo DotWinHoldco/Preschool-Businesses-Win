@@ -22,8 +22,11 @@ export async function updateAnalyticsSite(input: unknown): Promise<Result> {
   try {
     const r = await assertRole('admin')
     session = r.session
-  } catch {
-    return { ok: false, error: 'Not authorized' }
+  } catch (e) {
+    return {
+      ok: false,
+      error: 'Auth check failed: ' + (e instanceof Error ? e.message : String(e)),
+    }
   }
 
   const rawConsent =
@@ -33,7 +36,11 @@ export async function updateAnalyticsSite(input: unknown): Promise<Result> {
 
   const parsed = AnalyticsSiteUpdateSchema.safeParse(input)
   if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' }
+    const firstIssue = parsed.error.issues[0]
+    return {
+      ok: false,
+      error: `Zod@${firstIssue?.path?.join('.') ?? '?'}: ${firstIssue?.message ?? 'invalid'}`,
+    }
   }
   const data: AnalyticsSiteUpdate = parsed.data
 
@@ -42,8 +49,25 @@ export async function updateAnalyticsSite(input: unknown): Promise<Result> {
     parsed: data.consent_banner_enabled,
   })
 
-  const tenantId = await getTenantId()
-  const supabase = createAdminClient()
+  let tenantId: string
+  try {
+    tenantId = await getTenantId()
+  } catch (e) {
+    return {
+      ok: false,
+      error: 'Tenant lookup failed: ' + (e instanceof Error ? e.message : String(e)),
+    }
+  }
+
+  let supabase: ReturnType<typeof createAdminClient>
+  try {
+    supabase = createAdminClient()
+  } catch (e) {
+    return {
+      ok: false,
+      error: 'Admin client failed: ' + (e instanceof Error ? e.message : String(e)),
+    }
+  }
 
   // Ensure the row belongs to this tenant before updating.
   const { data: existing, error: loadErr } = await supabase
@@ -52,11 +76,17 @@ export async function updateAnalyticsSite(input: unknown): Promise<Result> {
     .eq('id', data.id)
     .maybeSingle()
 
-  if (loadErr || !existing) {
-    return { ok: false, error: 'Site not found' }
+  if (loadErr) {
+    return { ok: false, error: 'Load failed: ' + loadErr.message }
+  }
+  if (!existing) {
+    return { ok: false, error: `Site row ${data.id} not found` }
   }
   if (existing.tenant_id !== tenantId) {
-    return { ok: false, error: 'Not authorized' }
+    return {
+      ok: false,
+      error: `Tenant mismatch: row=${existing.tenant_id} req=${tenantId}`,
+    }
   }
 
   const { error: updErr } = await supabase
@@ -79,7 +109,7 @@ export async function updateAnalyticsSite(input: unknown): Promise<Result> {
 
   if (updErr) {
     console.error('[analytics/update-site] update failed', updErr)
-    return { ok: false, error: 'Save failed' }
+    return { ok: false, error: `Update failed: ${updErr.message || updErr.code || 'unknown'}` }
   }
 
   // Read it back so we can confirm what actually landed in the DB.
