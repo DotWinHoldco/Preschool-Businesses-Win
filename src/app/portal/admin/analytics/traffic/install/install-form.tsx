@@ -27,24 +27,23 @@ interface Site {
 
 interface Props {
   site: Site
+  collectorBase: string
 }
 
-const COLLECTOR_BASE = 'https://preschool.businesses.win'
-
-export function InstallForm({ site }: Props) {
+export function InstallForm({ site, collectorBase }: Props) {
   const [form, setForm] = useState<Site>(site)
   const [pending, startTransition] = useTransition()
   const [copied, setCopied] = useState<string | null>(null)
 
   const snippet = useMemo(() => {
     const analyticsTag = form.consent_banner_enabled
-      ? `<script\n  src="${COLLECTOR_BASE}/pbw-analytics.js"\n  data-site-key="${form.site_key}"\n  async\n></script>`
-      : `<script\n  src="${COLLECTOR_BASE}/pbw-analytics.js"\n  data-site-key="${form.site_key}"\n  data-consent="off"\n  async\n></script>`
+      ? `<script\n  src="${collectorBase}/pbw-analytics.js"\n  data-site-key="${form.site_key}"\n  async\n></script>`
+      : `<script\n  src="${collectorBase}/pbw-analytics.js"\n  data-site-key="${form.site_key}"\n  data-consent="off"\n  async\n></script>`
     const consentTag = form.consent_banner_enabled
-      ? `\n<script\n  src="${COLLECTOR_BASE}/pbw-consent.js"\n  data-privacy-url="/privacy"\n  async\n></script>`
+      ? `\n<script\n  src="${collectorBase}/pbw-consent.js"\n  data-privacy-url="/privacy"\n  async\n></script>`
       : ''
     return analyticsTag + consentTag
-  }, [form.site_key, form.consent_banner_enabled])
+  }, [form.site_key, form.consent_banner_enabled, collectorBase])
 
   function update<K extends keyof Site>(key: K, value: Site[K]) {
     setForm((f) => ({ ...f, [key]: value }))

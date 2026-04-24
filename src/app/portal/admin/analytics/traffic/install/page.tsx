@@ -15,6 +15,15 @@ export default async function TrafficInstallPage() {
   if (!tenantId) notFound()
   const supabase = await createTenantAdminClient(tenantId)
 
+  // Derive the collector base URL from the current request so the snippet
+  // points at a domain that is actually reachable today — even when the
+  // canonical platform domain (preschool.businesses.win) is not yet hooked
+  // up for a tenant. Admin is already at this host, so it's guaranteed live.
+  const host =
+    headerStore.get('x-forwarded-host') ?? headerStore.get('host') ?? 'preschool.businesses.win'
+  const proto = headerStore.get('x-forwarded-proto') ?? 'https'
+  const collectorBase = `${proto}://${host}`
+
   const { data: site } = await supabase
     .from('analytics_sites')
     .select(
@@ -49,6 +58,7 @@ export default async function TrafficInstallPage() {
         </Card>
       ) : (
         <InstallForm
+          collectorBase={collectorBase}
           site={{
             id: site.id as string,
             name: site.name as string,
