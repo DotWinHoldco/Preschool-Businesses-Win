@@ -6,6 +6,12 @@
  */
 (function () {
   'use strict'
+  var LOG = true
+  function log() {
+    if (!LOG || !window.console) return
+    try { console.log.apply(console, ['[pbwa]'].concat([].slice.call(arguments))) } catch (_e) {}
+  }
+  log('boot v2', new Date().toISOString())
   // document.currentScript is null for async scripts AND for scripts injected
   // by host platforms (Wix, Squarespace, etc.) that move the tag through
   // innerHTML. Find our own tag by src match instead.
@@ -36,6 +42,7 @@
   }
   var SITE_KEY = attr('data-site-key')
   if (!SITE_KEY) { console.warn('[pbwa] missing data-site-key'); return }
+  log('site-key:', SITE_KEY)
   // Default the collector to /api/collect on whatever host served this
   // script. That way the snippet always posts back to a domain that
   // actually exists, regardless of which PBW host the tenant uses.
@@ -48,6 +55,7 @@
     derivedCollect = null
   }
   var COLLECT_URL = attr('data-collect') || derivedCollect || '/api/collect'
+  log('collect-url:', COLLECT_URL)
   // TDPSA + most US states use an opt-out model, not opt-in. Events fire by
   // default; DNT/GPC browser signals silently opt out, and an explicit
   // "denied" consent cookie (set by the opt-out button on the banner, if
@@ -200,10 +208,12 @@
     if (!queue.length) return
     var events = queue.splice(0, queue.length)
     var payload = JSON.stringify({ site_key: SITE_KEY, events: events })
+    log('flush', events.length, 'events →', COLLECT_URL, 'sync:', !!sync)
     try {
       if (sync && navigator.sendBeacon) {
         var blob = new Blob([payload], { type: 'application/json' })
-        navigator.sendBeacon(COLLECT_URL, blob)
+        var ok = navigator.sendBeacon(COLLECT_URL, blob)
+        log('sendBeacon returned', ok)
         return
       }
       fetch(COLLECT_URL, {
@@ -212,8 +222,10 @@
         keepalive: true,
         headers: { 'content-type': 'application/json' },
         body: payload,
-      }).catch(function (_e) { /* swallow */ })
-    } catch (_e) { /* swallow */ }
+      })
+        .then(function (r) { log('POST status:', r.status) })
+        .catch(function (e) { log('POST error:', e && e.message) })
+    } catch (e) { log('flush threw:', e && e.message) }
   }
 
   function sendConsent(status) {
@@ -235,10 +247,13 @@
   }
 
   // ---- Auto-capture: page_view + session_start --------------------------
+  log('consent:', { dnt: dnt, gpc: gpc, stored: storedConsent, required: CONSENT_REQUIRED, granted: consentGranted() })
   if (consentGranted()) {
     if (isNewSession) queue.push(buildEvent('session_start', 'session_start', { new_visitor: isNewVisitor }))
     queue.push(buildEvent('page_view', 'page_view', {}))
     scheduleFlush()
+  } else {
+    log('events blocked by consent gate')
   }
 
   // ---- Auto-capture: clicks ---------------------------------------------
