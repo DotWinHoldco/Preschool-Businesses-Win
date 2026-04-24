@@ -16,11 +16,16 @@ export const calendarProviderEnum = z.enum(['google', 'outlook', 'apple'])
 
 export const CreateAppointmentTypeSchema = z.object({
   name: z.string().min(1).max(200),
-  slug: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/, 'slug must be lowercase letters, numbers, and hyphens'),
+  slug: z
+    .string()
+    .min(1)
+    .max(100)
+    .regex(/^[a-z0-9-]+$/, 'slug must be lowercase letters, numbers, and hyphens'),
   description: z.string().max(2000).optional(),
   duration_minutes: z.number().int().min(5).max(480),
   buffer_before_minutes: z.number().int().min(0).max(240).default(0),
   buffer_after_minutes: z.number().int().min(0).max(240).default(15),
+  color: z.string().max(7).optional(),
   location: z.string().max(500).optional(),
   location_type: locationTypeEnum.default('in_person'),
   virtual_meeting_url: z.string().url().optional().or(z.literal('')),
@@ -35,6 +40,7 @@ export const CreateAppointmentTypeSchema = z.object({
   confirmation_message: z.string().max(2000).optional(),
   reminder_hours: z.array(z.number().int().min(0)).default([24, 1]),
   linked_pipeline_stage: z.string().max(50).optional(),
+  price_cents: z.number().int().min(0).optional().nullable(),
   is_active: z.boolean().default(true),
 })
 export type CreateAppointmentTypeInput = z.input<typeof CreateAppointmentTypeSchema>
@@ -59,8 +65,14 @@ export const StaffAvailabilityOverrideSchema = z.object({
   user_id: z.string().uuid(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD'),
   is_available: z.boolean(),
-  start_time: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/).optional(),
-  end_time: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/).optional(),
+  start_time: z
+    .string()
+    .regex(/^\d{2}:\d{2}(:\d{2})?$/)
+    .optional(),
+  end_time: z
+    .string()
+    .regex(/^\d{2}:\d{2}(:\d{2})?$/)
+    .optional(),
   reason: z.string().max(500).optional(),
 })
 export type StaffAvailabilityOverrideInput = z.infer<typeof StaffAvailabilityOverrideSchema>
@@ -86,6 +98,31 @@ export const CancelAppointmentSchema = z.object({
   cancelled_by: z.enum(['parent', 'staff']).default('staff'),
 })
 export type CancelAppointmentInput = z.infer<typeof CancelAppointmentSchema>
+
+export const RescheduleAppointmentSchema = z.object({
+  id: z.string().uuid(),
+  new_start_at: z.string().datetime(),
+  reason: z.string().max(1000).optional(),
+})
+export type RescheduleAppointmentInput = z.infer<typeof RescheduleAppointmentSchema>
+
+export const UpdateAppointmentNotesSchema = z.object({
+  id: z.string().uuid(),
+  staff_notes: z.string().max(5000),
+})
+export type UpdateAppointmentNotesInput = z.infer<typeof UpdateAppointmentNotesSchema>
+
+export const ListAppointmentsSchema = z.object({
+  status: z.array(appointmentStatusEnum).optional(),
+  appointment_type_id: z.string().uuid().optional(),
+  staff_user_id: z.string().uuid().optional(),
+  date_from: z.string().optional(),
+  date_to: z.string().optional(),
+  search: z.string().max(200).optional(),
+  page: z.number().int().min(1).default(1),
+  per_page: z.number().int().min(1).max(100).default(25),
+})
+export type ListAppointmentsInput = z.infer<typeof ListAppointmentsSchema>
 
 export const PipelineActionSchema = z.object({
   application_id: z.string().uuid(),

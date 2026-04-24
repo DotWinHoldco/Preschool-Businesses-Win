@@ -1,113 +1,155 @@
 // @anchor: cca.appointments.admin-dashboard
 
-import { createTenantServerClient } from '@/lib/supabase/server'
-import Link from 'next/link'
-import { Calendar, Settings, Clock } from 'lucide-react'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { headers } from 'next/headers'
+import { getSession } from '@/lib/auth/session'
+import { redirect } from 'next/navigation'
+import { AppointmentsDashboardClient } from '@/components/portal/appointments/appointments-dashboard-client'
 
 export default async function AppointmentsDashboardPage() {
-  const supabase = await createTenantServerClient()
+  const session = await getSession()
+  if (!session) redirect('/portal/login')
 
-  const { data: upcoming } = await supabase
-    .from('appointments')
-    .select('*, appointment_types(name, duration_minutes)')
-    .gte('start_at', new Date().toISOString())
-    .order('start_at', { ascending: true })
-    .limit(50)
+  const headerStore = await headers()
+  const tenantId = headerStore.get('x-tenant-id')
+  if (!tenantId) redirect('/portal/login')
 
-  const { data: types } = await supabase
-    .from('appointment_types')
-    .select('id, name, slug, duration_minutes, is_active')
-    .order('created_at', { ascending: false })
+  const supabase = createAdminClient()
+
+  const now = new Date().toISOString()
+  const weekFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+  const todayStart = new Date(new Date().setHours(0, 0, 0, 0)).toISOString()
+  const todayEnd = new Date(new Date().setHours(23, 59, 59, 999)).toISOString()
+
+  const [
+    appointmentsRes,
+    typesRes,
+    staffRes,
+    todayRes,
+    pendingRes,
+    weekRes,
+    completedRes,
+    totalRes,
+  ] = await Promise.all([
+    supabase
+      .from('appointments')
+      .select(
+        'id, appointment_type_id, booked_by_name, booked_by_email, booked_by_phone, start_at, end_at, timezone, staff_user_id, status, notes, staff_notes, cancellation_reason, enrollment_application_id, price_cents, confirmation_token, rescheduled_from_id, created_at, appointment_types(name, color, slug, duration_minutes)',
+      )
+      .eq('tenant_id', tenantId)
+      .order('start_at', { ascending: false })
+      .limit(100),
+    supabase
+      .from('appointment_types')
+      .select('id, name, color, slug')
+      .eq('tenant_id', tenantId)
+      .eq('is_active', true)
+      .order('name'),
+    supabase
+      .from('staff')
+      .select('id, user_id, first_name, last_name, role')
+      .eq('tenant_id', tenantId)
+      .eq('status', 'active')
+      .order('first_name'),
+    supabase
+      .from('appointments')
+      .select('id', { count: 'exact', head: true })
+      .eq('tenant_id', tenantId)
+      .gte('start_at', todayStart)
+      .lte('start_at', todayEnd)
+      .not('status', 'in', '("cancelled_by_parent","cancelled_by_staff","rescheduled")'),
+    supabase
+      .from('appointments')
+      .select('id', { count: 'exact', head: true })
+      .eq('tenant_id', tenantId)
+      .eq('status', 'pending'),
+    supabase
+      .from('appointments')
+      .select('id', { count: 'exact', head: true })
+      .eq('tenant_id', tenantId)
+      .gte('start_at', now)
+      .lte('start_at', weekFromNow)
+      .not('status', 'in', '("cancelled_by_parent","cancelled_by_staff","rescheduled")'),
+    supabase
+      .from('appointments')
+      .select('id', { count: 'exact', head: true })
+      .eq('tenant_id', tenantId)
+      .eq('status', 'completed'),
+    supabase
+      .from('appointments')
+      .select('id', { count: 'exact', head: true })
+      .eq('tenant_id', tenantId)
+      .not('status', 'in', '("rescheduled")'),
+  ])
+
+  const appointments = (appointmentsRes.data ?? []).map((row) => {
+    const apptType = row.appointment_types as unknown as {
+      name: string
+      color: string | null
+      slug: string
+      duration_minutes: number
+    } | null
+    return {
+      id: row.id as string,
+      appointment_type_id: row.appointment_type_id as string,
+      type_name: apptType?.name ?? 'Unknown',
+      type_color: apptType?.color ?? null,
+      type_slug: apptType?.slug ?? '',
+      duration_minutes: apptType?.duration_minutes ?? 30,
+      booked_by_name: row.booked_by_name as string,
+      booked_by_email: row.booked_by_email as string,
+      booked_by_phone: (row.booked_by_phone as string) ?? null,
+      start_at: row.start_at as string,
+      end_at: row.end_at as string,
+      timezone: row.timezone as string,
+      staff_user_id: (row.staff_user_id as string) ?? null,
+      status: row.status as string,
+      notes: (row.notes as string) ?? null,
+      staff_notes: (row.staff_notes as string) ?? null,
+      cancellation_reason: (row.cancellation_reason as string) ?? null,
+      enrollment_application_id: (row.enrollment_application_id as string) ?? null,
+      price_cents: (row.price_cents as number) ?? null,
+      confirmation_token: (row.confirmation_token as string) ?? null,
+      rescheduled_from_id: (row.rescheduled_from_id as string) ?? null,
+      created_at: row.created_at as string,
+    }
+  })
+
+  const staffMap: Record<string, string> = {}
+  for (const s of staffRes.data ?? []) {
+    staffMap[s.user_id as string] = `${s.first_name} ${s.last_name}`
+  }
+
+  const types = (typesRes.data ?? []).map((t) => ({
+    id: t.id as string,
+    name: t.name as string,
+    color: (t.color as string) ?? null,
+    slug: (t.slug as string) ?? '',
+  }))
+
+  const staff = (staffRes.data ?? []).map((s) => ({
+    id: s.id as string,
+    user_id: s.user_id as string,
+    name: `${s.first_name} ${s.last_name}`,
+  }))
+
+  const stats = {
+    today: todayRes.count ?? 0,
+    pending: pendingRes.count ?? 0,
+    thisWeek: weekRes.count ?? 0,
+    completionRate:
+      (totalRes.count ?? 0) > 0
+        ? Math.round(((completedRes.count ?? 0) / (totalRes.count ?? 1)) * 100)
+        : 0,
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Calendar className="h-5 w-5 text-[var(--color-primary)]" />
-            <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Appointments</h1>
-          </div>
-          <p className="text-sm text-[var(--color-muted-foreground)]">
-            Scheduled bookings, appointment types, and staff availability
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Link
-            href="/portal/admin/settings/appointments"
-            className="inline-flex items-center gap-1 rounded-[var(--radius)] border border-[var(--color-border)] px-3 py-1.5 text-sm hover:bg-[var(--color-muted)]"
-          >
-            <Settings className="h-4 w-4" />
-            Types
-          </Link>
-          <Link
-            href="/portal/admin/appointments/availability"
-            className="inline-flex items-center gap-1 rounded-[var(--radius)] border border-[var(--color-border)] px-3 py-1.5 text-sm hover:bg-[var(--color-muted)]"
-          >
-            <Clock className="h-4 w-4" />
-            Availability
-          </Link>
-        </div>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2 rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] p-6">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-[var(--color-muted-foreground)]">
-            Upcoming Bookings
-          </h2>
-          {upcoming && upcoming.length > 0 ? (
-            <ul className="divide-y divide-[var(--color-border)]">
-              {upcoming.map((a: Record<string, unknown>) => {
-                const typeInfo = a.appointment_types as { name: string; duration_minutes: number } | null
-                const start = new Date(a.start_at as string)
-                return (
-                  <li key={a.id as string} className="flex items-center justify-between py-3">
-                    <div>
-                      <div className="text-sm font-semibold text-[var(--color-foreground)]">
-                        {a.booked_by_name as string}
-                      </div>
-                      <div className="text-xs text-[var(--color-muted-foreground)]">
-                        {typeInfo?.name ?? 'Appointment'} · {start.toLocaleString()}
-                      </div>
-                    </div>
-                    <span className="rounded-full bg-[var(--color-muted)] px-2 py-0.5 text-xs">
-                      {a.status as string}
-                    </span>
-                  </li>
-                )
-              })}
-            </ul>
-          ) : (
-            <div className="text-sm text-[var(--color-muted-foreground)]">No upcoming appointments.</div>
-          )}
-        </div>
-
-        <div className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] p-6">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-[var(--color-muted-foreground)]">
-            Appointment Types
-          </h2>
-          {types && types.length > 0 ? (
-            <ul className="space-y-2">
-              {types.map((t: Record<string, unknown>) => (
-                <li key={t.id as string} className="flex items-center justify-between rounded-[var(--radius)] border border-[var(--color-border)] p-2">
-                  <div>
-                    <div className="text-sm font-medium text-[var(--color-foreground)]">{t.name as string}</div>
-                    <div className="text-xs text-[var(--color-muted-foreground)]">
-                      {t.duration_minutes as number} min · /{t.slug as string}
-                    </div>
-                  </div>
-                  {(t.is_active as boolean) && (
-                    <span className="rounded-full bg-[var(--color-primary)]/15 px-2 py-0.5 text-[10px] text-[var(--color-primary)]">
-                      active
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="text-sm text-[var(--color-muted-foreground)]">No appointment types yet.</div>
-          )}
-        </div>
-      </div>
-    </div>
+    <AppointmentsDashboardClient
+      appointments={appointments}
+      staffMap={staffMap}
+      types={types}
+      staff={staff}
+      stats={stats}
+    />
   )
 }

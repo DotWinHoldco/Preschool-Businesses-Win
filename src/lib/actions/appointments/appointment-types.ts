@@ -39,6 +39,7 @@ export async function createAppointmentType(
       duration_minutes: d.duration_minutes,
       buffer_before_minutes: d.buffer_before_minutes,
       buffer_after_minutes: d.buffer_after_minutes,
+      color: d.color ?? null,
       location: d.location ?? null,
       location_type: d.location_type,
       virtual_meeting_url: d.virtual_meeting_url || null,
@@ -53,6 +54,7 @@ export async function createAppointmentType(
       confirmation_message: d.confirmation_message ?? null,
       reminder_hours: d.reminder_hours,
       linked_pipeline_stage: d.linked_pipeline_stage ?? null,
+      price_cents: d.price_cents ?? null,
       is_active: d.is_active,
       created_by: actorId,
     })

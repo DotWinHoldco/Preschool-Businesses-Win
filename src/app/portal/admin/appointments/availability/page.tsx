@@ -1,62 +1,96 @@
 // @anchor: cca.appointments.admin-availability
 
-import { createTenantServerClient } from '@/lib/supabase/server'
+import { headers } from 'next/headers'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { getSession } from '@/lib/auth/session'
+import { redirect } from 'next/navigation'
 import { Clock } from 'lucide-react'
 import { AvailabilityClient } from '@/components/portal/appointments/availability-client'
 
-const DOW_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-
 export default async function AvailabilityPage() {
-  const supabase = await createTenantServerClient()
+  const session = await getSession()
+  if (!session) redirect('/portal/login')
 
-  const { data: availability } = await supabase
-    .from('staff_availability')
-    .select('*')
-    .order('user_id')
-    .order('day_of_week')
+  const headerStore = await headers()
+  const tenantId = headerStore.get('x-tenant-id')
+  if (!tenantId) throw new Error('Missing tenant context (x-tenant-id header not set)')
 
-  const { data: overrides } = await supabase
-    .from('staff_availability_overrides')
-    .select('*')
-    .gte('date', new Date().toISOString().slice(0, 10))
-    .order('date')
+  const supabase = createAdminClient()
 
-  const { data: connections } = await supabase
-    .from('calendar_connections')
-    .select('*')
-    .order('updated_at', { ascending: false })
+  const [staffResult, availabilityResult, overridesResult, connectionsResult, typesResult] =
+    await Promise.all([
+      supabase
+        .from('staff')
+        .select('id, user_id, first_name, last_name, role')
+        .eq('tenant_id', tenantId)
+        .eq('status', 'active')
+        .order('last_name'),
+      supabase
+        .from('staff_availability')
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .order('user_id')
+        .order('day_of_week'),
+      supabase
+        .from('staff_availability_overrides')
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .order('date'),
+      supabase
+        .from('calendar_connections')
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .order('updated_at', { ascending: false }),
+      supabase
+        .from('appointment_types')
+        .select('id, name')
+        .eq('tenant_id', tenantId)
+        .eq('is_active', true)
+        .order('name'),
+    ])
 
-  const byStaff = new Map<string, Array<Record<string, unknown>>>()
-  for (const row of availability ?? []) {
-    const userId = row.user_id as string
-    if (!byStaff.has(userId)) byStaff.set(userId, [])
-    byStaff.get(userId)!.push(row)
-  }
+  const staff = (staffResult.data ?? []) as Array<{
+    id: string
+    user_id: string
+    first_name: string
+    last_name: string
+    role: string
+  }>
 
-  const staffEntries = Array.from(byStaff.entries()).map(([userId, rows]) => ({
-    userId,
-    rows: rows.map((r) => ({
-      day: DOW_LABELS[r.day_of_week as number],
-      start: (r.start_time as string).slice(0, 5),
-      end: (r.end_time as string).slice(0, 5),
-    })),
-  }))
+  const availability = (availabilityResult.data ?? []) as Array<{
+    id: string
+    user_id: string
+    day_of_week: number
+    start_time: string
+    end_time: string
+    appointment_type_id: string | null
+    effective_from: string | null
+    effective_to: string | null
+  }>
 
-  const overrideList = (overrides ?? []).map((o: Record<string, unknown>) => ({
-    id: o.id as string,
-    date: o.date as string,
-    isAvailable: o.is_available as boolean,
-    reason: (o.reason as string | null) ?? null,
-    userId: (o.user_id as string).slice(0, 8),
-  }))
+  const overrides = (overridesResult.data ?? []) as Array<{
+    id: string
+    user_id: string
+    date: string
+    is_available: boolean
+    start_time: string | null
+    end_time: string | null
+    reason: string | null
+  }>
 
-  const connectionList = (connections ?? []).map((c: Record<string, unknown>) => ({
-    id: c.id as string,
-    provider: c.provider as string,
-    calendarName: (c.calendar_name as string | null) ?? (c.calendar_id as string | null) ?? 'primary',
-    status: c.status as string,
-    lastSynced: c.last_synced_at ? new Date(c.last_synced_at as string).toLocaleString() : 'never',
-  }))
+  const connections = (connectionsResult.data ?? []) as Array<{
+    id: string
+    user_id: string
+    provider: string
+    calendar_name: string | null
+    status: string
+    last_synced_at: string | null
+  }>
+
+  const appointmentTypes = (typesResult.data ?? []) as Array<{
+    id: string
+    name: string
+  }>
 
   return (
     <div className="space-y-6">
@@ -71,9 +105,11 @@ export default async function AvailabilityPage() {
       </div>
 
       <AvailabilityClient
-        staffEntries={staffEntries}
-        overrides={overrideList}
-        connections={connectionList}
+        staff={staff}
+        availabilityPatterns={availability}
+        overrides={overrides}
+        calendarConnections={connections}
+        appointmentTypes={appointmentTypes}
       />
     </div>
   )
