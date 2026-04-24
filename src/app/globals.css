@@ -2,32 +2,32 @@
 /* Global styles — Tailwind v4 with design tokens from BRAND.md */
 /* All components reference CSS variables. Never hardcode hex colors in components. */
 
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @theme inline {
   /* Primary brand colors (platform-level defaults from BRAND.md §2) */
-  --color-primary-50: #EFF6FF;
-  --color-primary-500: #2563EB;
-  --color-primary-600: #1D4ED8;
-  --color-gold-50: #FFFBEB;
-  --color-gold-500: #F59E0B;
-  --color-charcoal-700: #2E2E3D;
-  --color-charcoal-900: #1C1C28;
-  --color-cream-50: #FDF8F0;
-  --color-success: #10B981;
-  --color-warning: #F59E0B;
-  --color-danger: #EF4444;
+  --color-primary-50: #eff6ff;
+  --color-primary-500: #2563eb;
+  --color-primary-600: #1d4ed8;
+  --color-gold-50: #fffbeb;
+  --color-gold-500: #f59e0b;
+  --color-charcoal-700: #2e2e3d;
+  --color-charcoal-900: #1c1c28;
+  --color-cream-50: #fdf8f0;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
 
   /* CCA Marketing palette */
-  --color-cca-green: #5CB961;
-  --color-cca-blue: #3B70B0;
-  --color-cca-coral: #F15A50;
-  --color-cca-pink: #F878AF;
-  --color-cca-yellow: #F2B020;
-  --color-cca-teal: #4ABDAC;
+  --color-cca-green: #5cb961;
+  --color-cca-blue: #3b70b0;
+  --color-cca-coral: #f15a50;
+  --color-cca-pink: #f878af;
+  --color-cca-yellow: #f2b020;
+  --color-cca-teal: #4abdac;
   --color-cca-ink: #141413;
-  --color-cca-cream: #FAF9F5;
-  --color-cca-gold: #C5A55A;
+  --color-cca-cream: #faf9f5;
+  --color-cca-gold: #c5a55a;
 
   /* CCA Marketing fonts */
   --font-kollektif: 'Kollektif Bold', system-ui, sans-serif;
@@ -43,9 +43,9 @@
   --radius-pill: 9999px;
 
   /* Elevation tokens (BRAND.md §4) */
-  --shadow-card: 0 1px 2px rgba(28,28,40,.04), 0 8px 24px -8px rgba(28,28,40,.08);
-  --shadow-card-hover: 0 2px 4px rgba(28,28,40,.06), 0 24px 48px -12px rgba(37,99,235,.12);
-  --shadow-cta: 0 8px 24px -8px rgba(37,99,235,.35);
+  --shadow-card: 0 1px 2px rgba(28, 28, 40, 0.04), 0 8px 24px -8px rgba(28, 28, 40, 0.08);
+  --shadow-card-hover: 0 2px 4px rgba(28, 28, 40, 0.06), 0 24px 48px -12px rgba(37, 99, 235, 0.12);
+  --shadow-cta: 0 8px 24px -8px rgba(37, 99, 235, 0.35);
 }
 
 /* ------------------------------------------------------------------ */
@@ -55,22 +55,22 @@
 /* ------------------------------------------------------------------ */
 :root {
   /* Identity colors — CCA defaults */
-  --color-primary: #5CB961;
-  --color-primary-foreground: #FFFFFF;
-  --color-secondary: #3B70B0;
-  --color-secondary-foreground: #FFFFFF;
-  --color-accent: #F15A50;
-  --color-accent-foreground: #FFFFFF;
-  --color-warning: #F59E0B;
-  --color-destructive: #EF4444;
+  --color-primary: #5cb961;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #3b70b0;
+  --color-secondary-foreground: #ffffff;
+  --color-accent: #f15a50;
+  --color-accent-foreground: #ffffff;
+  --color-warning: #f59e0b;
+  --color-destructive: #ef4444;
 
   /* Surface colors */
-  --color-background: #FFFFFF;
-  --color-foreground: #1A1A1A;
-  --color-muted: #F5F5F5;
+  --color-background: #ffffff;
+  --color-foreground: #1a1a1a;
+  --color-muted: #f5f5f5;
   --color-muted-foreground: #737373;
-  --color-card: #FFFFFF;
-  --color-border: #E5E5E5;
+  --color-card: #ffffff;
+  --color-border: #e5e5e5;
 
   /* Typography (loaded via next/font/google, fallbacks here) */
   --font-heading: 'Nunito', sans-serif;
@@ -81,8 +81,8 @@
   --radius: 0.75rem;
 
   /* Gradients (BRAND.md §2) */
-  --gradient-hero: linear-gradient(135deg, #EFF6FF 0%, #FDF8F0 50%, #FFFFFF 100%);
-  --gradient-cta: linear-gradient(180deg, #2563EB 0%, #1D4ED8 100%);
+  --gradient-hero: linear-gradient(135deg, #eff6ff 0%, #fdf8f0 50%, #ffffff 100%);
+  --gradient-cta: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
 }
 
 /* ------------------------------------------------------------------ */
@@ -92,13 +92,32 @@ body {
   font-family: var(--font-body);
   color: var(--color-foreground);
   background: var(--color-background);
+  cursor:
+    url('/cca-assets/sunshine-cursor.png') 16 16,
+    auto;
+}
+
+a,
+button,
+[role='button'],
+input[type='submit'],
+select,
+label[for],
+.cursor-pointer {
+  cursor:
+    url('/cca-assets/sunshine-cursor-2x.png') 24 24,
+    pointer;
 }
 
 /* ------------------------------------------------------------------ */
 /* Typography utilities (BRAND.md §3)                                  */
 /* ------------------------------------------------------------------ */
-.text-balance { text-wrap: balance; }
-.text-pretty  { text-wrap: pretty; }
+.text-balance {
+  text-wrap: balance;
+}
+.text-pretty {
+  text-wrap: pretty;
+}
 
 /* ------------------------------------------------------------------ */
 /* Accessibility (BRAND.md §8)                                         */
@@ -133,13 +152,22 @@ body {
 /* Marketing keyframe animations                                       */
 /* ------------------------------------------------------------------ */
 @keyframes marquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -160,13 +188,25 @@ body {
 /* Print styles — enrollment application PDF                           */
 /* ------------------------------------------------------------------ */
 @media print {
-  body { background: white !important; }
-  .print\:hidden { display: none !important; }
-  .print\:block { display: block !important; }
-  .print\:shadow-none { box-shadow: none !important; }
-  .print\:border-\[var\(--color-border\)\] { border-color: #e5e7eb !important; }
+  body {
+    background: white !important;
+  }
+  .print\:hidden {
+    display: none !important;
+  }
+  .print\:block {
+    display: block !important;
+  }
+  .print\:shadow-none {
+    box-shadow: none !important;
+  }
+  .print\:border-\[var\(--color-border\)\] {
+    border-color: #e5e7eb !important;
+  }
 
-  nav, header, aside,
+  nav,
+  header,
+  aside,
   [data-sidebar],
   [data-portal-nav] {
     display: none !important;

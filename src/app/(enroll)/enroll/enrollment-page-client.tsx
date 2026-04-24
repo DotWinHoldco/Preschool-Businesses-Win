@@ -244,7 +244,7 @@ export function EnrollmentPageClient(props: Props) {
               alt="Crandall Christian Academy"
               width={338}
               height={118}
-              className="h-12 md:h-14 w-auto"
+              className="h-20 md:h-24 w-auto"
               priority
             />
           </a>

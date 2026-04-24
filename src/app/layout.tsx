@@ -47,6 +47,10 @@ export const metadata: Metadata = {
   },
   description:
     'The best preschool management platform. Phone-first. Apple-grade polish. Multi-tenant.',
+  icons: {
+    icon: '/marketing/shared/favicon.png',
+    apple: '/apple-touch-icon.png',
+  },
 }
 
 /* ------------------------------------------------------------------ */
@@ -67,9 +71,7 @@ export default async function RootLayout({
   const branding = tenantId ? await getTenantBranding(tenantId) : null
 
   // Build tenant context value for client components
-  const tenantContextValue = tenantId
-    ? { tenantId, tenantSlug, surface }
-    : null
+  const tenantContextValue = tenantId ? { tenantId, tenantSlug, surface } : null
 
   return (
     <html
@@ -81,9 +83,7 @@ export default async function RootLayout({
         <SkipToContent />
         <TenantThemeProvider branding={branding}>
           {tenantContextValue ? (
-            <TenantProvider value={tenantContextValue}>
-              {children}
-            </TenantProvider>
+            <TenantProvider value={tenantContextValue}>{children}</TenantProvider>
           ) : (
             children
           )}
