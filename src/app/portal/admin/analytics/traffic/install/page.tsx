@@ -18,7 +18,7 @@ export default async function TrafficInstallPage() {
   const { data: site } = await supabase
     .from('analytics_sites')
     .select(
-      'id, tenant_id, site_key, name, origins, is_active, meta_pixel_id, meta_capi_token, meta_test_event_code, ga4_measurement_id, ga4_api_secret, tiktok_pixel_id, tiktok_access_token',
+      'id, tenant_id, site_key, name, origins, is_active, consent_banner_enabled, meta_pixel_id, meta_capi_token, meta_test_event_code, ga4_measurement_id, ga4_api_secret, tiktok_pixel_id, tiktok_access_token',
     )
     .eq('tenant_id', tenantId)
     .order('created_at', { ascending: true })
@@ -55,6 +55,7 @@ export default async function TrafficInstallPage() {
             site_key: site.site_key as string,
             origins: (site.origins as string[]) ?? [],
             is_active: (site.is_active as boolean) ?? true,
+            consent_banner_enabled: (site.consent_banner_enabled as boolean) ?? true,
             meta_pixel_id: (site.meta_pixel_id as string | null) ?? null,
             meta_capi_token: (site.meta_capi_token as string | null) ?? null,
             meta_test_event_code: (site.meta_test_event_code as string | null) ?? null,

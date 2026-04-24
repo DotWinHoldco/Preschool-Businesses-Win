@@ -15,6 +15,7 @@ interface Site {
   site_key: string
   origins: string[]
   is_active: boolean
+  consent_banner_enabled: boolean
   meta_pixel_id: string | null
   meta_capi_token: string | null
   meta_test_event_code: string | null
@@ -35,11 +36,15 @@ export function InstallForm({ site }: Props) {
   const [pending, startTransition] = useTransition()
   const [copied, setCopied] = useState<string | null>(null)
 
-  const snippet = useMemo(
-    () =>
-      `<script\n  src="${COLLECTOR_BASE}/pbw-analytics.js"\n  data-site-key="${form.site_key}"\n  async\n></script>\n<script\n  src="${COLLECTOR_BASE}/pbw-consent.js"\n  data-privacy-url="/privacy"\n  async\n></script>`,
-    [form.site_key],
-  )
+  const snippet = useMemo(() => {
+    const analyticsTag = form.consent_banner_enabled
+      ? `<script\n  src="${COLLECTOR_BASE}/pbw-analytics.js"\n  data-site-key="${form.site_key}"\n  async\n></script>`
+      : `<script\n  src="${COLLECTOR_BASE}/pbw-analytics.js"\n  data-site-key="${form.site_key}"\n  data-consent="off"\n  async\n></script>`
+    const consentTag = form.consent_banner_enabled
+      ? `\n<script\n  src="${COLLECTOR_BASE}/pbw-consent.js"\n  data-privacy-url="/privacy"\n  async\n></script>`
+      : ''
+    return analyticsTag + consentTag
+  }, [form.site_key, form.consent_banner_enabled])
 
   function update<K extends keyof Site>(key: K, value: Site[K]) {
     setForm((f) => ({ ...f, [key]: value }))
@@ -147,6 +152,47 @@ export function InstallForm({ site }: Props) {
               seconds.
             </li>
           </ol>
+        </CardContent>
+      </Card>
+
+      {/* Consent banner */}
+      <Card>
+        <CardContent className="p-5 space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-lg font-semibold text-[var(--color-foreground)]">
+                Consent banner
+              </h2>
+              <p className="text-xs text-[var(--color-muted-foreground)] mt-1">
+                Shows a TDPSA-compliant Accept / Opt out banner on first visit. When off, the site
+                still honors DNT and Global Privacy Control headers but never shows a prompt —
+                appropriate if your marketing site already has its own consent layer, or if you
+                operate only in jurisdictions without a banner requirement.
+              </p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer shrink-0 mt-1">
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={form.consent_banner_enabled}
+                onChange={(e) => update('consent_banner_enabled', e.target.checked)}
+              />
+              <div className="w-11 h-6 bg-[var(--color-muted)] rounded-full peer peer-checked:bg-[var(--color-primary)] transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-transform peer-checked:after:translate-x-5" />
+            </label>
+          </div>
+          <div className="rounded-md border border-[var(--color-border)] bg-[var(--color-muted)]/30 p-3 text-xs text-[var(--color-muted-foreground)] space-y-1">
+            <p className="text-[var(--color-foreground)] font-medium">
+              {form.consent_banner_enabled
+                ? 'Banner is on — visitors see Accept / Opt out on first visit.'
+                : 'Banner is off — only DNT / GPC browser signals opt users out.'}
+            </p>
+            <p>
+              The generated snippet above reflects this setting.
+              {form.consent_banner_enabled
+                ? ' Re-copy and re-paste it in Wix after saving if you just flipped the toggle.'
+                : ' pbw-consent.js is omitted and pbw-analytics.js runs with data-consent="off".'}
+            </p>
+          </div>
         </CardContent>
       </Card>
 

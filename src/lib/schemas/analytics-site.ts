@@ -18,6 +18,7 @@ export const AnalyticsSiteUpdateSchema = z.object({
   name: z.string().trim().min(1).max(120),
   origins: z.array(urlString).max(10).default([]),
   is_active: z.boolean().default(true),
+  consent_banner_enabled: z.boolean().default(true),
   meta_pixel_id: trimmedOrNull(64),
   meta_capi_token: trimmedOrNull(1024),
   meta_test_event_code: trimmedOrNull(32),
