@@ -15,6 +15,7 @@ import {
   PieChart,
   ShieldCheck,
   UserCog,
+  Globe,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 
@@ -41,6 +42,13 @@ interface SubRoute {
 }
 
 const subRoutes: SubRoute[] = [
+  {
+    title: 'Website Traffic',
+    description:
+      'Live visitors, conversions, funnel, attribution, geo, and devices from your marketing site.',
+    href: '/portal/admin/analytics/traffic',
+    icon: Globe,
+  },
   {
     title: 'Attendance Analytics',
     description: 'Daily patterns, heatmaps, and trend analysis across classrooms.',

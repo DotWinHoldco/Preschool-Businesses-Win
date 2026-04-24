@@ -1,0 +1,292 @@
+/*! Preschool Businesses Win — Analytics Snippet
+ *  Paste on tenant marketing site via:
+ *    <script src="https://preschool.businesses.win/pbw-analytics.js"
+ *            data-site-key="pk_xxx"
+ *            async></script>
+ */
+(function () {
+  'use strict'
+  var currentScript = document.currentScript
+  if (!currentScript) return
+  var SITE_KEY = currentScript.getAttribute('data-site-key')
+  if (!SITE_KEY) { console.warn('[pbwa] missing data-site-key'); return }
+  var COLLECT_URL = currentScript.getAttribute('data-collect') || 'https://preschool.businesses.win/api/collect'
+  var CONSENT_REQUIRED = currentScript.getAttribute('data-consent') !== 'off'
+  var AUTO_ENROLL_MATCH = currentScript.getAttribute('data-auto-enroll-match') !== 'off'
+  var COOKIE_DOMAIN = currentScript.getAttribute('data-cookie-domain') || ''
+
+  var VISITOR_COOKIE = '_pbwa_vid'
+  var CONSENT_COOKIE = '_pbwa_consent'
+  var ATTR_COOKIE = '_pbwa_attr'
+  var SESSION_KEY = '_pbwa_sid'
+  var SESSION_LAST_KEY = '_pbwa_sid_last'
+  var SESSION_TIMEOUT_MS = 30 * 60 * 1000 // 30 minutes inactivity = new session
+  var FLUSH_INTERVAL_MS = 5000
+  var FLUSH_BATCH_SIZE = 10
+
+  // ---- Consent ----------------------------------------------------------
+  var dnt = navigator.doNotTrack === '1' || window.doNotTrack === '1' || navigator.msDoNotTrack === '1'
+  var gpc = !!navigator.globalPrivacyControl
+  var storedConsent = getCookie(CONSENT_COOKIE) // 'granted' | 'denied' | null
+
+  function consentGranted() {
+    if (dnt || gpc) return false
+    if (!CONSENT_REQUIRED) return true
+    return storedConsent === 'granted'
+  }
+
+  // ---- Visitor + session IDs --------------------------------------------
+  function uuid() {
+    if (crypto && crypto.randomUUID) return crypto.randomUUID()
+    return 'xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      var r = (Math.random() * 16) | 0, v = c === 'x' ? r : (r & 0x3) | 0x8
+      return v.toString(16)
+    })
+  }
+
+  function getCookie(n) {
+    var m = document.cookie.match(new RegExp('(?:^|; )' + n.replace(/[.$?*|{}()[\]\\/+^]/g, '\\$&') + '=([^;]*)'))
+    return m ? decodeURIComponent(m[1]) : null
+  }
+  function setCookie(n, v, days) {
+    var d = new Date(); d.setTime(d.getTime() + days * 86400000)
+    var parts = [n + '=' + encodeURIComponent(v), 'expires=' + d.toUTCString(), 'path=/', 'SameSite=Lax']
+    if (location.protocol === 'https:') parts.push('Secure')
+    if (COOKIE_DOMAIN) parts.push('domain=' + COOKIE_DOMAIN)
+    document.cookie = parts.join('; ')
+  }
+
+  var visitorId = getCookie(VISITOR_COOKIE)
+  var isNewVisitor = false
+  if (!visitorId) { visitorId = uuid(); isNewVisitor = true }
+  if (consentGranted()) setCookie(VISITOR_COOKIE, visitorId, 365)
+
+  var now = Date.now()
+  var sessionId = sessionStorage.getItem(SESSION_KEY)
+  var sessionLast = parseInt(sessionStorage.getItem(SESSION_LAST_KEY) || '0', 10)
+  var isNewSession = false
+  if (!sessionId || !sessionLast || now - sessionLast > SESSION_TIMEOUT_MS) {
+    sessionId = uuid()
+    isNewSession = true
+  }
+  sessionStorage.setItem(SESSION_KEY, sessionId)
+  sessionStorage.setItem(SESSION_LAST_KEY, String(now))
+
+  function touchSession() {
+    sessionStorage.setItem(SESSION_LAST_KEY, String(Date.now()))
+  }
+
+  // ---- Attribution (UTM + click IDs) persisted for 30d ------------------
+  function parseUrlParams() {
+    var p = new URLSearchParams(location.search)
+    return {
+      utm_source: p.get('utm_source'),
+      utm_medium: p.get('utm_medium'),
+      utm_campaign: p.get('utm_campaign'),
+      utm_content: p.get('utm_content'),
+      utm_term: p.get('utm_term'),
+      fbclid: p.get('fbclid'),
+      gclid: p.get('gclid'),
+      ttclid: p.get('ttclid'),
+    }
+  }
+
+  var urlAttr = parseUrlParams()
+  var hasFreshAttr = !!(urlAttr.utm_source || urlAttr.utm_medium || urlAttr.utm_campaign || urlAttr.fbclid || urlAttr.gclid || urlAttr.ttclid)
+
+  var attr
+  try {
+    attr = JSON.parse(getCookie(ATTR_COOKIE) || 'null')
+  } catch (_e) { attr = null }
+  if (hasFreshAttr) {
+    attr = urlAttr
+    if (consentGranted()) setCookie(ATTR_COOKIE, JSON.stringify(attr), 30)
+  } else if (!attr) {
+    attr = urlAttr
+  }
+
+  // ---- Event queue ------------------------------------------------------
+  var queue = []
+  var flushTimer = null
+
+  function scheduleFlush() {
+    if (flushTimer) return
+    flushTimer = setTimeout(function () { flushTimer = null; flush() }, FLUSH_INTERVAL_MS)
+    if (queue.length >= FLUSH_BATCH_SIZE) {
+      clearTimeout(flushTimer); flushTimer = null; flush()
+    }
+  }
+
+  function buildEvent(type, name, props) {
+    return {
+      event_id: uuid(),
+      event_type: type,
+      event_name: name,
+      visitor_id: visitorId,
+      session_id: sessionId,
+      client_ts: Date.now(),
+      page_url: location.href.slice(0, 2000),
+      page_path: location.pathname + location.search,
+      page_title: document.title ? document.title.slice(0, 500) : null,
+      referrer: document.referrer ? document.referrer.slice(0, 2000) : null,
+      utm_source: attr && attr.utm_source,
+      utm_medium: attr && attr.utm_medium,
+      utm_campaign: attr && attr.utm_campaign,
+      utm_content: attr && attr.utm_content,
+      utm_term: attr && attr.utm_term,
+      fbclid: attr && attr.fbclid,
+      gclid: attr && attr.gclid,
+      ttclid: attr && attr.ttclid,
+      screen_width: screen.width,
+      screen_height: screen.height,
+      viewport_width: window.innerWidth,
+      viewport_height: window.innerHeight,
+      language: navigator.language,
+      properties: props || {},
+    }
+  }
+
+  function track(type, name, props) {
+    if (!consentGranted()) return
+    queue.push(buildEvent(type, name, props))
+    touchSession()
+    scheduleFlush()
+  }
+
+  function flush(sync) {
+    if (!queue.length) return
+    var events = queue.splice(0, queue.length)
+    var payload = JSON.stringify({ site_key: SITE_KEY, events: events })
+    try {
+      if (sync && navigator.sendBeacon) {
+        var blob = new Blob([payload], { type: 'application/json' })
+        navigator.sendBeacon(COLLECT_URL, blob)
+        return
+      }
+      fetch(COLLECT_URL, {
+        method: 'POST',
+        credentials: 'omit',
+        keepalive: true,
+        headers: { 'content-type': 'application/json' },
+        body: payload,
+      }).catch(function (_e) { /* swallow */ })
+    } catch (_e) { /* swallow */ }
+  }
+
+  function sendConsent(status) {
+    try {
+      var payload = JSON.stringify({
+        site_key: SITE_KEY,
+        visitor_id: visitorId,
+        status: status,
+        page_url: location.href.slice(0, 2000),
+      })
+      fetch(COLLECT_URL, {
+        method: 'PUT',
+        credentials: 'omit',
+        keepalive: true,
+        headers: { 'content-type': 'application/json' },
+        body: payload,
+      }).catch(function (_e) {})
+    } catch (_e) {}
+  }
+
+  // ---- Auto-capture: page_view + session_start --------------------------
+  if (consentGranted()) {
+    if (isNewSession) queue.push(buildEvent('session_start', 'session_start', { new_visitor: isNewVisitor }))
+    queue.push(buildEvent('page_view', 'page_view', {}))
+    scheduleFlush()
+  }
+
+  // ---- Auto-capture: clicks ---------------------------------------------
+  document.addEventListener('click', function (ev) {
+    if (!consentGranted()) return
+    var t = ev.target
+    if (!(t instanceof Element)) return
+    var el = t.closest('[data-track],a,button')
+    if (!el) return
+
+    var explicit = el.getAttribute && el.getAttribute('data-track')
+    if (explicit) {
+      var props = {}
+      Array.prototype.forEach.call(el.attributes, function (a) {
+        if (a.name.indexOf('data-track-') === 0) props[a.name.slice(11)] = a.value
+      })
+      var isConv = /enroll|conversion/i.test(explicit)
+      track(isConv ? 'conversion' : 'click', explicit, props)
+      return
+    }
+
+    if (!AUTO_ENROLL_MATCH) return
+    var tag = el.tagName
+    if (tag === 'A' || tag === 'BUTTON') {
+      var href = (tag === 'A' && el.getAttribute('href')) || ''
+      var txt = (el.textContent || '').trim().slice(0, 200)
+      var isEnrollUrl = /enroll|apply|application|tour|schedule-a-tour/i.test(href)
+      var isEnrollText = /^(enroll|apply|start application|begin enrollment|schedule a tour)/i.test(txt)
+      if (isEnrollUrl || isEnrollText) {
+        track('conversion', 'enrollment_click', { href: href.slice(0, 500), text: txt })
+      } else if (href && /^https?:/i.test(href) && href.indexOf(location.hostname) === -1) {
+        track('click', 'outbound_click', { href: href.slice(0, 500) })
+      }
+    }
+  }, true)
+
+  // ---- Auto-rewrite outbound enrollment links with _av stitch -----------
+  function stitchEnrollmentLinks() {
+    if (!AUTO_ENROLL_MATCH) return
+    var anchors = document.querySelectorAll('a[href]')
+    for (var i = 0; i < anchors.length; i++) {
+      var a = anchors[i]
+      var href = a.getAttribute('href')
+      if (!href) continue
+      if (a.getAttribute('data-pbwa-stitched') === '1') continue
+      if (/preschool\.businesses\.win|crandallchristianacademy\.com\/enroll|\/enrollment/i.test(href)) {
+        try {
+          var u = new URL(href, location.href)
+          if (!u.searchParams.has('_av')) {
+            u.searchParams.set('_av', visitorId)
+            a.setAttribute('href', u.toString())
+            a.setAttribute('data-pbwa-stitched', '1')
+          }
+        } catch (_e) { /* ignore invalid URL */ }
+      }
+    }
+  }
+  stitchEnrollmentLinks()
+  var observer = new MutationObserver(function () { stitchEnrollmentLinks() })
+  observer.observe(document.documentElement, { childList: true, subtree: true })
+
+  // ---- Unload handling --------------------------------------------------
+  function onHidden() {
+    if (document.visibilityState === 'hidden') {
+      if (consentGranted()) queue.push(buildEvent('session_end', 'session_end', {}))
+      flush(true)
+    }
+  }
+  document.addEventListener('visibilitychange', onHidden)
+  window.addEventListener('pagehide', function () {
+    if (consentGranted()) queue.push(buildEvent('session_end', 'session_end', {}))
+    flush(true)
+  })
+
+  // ---- Public API -------------------------------------------------------
+  window.pbwa = {
+    track: function (name, props) { track('custom', String(name).slice(0, 64), props || {}) },
+    conversion: function (name, props) { track('conversion', String(name).slice(0, 64), props || {}) },
+    pageView: function (props) { track('page_view', 'page_view', props || {}) },
+    setConsent: function (status) {
+      if (status !== 'granted' && status !== 'denied' && status !== 'withdrawn') return
+      storedConsent = status === 'withdrawn' ? 'denied' : status
+      setCookie(CONSENT_COOKIE, storedConsent, 365)
+      sendConsent(status)
+      if (status === 'granted') {
+        setCookie(VISITOR_COOKIE, visitorId, 365)
+        if (!queue.length) queue.push(buildEvent('page_view', 'page_view', { from: 'consent_grant' }))
+        scheduleFlush()
+      }
+    },
+    getVisitorId: function () { return visitorId },
+    getSessionId: function () { return sessionId },
+  }
+})()

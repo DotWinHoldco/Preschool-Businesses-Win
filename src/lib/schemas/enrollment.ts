@@ -146,6 +146,9 @@ export const SystemEnrollmentSchema = StepParentSchema.merge(StepChildrenSchema)
     /** Honeypot — must be empty */
     website: z.string().max(0).optional().default(''),
     form_id: z.string().uuid().optional(),
+    /** Cross-domain analytics visitor id (from ?_av stitch) */
+    analytics_visitor_id: z.string().min(1).max(64).optional(),
+    analytics_session_id: z.string().min(1).max(64).optional(),
   })
 
 export type SystemEnrollmentData = z.infer<typeof SystemEnrollmentSchema>

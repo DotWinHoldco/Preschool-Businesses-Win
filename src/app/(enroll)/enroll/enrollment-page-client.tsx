@@ -64,6 +64,7 @@ interface Props {
   sections: WizardSection[]
   fields: WizardField[]
   tenantName: string
+  analyticsSiteKey?: string | null
 }
 
 const LAYOUT_TYPES = new Set([
@@ -88,7 +89,68 @@ export function EnrollmentPageClient(props: Props) {
     sections,
     fields,
     tenantName,
+    analyticsSiteKey,
   } = props
+
+  const [analyticsIds, setAnalyticsIds] = useState<{
+    visitor_id: string
+    session_id: string
+  } | null>(null)
+
+  useEffect(() => {
+    if (!analyticsSiteKey) return
+    try {
+      const params = new URLSearchParams(window.location.search)
+      const avFromUrl = params.get('_av')
+      const sidStored = sessionStorage.getItem('_pbwa_sid')
+      const vidStored =
+        (document.cookie.match(/(?:^|; )_pbwa_vid=([^;]*)/)?.[1] &&
+          decodeURIComponent(document.cookie.match(/(?:^|; )_pbwa_vid=([^;]*)/)![1])) ||
+        null
+      const visitor_id = avFromUrl || vidStored || crypto.randomUUID()
+      const session_id = sidStored || crypto.randomUUID()
+      if (avFromUrl) {
+        // Persist the stitched identity for the duration of this browser tab
+        try {
+          document.cookie = `_pbwa_vid=${encodeURIComponent(visitor_id)}; path=/; Max-Age=31536000; SameSite=Lax${window.location.protocol === 'https:' ? '; Secure' : ''}`
+          sessionStorage.setItem('_pbwa_sid', session_id)
+          sessionStorage.setItem('_pbwa_sid_last', String(Date.now()))
+        } catch {}
+      }
+      setAnalyticsIds({ visitor_id, session_id })
+      fetch('/api/collect', {
+        method: 'POST',
+        credentials: 'omit',
+        keepalive: true,
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          site_key: analyticsSiteKey,
+          events: [
+            {
+              event_id: crypto.randomUUID(),
+              event_type: 'conversion',
+              event_name: 'enrollment_started',
+              visitor_id,
+              session_id,
+              client_ts: Date.now(),
+              page_url: window.location.href.slice(0, 2000),
+              page_path: window.location.pathname + window.location.search,
+              page_title: document.title.slice(0, 500),
+              referrer: document.referrer ? document.referrer.slice(0, 2000) : null,
+              screen_width: screen.width,
+              screen_height: screen.height,
+              viewport_width: window.innerWidth,
+              viewport_height: window.innerHeight,
+              language: navigator.language,
+              properties: { stitched: !!avFromUrl },
+            },
+          ],
+        }),
+      }).catch(() => {})
+    } catch {
+      // analytics failures never block enrollment
+    }
+  }, [analyticsSiteKey])
 
   const steps = useMemo(() => {
     if (sections.length > 0) {
@@ -217,7 +279,12 @@ export function EnrollmentPageClient(props: Props) {
     setError(null)
     setPending(true)
     try {
-      const payload = { ...values, form_id: formId } as unknown as SystemEnrollmentData
+      const payload = {
+        ...values,
+        form_id: formId,
+        analytics_visitor_id: analyticsIds?.visitor_id,
+        analytics_session_id: analyticsIds?.session_id,
+      } as unknown as SystemEnrollmentData
       const result = await submitSystemEnrollment(payload)
       if (!result.ok) {
         setError(result.error ?? 'Submission failed.')

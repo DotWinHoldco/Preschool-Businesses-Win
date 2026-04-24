@@ -4,6 +4,31 @@
 
 ---
 
+### 2026-04-24 — Analytics Install Tab + CAPI config UI
+
+- **What:** Added tabbed navigation on `/portal/admin/analytics/traffic` (Overview / Install & Integrations). New install tab shows the tenant's site key with copy, the pre-filled Wix snippet with copy, an editable allowed-origins list, and form fields for Meta CAPI (pixel id + access token + test event code), GA4 MP (measurement id + API secret), and TikTok Events API (pixel id + access token). Site name + active toggle included.
+- **Server action:** `updateAnalyticsSite` — Zod-validated, admin-gated, tenant-scoped. Verifies the target row belongs to the current tenant before updating. Audit-logged with a summary of what was configured (not the secret values).
+- **Where:** src/app/portal/admin/analytics/traffic/install/page.tsx · src/app/portal/admin/analytics/traffic/install/install-form.tsx · src/lib/actions/analytics/update-site.ts · src/lib/schemas/analytics-site.ts · src/components/portal/analytics/traffic-tabs.tsx · src/app/portal/admin/analytics/traffic/page.tsx.
+- **Status:** Complete · `npx tsc --noEmit` clean · `npx next build` clean · both routes compiled.
+
+---
+
+### 2026-04-24 — Website Analytics + CAPI Pipeline (commit pending)
+
+- **What:** First-party web analytics for tenant marketing sites (Wix Studio for CCA) → `/api/collect` on the PBW app → Supabase → live traffic dashboard at `/portal/admin/analytics/traffic` → Meta/GA4/TikTok CAPI forwarder on a 1-minute Vercel cron. Multi-tenant from day one via `analytics_sites.site_key`.
+- **Schema (migration 0064):** `analytics_sites`, `analytics_events`, `analytics_sessions`, `analytics_visitors`, `analytics_consent`, `analytics_ip_salt` + `rotate_analytics_ip_salt()`. Full tenant*isolation + service_all RLS. Seeded CCA site row with site_key `pk_cca*…`.
+- **Collector (`/api/collect`):** POST with Zod-validated batch (≤50 events), PUT for consent; CORS enforced against `analytics_sites.origins`; proxy.ts whitelists the path for cross-origin; rate-limited 600/min per IP; salt-rotated SHA-256 IP hashing; lightweight UA parser (no new dep); bot UAs dropped at ingest; Vercel/Cloudflare geo headers captured.
+- **Snippet (`/pbw-analytics.js`, `/pbw-consent.js`):** ~6KB, zero deps. Auto page_view + session_start, DNT/GPC respected, TDPSA consent banner, `sendBeacon` on unload, UTM + fbclid/gclid/ttclid capture + stickiness, `[data-track]` capture, auto-detect enrollment CTAs by href/text, MutationObserver rewrites outbound enrollment links with `?_av={visitor_id}` for cross-domain stitch. `window.pbwa.{track,conversion,setConsent}` exposed.
+- **Cross-domain stitch:** Enrollment wizard page reads `?_av`, fires `enrollment_started` conversion, passes visitor+session ids into `submitSystemEnrollment`. Server action writes `enrollment_completed` and links `analytics_visitors.application_id`.
+- **Dashboard (`/portal/admin/analytics/traffic`):** Server component aggregates events in-range; KPI grid (visitors, page views, conversions, conv rate, sessions, bounce rate, enrollment clicks, avg duration); funnel bar (page view → click → started → completed with drop-off %); daily bar chart; top pages/referrers/UTM sources/UTM campaigns; devices, top countries, top cities. Live "X on site now" pill via `/api/analytics/realtime` polling (10s). Range toggles: today/7d/30d/90d.
+- **CAPI forwarder (`/api/cron/analytics-forward`, runs `* * * * *`):** Fans `event_type='conversion'` rows to Meta CAPI, GA4 MP, TikTok Events API using credentials from `analytics_sites` row. Dedupes via `forwarded_to` jsonb. Meta mapping Lead/InitiateCheckout/AddToCart; TikTok CompleteRegistration/InitiateCheckout/ClickButton.
+- **Compliance (TX TDPSA):** consent banner with Accept/Opt out, DNT/GPC silent opt-out, SHA-256 salted IP hashing (no raw IPs stored), `analytics_consent` audit trail, `window.pbwaManageConsent()` hook for the privacy page. Bot filter at ingest.
+- **Where:** supabase/migrations/0064_analytics_tracking.sql · src/app/api/collect/route.ts · src/app/api/analytics/realtime/route.ts · src/app/api/cron/analytics-forward/route.ts · src/app/portal/admin/analytics/traffic/page.tsx · src/app/portal/admin/analytics/page.tsx · src/app/(enroll)/enroll/page.tsx · src/app/(enroll)/enroll/enrollment-page-client.tsx · src/lib/analytics/{schemas,ingest,site-lookup,ua-parse,ip-hash,emit}.ts · src/lib/cron/analytics-forward.ts · src/lib/actions/enrollment/submit-system-enrollment.ts · src/lib/schemas/enrollment.ts · src/components/portal/analytics/realtime-visitors.tsx · src/proxy.ts · public/pbw-analytics.js · public/pbw-consent.js · docs/WIX_ANALYTICS_INSTALL.md · vercel.json.
+- **Status:** Complete · `npx tsc --noEmit` clean · `npx next build` clean · OPTIONS preflight verified 204 with correct CORS headers. Migration applied to oajfxyiqjqymuvevnoui. POST endpoint requires `SUPABASE_SERVICE_ROLE_KEY` (already set in Vercel; local .env.local still has placeholder).
+- **Install:** docs/WIX_ANALYTICS_INSTALL.md — paste 2 script tags in Wix Studio → Custom Code → body-end. Site key in dashboard header.
+
+---
+
 ### 2026-04-24 — Admin Platform Gap-Close (15 clusters, commit 76f14ad)
 
 - **What:** Closed the gap between admin UI promises and backing tables/actions across the entire admin portal. Replaced stubs, mock data, and dead buttons with real CRUD, persistence, and server-action wiring.

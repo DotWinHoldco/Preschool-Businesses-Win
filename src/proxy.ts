@@ -17,7 +17,17 @@ export async function proxy(request: NextRequest) {
 
   let response: NextResponse
 
-  if (hostname === 'preschool.businesses.win' || hostname === 'localhost:3000') {
+  // Analytics collector is served from the PBW app but must be reachable
+  // from tenant marketing domains. Skip tenant resolution + let the route
+  // enforce its own CORS via site.origins.
+  const isAnalyticsIngest = pathname === '/api/collect'
+
+  if (
+    hostname === 'preschool.businesses.win' ||
+    hostname.startsWith('localhost:') ||
+    hostname === 'localhost' ||
+    isAnalyticsIngest
+  ) {
     response = NextResponse.next()
   } else {
     const resolved = await resolveTenant(hostname)

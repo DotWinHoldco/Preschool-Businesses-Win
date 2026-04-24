@@ -14,6 +14,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId } from '@/lib/actions/get-tenant-id'
 import { writeAudit } from '@/lib/audit'
 import { createApplicantAccount } from './create-applicant-account'
+import { emitServerConversion } from '@/lib/analytics/emit'
 
 interface SubmitResult {
   ok: boolean
@@ -33,16 +34,17 @@ function computeTriageScore(data: SystemEnrollmentData, child: ChildData): numbe
   return Math.min(score, 100)
 }
 
-export async function submitSystemEnrollment(
-  raw: SystemEnrollmentData,
-): Promise<SubmitResult> {
+export async function submitSystemEnrollment(raw: SystemEnrollmentData): Promise<SubmitResult> {
   if (raw.website && raw.website.length > 0) {
     return { ok: true, response_id: 'honeypot', application_ids: [] }
   }
 
   const parsed = SystemEnrollmentSchema.safeParse(raw)
   if (!parsed.success) {
-    console.error('[Enrollment] Zod validation failed:', JSON.stringify(parsed.error.issues, null, 2))
+    console.error(
+      '[Enrollment] Zod validation failed:',
+      JSON.stringify(parsed.error.issues, null, 2),
+    )
     const msg = parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ')
     return { ok: false, error: msg || 'Validation failed' }
   }
@@ -224,7 +226,29 @@ export async function submitSystemEnrollment(
       console.error('[Enrollment] Applicant account creation failed (non-blocking):', accountErr)
     }
 
-    return { ok: true, response_id: responseId, application_ids: applicationIds, magic_link_sent: magicLinkSent }
+    // Fire enrollment_completed conversion for each created application.
+    // Non-blocking: analytics must never prevent a successful submission.
+    for (const appId of applicationIds) {
+      await emitServerConversion({
+        tenantId,
+        eventName: 'enrollment_completed',
+        visitorId: data.analytics_visitor_id ?? null,
+        sessionId: data.analytics_session_id ?? null,
+        applicationId: appId,
+        properties: {
+          program_type: data.children.find((_c, i) => applicationIds[i] === appId)?.program_type,
+          child_count: data.children.length,
+          how_heard: data.how_heard,
+        },
+      })
+    }
+
+    return {
+      ok: true,
+      response_id: responseId,
+      application_ids: applicationIds,
+      magic_link_sent: magicLinkSent,
+    }
   } catch (err) {
     console.error('System enrollment submit error:', err)
     return { ok: false, error: 'Something went wrong. Please try again.' }
