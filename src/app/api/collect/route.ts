@@ -19,8 +19,9 @@ function corsHeaders(origin: string | null, allow: boolean): Record<string, stri
   if (!allow || !origin) return {}
   return {
     'Access-Control-Allow-Origin': origin,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'POST, PUT, OPTIONS',
     'Access-Control-Allow-Headers': 'content-type',
+    'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Max-Age': '86400',
     Vary: 'Origin',
   }
@@ -55,12 +56,15 @@ export async function OPTIONS(request: NextRequest) {
   const origin = request.headers.get('origin')
   // Cannot look up the site without a body, so allow preflight for any origin.
   // The POST handler enforces the origin against the resolved site.
+  // We reflect the origin (not '*') and set Allow-Credentials so sendBeacon
+  // works (it always sends with credentials mode 'include').
   return new NextResponse(null, {
     status: 204,
     headers: {
       'Access-Control-Allow-Origin': origin ?? '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'POST, PUT, OPTIONS',
       'Access-Control-Allow-Headers': 'content-type',
+      'Access-Control-Allow-Credentials': 'true',
       'Access-Control-Max-Age': '86400',
       Vary: 'Origin',
     },
