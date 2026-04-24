@@ -334,53 +334,50 @@ export function EnrollmentPageClient(props: Props) {
       {/* === STICKY MINI-HEADER (compact, always present) === */}
       <header className="sticky top-0 z-50 bg-white/75 backdrop-blur-lg border-b border-cca-ink/5">
         <div className="max-w-3xl mx-auto px-5 py-3 flex items-center justify-between gap-3">
-          <a href={WEBSITE_URL} className="flex-shrink-0 flex items-center gap-2.5">
+          <a
+            href={WEBSITE_URL}
+            className="flex-shrink-0 flex items-center gap-2.5 group"
+            aria-label="Crandall Christian Academy home"
+          >
             <Image
-              src="/cca-assets/cca-full-with-tagline.png"
-              alt="Crandall Christian Academy — Where Little Minds Shine"
-              width={200}
-              height={89}
-              className="h-11 w-auto"
-              priority
+              src="/cca-assets/crandall-sunshine.png"
+              alt=""
+              aria-hidden
+              width={128}
+              height={128}
+              className="h-10 w-10 md:h-11 md:w-11 select-none transition-transform duration-500 group-hover:rotate-45"
             />
-            <span className="hidden sm:inline font-kollektif text-sm text-cca-ink/70">
+            <span className="font-kollektif text-sm md:text-base text-cca-ink/80">
               Crandall Christian Academy
             </span>
           </a>
           {!submitted && !noForm && (
-            <div className="flex items-center gap-2">
-              <Image
-                src="/cca-assets/crandall-sunshine.png"
-                alt=""
-                aria-hidden
-                width={64}
-                height={64}
-                className="h-9 w-9 md:h-10 md:w-10 select-none animate-[spin_60s_linear_infinite]"
-              />
-              <button
-                onClick={handleSave}
-                className="flex items-center gap-2 bg-cca-blue text-white font-kollektif text-sm px-5 py-2.5 rounded-full hover:bg-cca-blue/90 transition-all shadow-[0_4px_14px_-4px_rgba(59,112,176,0.4)] hover:shadow-[0_6px_20px_-4px_rgba(59,112,176,0.5)] hover:-translate-y-0.5"
-              >
-                <Save className="w-4 h-4" />
-                <span className="hidden sm:inline">Save Progress</span>
-                <span className="sm:hidden">Save</span>
-              </button>
-            </div>
+            <button
+              onClick={handleSave}
+              className="flex items-center gap-2 bg-cca-blue text-white font-kollektif text-sm px-5 py-2.5 rounded-full hover:bg-cca-blue/90 transition-all shadow-[0_4px_14px_-4px_rgba(59,112,176,0.4)] hover:shadow-[0_6px_20px_-4px_rgba(59,112,176,0.5)] hover:-translate-y-0.5"
+            >
+              <Save className="w-4 h-4" />
+              <span className="hidden sm:inline">Save Progress</span>
+              <span className="sm:hidden">Save</span>
+            </button>
           )}
         </div>
       </header>
 
       {/* === HERO === */}
       {!submitted && !noForm && (
-        <section className="relative pt-10 md:pt-16 pb-4 md:pb-6 px-5">
+        <section className="relative pt-10 md:pt-14 pb-4 md:pb-6 px-5">
           <div className="max-w-3xl mx-auto text-center">
+            {/* Sized at ~native resolution (200px-wide source) so it stays crisp.
+                Swap for a hi-res SVG/PNG when provided to go larger. */}
             <Image
               src="/cca-assets/cca-full-with-tagline.png"
               alt="Crandall Christian Academy — Where Little Minds Shine"
-              width={400}
-              height={178}
-              className="h-40 md:h-56 w-auto mx-auto mb-6 md:mb-8 drop-shadow-[0_12px_32px_rgba(59,112,176,0.15)]"
+              width={200}
+              height={89}
+              className="h-20 md:h-24 w-auto mx-auto mb-6 md:mb-8"
               priority
+              unoptimized
             />
             <h1 className="font-kollektif text-2xl md:text-4xl text-cca-ink mb-3 text-balance">
               We&rsquo;re so glad you&rsquo;re here.
