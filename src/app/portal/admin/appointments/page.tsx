@@ -34,7 +34,7 @@ export default async function AppointmentsDashboardPage() {
     supabase
       .from('appointments')
       .select(
-        'id, appointment_type_id, booked_by_name, booked_by_email, booked_by_phone, start_at, end_at, timezone, staff_user_id, status, notes, staff_notes, cancellation_reason, enrollment_application_id, price_cents, confirmation_token, rescheduled_from_id, created_at, appointment_types(name, color, slug, duration_minutes)',
+        'id, appointment_type_id, booked_by_name, booked_by_email, booked_by_phone, start_at, end_at, timezone, staff_user_id, status, notes, staff_notes, cancellation_reason, enrollment_application_id, confirmation_token, rescheduled_from_id, created_at, appointment_types(name, color, slug, duration_minutes)',
       )
       .eq('tenant_id', tenantId)
       .order('start_at', { ascending: false })
@@ -108,7 +108,7 @@ export default async function AppointmentsDashboardPage() {
       staff_notes: (row.staff_notes as string) ?? null,
       cancellation_reason: (row.cancellation_reason as string) ?? null,
       enrollment_application_id: (row.enrollment_application_id as string) ?? null,
-      price_cents: (row.price_cents as number) ?? null,
+      price_cents: ((row as Record<string, unknown>).price_cents as number) ?? null,
       confirmation_token: (row.confirmation_token as string) ?? null,
       rescheduled_from_id: (row.rescheduled_from_id as string) ?? null,
       created_at: row.created_at as string,
