@@ -36,7 +36,18 @@
   }
   var SITE_KEY = attr('data-site-key')
   if (!SITE_KEY) { console.warn('[pbwa] missing data-site-key'); return }
-  var COLLECT_URL = attr('data-collect') || 'https://preschool.businesses.win/api/collect'
+  // Default the collector to /api/collect on whatever host served this
+  // script. That way the snippet always posts back to a domain that
+  // actually exists, regardless of which PBW host the tenant uses.
+  var scriptSrc = (currentScript && currentScript.src) || ''
+  var derivedCollect
+  try {
+    var u = new URL(scriptSrc, window.location.href)
+    derivedCollect = u.protocol + '//' + u.host + '/api/collect'
+  } catch (_e) {
+    derivedCollect = null
+  }
+  var COLLECT_URL = attr('data-collect') || derivedCollect || '/api/collect'
   var CONSENT_REQUIRED = attr('data-consent') !== 'off'
   var AUTO_ENROLL_MATCH = attr('data-auto-enroll-match') !== 'off'
   var COOKIE_DOMAIN = attr('data-cookie-domain') || ''
