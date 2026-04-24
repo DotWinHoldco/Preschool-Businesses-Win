@@ -48,7 +48,12 @@
     derivedCollect = null
   }
   var COLLECT_URL = attr('data-collect') || derivedCollect || '/api/collect'
-  var CONSENT_REQUIRED = attr('data-consent') !== 'off'
+  // TDPSA + most US states use an opt-out model, not opt-in. Events fire by
+  // default; DNT/GPC browser signals silently opt out, and an explicit
+  // "denied" consent cookie (set by the opt-out button on the banner, if
+  // pasted) also stops events. Set data-consent="required" only if you want
+  // the stricter opt-in flow where visitors must click Accept first.
+  var CONSENT_REQUIRED = attr('data-consent') === 'required' || attr('data-consent') === 'on'
   var AUTO_ENROLL_MATCH = attr('data-auto-enroll-match') !== 'off'
   var COOKIE_DOMAIN = attr('data-cookie-domain') || ''
 
@@ -68,6 +73,7 @@
 
   function consentGranted() {
     if (dnt || gpc) return false
+    if (storedConsent === 'denied') return false
     if (!CONSENT_REQUIRED) return true
     return storedConsent === 'granted'
   }
