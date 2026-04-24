@@ -115,6 +115,13 @@ export async function ingestBatch(
 
 type AdminClient = ReturnType<typeof createAdminClient>
 
+// A bounce is a session with zero engagement — no click, no conversion,
+// only one page view AND less than 30 seconds on site. Any click (inbound
+// CTA, outbound link, enrollment action) counts as engagement.
+function isEngagement(e: AnalyticsEvent): boolean {
+  return e.event_type === 'click' || e.event_type === 'conversion'
+}
+
 async function upsertSession(
   supabase: AdminClient,
   ctx: IngestContext,
@@ -123,11 +130,12 @@ async function upsertSession(
   ipHash: string | null,
 ) {
   const isPageView = e.event_type === 'page_view'
+  const engagement = isEngagement(e)
   const converted = isConversion(e)
 
   const { data: existing } = await supabase
     .from('analytics_sessions')
-    .select('id, started_at, page_count, event_count, converted')
+    .select('id, started_at, page_count, event_count, converted, is_bounce')
     .eq('tenant_id', ctx.site.tenant_id)
     .eq('session_id', e.session_id)
     .maybeSingle()
@@ -160,7 +168,8 @@ async function upsertSession(
       user_agent: ctx.user_agent,
       converted,
       conversion_event: converted ? e.event_name : null,
-      is_bounce: true,
+      // Opening event is a click/conversion → already engaged, not a bounce.
+      is_bounce: !engagement,
       duration_seconds: 0,
     })
     return
@@ -171,6 +180,9 @@ async function upsertSession(
   const duration = Math.max(0, Math.floor((now - startedAt) / 1000))
   const nextPageCount = (existing.page_count as number) + (isPageView ? 1 : 0)
   const nextEventCount = (existing.event_count as number) + 1
+  // Sticky: once a session is marked not-a-bounce, never flip back.
+  const wasBounce = (existing.is_bounce as boolean) ?? true
+  const nextIsBounce = wasBounce && !engagement && nextPageCount <= 1 && duration < 30
 
   await supabase
     .from('analytics_sessions')
@@ -180,7 +192,7 @@ async function upsertSession(
       page_count: nextPageCount,
       event_count: nextEventCount,
       duration_seconds: duration,
-      is_bounce: nextPageCount <= 1 && duration < 30,
+      is_bounce: nextIsBounce,
       converted: (existing.converted as boolean) || converted,
       conversion_event: (existing.converted as boolean)
         ? undefined
