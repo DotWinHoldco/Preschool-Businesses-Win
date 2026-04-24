@@ -236,36 +236,74 @@
   }
 
   // ---- Auto-capture: clicks ---------------------------------------------
+  function findClickable(start) {
+    var el = start
+    while (el && el !== document.body && el.nodeType === 1) {
+      if (el.hasAttribute && el.hasAttribute('data-track')) return el
+      var tag = el.tagName
+      if (tag === 'A' || tag === 'BUTTON') return el
+      var role = el.getAttribute && el.getAttribute('role')
+      if (role === 'button' || role === 'link') return el
+      // Wix often renders interactive things as div/span with onclick
+      if (el.onclick) return el
+      try {
+        var cs = window.getComputedStyle(el)
+        if (cs && cs.cursor === 'pointer') return el
+      } catch (_e) {}
+      el = el.parentElement
+    }
+    return start
+  }
+
+  function findHref(el) {
+    var cur = el
+    for (var i = 0; i < 6 && cur; i++) {
+      if (cur.tagName === 'A' && cur.getAttribute('href')) return cur.getAttribute('href')
+      cur = cur.parentElement
+    }
+    var a = el.querySelector && el.querySelector('a[href]')
+    return (a && a.getAttribute('href')) || ''
+  }
+
+  function clickText(el) {
+    var txt = ''
+    try {
+      txt = (el.innerText || el.textContent || '').trim()
+    } catch (_e) {}
+    return txt.slice(0, 200)
+  }
+
   document.addEventListener('click', function (ev) {
     if (!consentGranted()) return
     var t = ev.target
     if (!(t instanceof Element)) return
-    var el = t.closest('[data-track],a,button')
+    var el = findClickable(t)
     if (!el) return
 
     var explicit = el.getAttribute && el.getAttribute('data-track')
     if (explicit) {
       var props = {}
-      Array.prototype.forEach.call(el.attributes, function (a) {
+      Array.prototype.forEach.call(el.attributes || [], function (a) {
         if (a.name.indexOf('data-track-') === 0) props[a.name.slice(11)] = a.value
       })
-      var isConv = /enroll|conversion/i.test(explicit)
+      var isConv = /enroll|conversion|apply/i.test(explicit)
       track(isConv ? 'conversion' : 'click', explicit, props)
+      flush(true)
       return
     }
 
     if (!AUTO_ENROLL_MATCH) return
-    var tag = el.tagName
-    if (tag === 'A' || tag === 'BUTTON') {
-      var href = (tag === 'A' && el.getAttribute('href')) || ''
-      var txt = (el.textContent || '').trim().slice(0, 200)
-      var isEnrollUrl = /enroll|apply|application|tour|schedule-a-tour/i.test(href)
-      var isEnrollText = /^(enroll|apply|start application|begin enrollment|schedule a tour)/i.test(txt)
-      if (isEnrollUrl || isEnrollText) {
-        track('conversion', 'enrollment_click', { href: href.slice(0, 500), text: txt })
-      } else if (href && /^https?:/i.test(href) && href.indexOf(location.hostname) === -1) {
-        track('click', 'outbound_click', { href: href.slice(0, 500) })
-      }
+    var href = findHref(el)
+    var txt = clickText(el)
+    var isEnrollUrl = /enroll|apply|application|tour|schedule-a-tour/i.test(href)
+    var isEnrollText = /^(enroll|apply|start application|begin enrollment|schedule a tour|apply now|enroll now)/i.test(txt)
+    if (isEnrollUrl || isEnrollText) {
+      track('conversion', 'enrollment_click', { href: (href || '').slice(0, 500), text: txt })
+      // Flush immediately — page is about to navigate.
+      flush(true)
+    } else if (href && /^https?:/i.test(href) && href.indexOf(location.hostname) === -1) {
+      track('click', 'outbound_click', { href: href.slice(0, 500) })
+      flush(true)
     }
   }, true)
 

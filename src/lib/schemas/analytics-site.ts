@@ -5,7 +5,7 @@ const trimmedOrNull = (maxLen: number) =>
     .string()
     .trim()
     .max(maxLen)
-    .optional()
+    .nullish()
     .transform((v) => (v && v.length > 0 ? v : null))
 
 const urlString = z
