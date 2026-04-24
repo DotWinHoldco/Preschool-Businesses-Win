@@ -302,23 +302,44 @@ export function EnrollmentPageClient(props: Props) {
 
   return (
     <>
-      {/* === HEADER === */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-100/80">
-        <div className="max-w-2xl mx-auto px-5 py-4 flex items-center justify-between">
-          <a href={WEBSITE_URL} className="flex-shrink-0">
+      {/* === DECORATIVE BACKGROUND === */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 -z-10"
+        style={{
+          background:
+            'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(242,176,32,0.08), transparent 60%), radial-gradient(ellipse 60% 40% at 90% 10%, rgba(248,120,175,0.06), transparent 60%), radial-gradient(ellipse 60% 40% at 10% 5%, rgba(74,189,172,0.05), transparent 60%), linear-gradient(180deg, #faf9f5 0%, #ffffff 40%)',
+        }}
+      />
+      <Image
+        src="/cca-assets/crandall-sunshine.png"
+        alt=""
+        aria-hidden
+        width={320}
+        height={320}
+        className="pointer-events-none fixed -top-16 -right-16 w-64 md:w-80 opacity-[0.14] -z-10 select-none"
+      />
+
+      {/* === STICKY MINI-HEADER (compact, always present) === */}
+      <header className="sticky top-0 z-50 bg-white/70 backdrop-blur-lg border-b border-cca-ink/5">
+        <div className="max-w-3xl mx-auto px-5 py-3 flex items-center justify-between">
+          <a href={WEBSITE_URL} className="flex-shrink-0 flex items-center gap-2">
             <Image
-              src="/marketing/shared/cca-logo-full.png"
+              src="/marketing/shared/cca-logo-small.png"
               alt="Crandall Christian Academy"
-              width={338}
-              height={118}
-              className="h-20 md:h-24 w-auto"
+              width={48}
+              height={48}
+              className="h-10 w-auto"
               priority
             />
+            <span className="hidden sm:inline font-kollektif text-sm text-cca-ink/70">
+              Crandall Christian Academy
+            </span>
           </a>
-          {!submitted && (
+          {!submitted && !noForm && (
             <button
               onClick={handleSave}
-              className="flex items-center gap-2 bg-cca-blue text-white font-kollektif text-sm px-5 py-2.5 rounded-full hover:bg-cca-blue/90 transition-colors shadow-sm"
+              className="flex items-center gap-2 bg-cca-blue text-white font-kollektif text-sm px-5 py-2.5 rounded-full hover:bg-cca-blue/90 transition-all shadow-[0_4px_14px_-4px_rgba(59,112,176,0.4)] hover:shadow-[0_6px_20px_-4px_rgba(59,112,176,0.5)] hover:-translate-y-0.5"
             >
               <Save className="w-4 h-4" />
               <span className="hidden sm:inline">Save Progress</span>
@@ -327,6 +348,48 @@ export function EnrollmentPageClient(props: Props) {
           )}
         </div>
       </header>
+
+      {/* === HERO === */}
+      {!submitted && !noForm && (
+        <section className="relative pt-8 md:pt-14 pb-4 md:pb-6 px-5">
+          <div className="max-w-3xl mx-auto text-center">
+            <div className="inline-block relative mb-4 md:mb-6">
+              <Image
+                src="/marketing/shared/cca-logo-full.png"
+                alt="Crandall Christian Academy"
+                width={338}
+                height={118}
+                className="h-32 md:h-44 w-auto mx-auto drop-shadow-[0_8px_24px_rgba(59,112,176,0.12)]"
+                priority
+              />
+            </div>
+            <p className="font-[family-name:var(--font-signature)] text-lg md:text-2xl text-cca-blue/80 mb-3 md:mb-4">
+              Where Little Minds Shine
+            </p>
+            <h1 className="font-kollektif text-2xl md:text-4xl text-cca-ink mb-3 text-balance">
+              We&rsquo;re so glad you&rsquo;re here.
+            </h1>
+            <p className="font-questrial text-base md:text-lg text-cca-ink/65 max-w-lg mx-auto text-pretty leading-relaxed">
+              Choosing a preschool is a big decision. The next few minutes help us get to know your
+              family so we can make sure CCA is the right fit.
+            </p>
+            <div className="mt-5 md:mt-7 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs md:text-sm font-questrial text-cca-ink/55">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-cca-green" />
+                About 5–10 minutes
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-cca-blue" />
+                Your progress saves as you go
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-cca-pink" />
+                No commitment — we reach out to you
+              </span>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* === SAVE TOAST === */}
       <div
@@ -367,8 +430,8 @@ export function EnrollmentPageClient(props: Props) {
       )}
 
       {/* === MAIN CONTENT === */}
-      <main className="flex-1 py-8 md:py-12 px-4">
-        <div className="max-w-2xl mx-auto">
+      <main className="flex-1 pt-4 md:pt-6 pb-10 md:pb-16 px-4">
+        <div className="max-w-3xl mx-auto">
           {noForm ? (
             <div className="text-center py-16">
               <h1 className="font-kollektif text-2xl text-cca-ink mb-3">{title}</h1>
@@ -391,30 +454,39 @@ export function EnrollmentPageClient(props: Props) {
               </div>
             </div>
           ) : submitted ? (
-            <div className="text-center py-16">
-              <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-cca-green/10 mb-5">
-                <CheckCircle2 className="h-8 w-8 text-cca-green" />
-              </div>
-              <h1 className="font-kollektif text-2xl md:text-3xl text-cca-ink mb-3">
+            <div className="relative text-center py-12 md:py-20">
+              <Image
+                src="/cca-assets/crandall-sunshine.png"
+                alt=""
+                aria-hidden
+                width={280}
+                height={280}
+                className="mx-auto w-40 md:w-56 mb-6 drop-shadow-[0_12px_32px_rgba(242,176,32,0.25)] animate-[spin_40s_linear_infinite]"
+              />
+              <p className="font-[family-name:var(--font-signature)] text-xl md:text-3xl text-cca-pink mb-3">
+                Hooray!
+              </p>
+              <h1 className="font-kollektif text-3xl md:text-5xl text-cca-ink mb-4 text-balance">
                 {thankYouTitle}
               </h1>
-              <p className="font-questrial text-cca-ink/70 text-base leading-relaxed mb-4 max-w-md mx-auto">
+              <p className="font-questrial text-cca-ink/70 text-base md:text-lg leading-relaxed mb-3 max-w-lg mx-auto text-pretty">
                 {thankYouMessage}
               </p>
-              <p className="font-questrial text-cca-ink/50 text-sm leading-relaxed mb-8 max-w-md mx-auto">
-                Track your application status and book your tour when invited from your portal.
+              <p className="font-questrial text-cca-ink/50 text-sm leading-relaxed mb-10 max-w-md mx-auto">
+                Track your application status and book your tour when invited &mdash; right from
+                your parent portal.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link
                   href="/portal/login"
-                  className="inline-flex items-center justify-center gap-2 bg-cca-blue text-white font-kollektif px-8 py-3 rounded-full hover:bg-cca-blue/90 transition-colors shadow-sm"
+                  className="inline-flex items-center justify-center gap-2 bg-cca-blue text-white font-kollektif px-8 py-3.5 rounded-full hover:bg-cca-blue/90 transition-all shadow-[0_10px_28px_-8px_rgba(59,112,176,0.5)] hover:-translate-y-0.5"
                 >
                   Log into Your Portal
                   <ArrowUpRight className="w-4 h-4" />
                 </Link>
                 <a
                   href={WEBSITE_URL}
-                  className="inline-flex items-center justify-center gap-2 border border-gray-200 text-cca-ink font-kollektif px-8 py-3 rounded-full hover:bg-gray-50 transition-colors"
+                  className="inline-flex items-center justify-center gap-2 border border-cca-ink/10 bg-white text-cca-ink font-kollektif px-8 py-3.5 rounded-full hover:bg-cca-cream transition-colors"
                 >
                   Return to Website
                 </a>
@@ -433,45 +505,73 @@ export function EnrollmentPageClient(props: Props) {
               {/* Step indicator */}
               {steps.length > 1 && (
                 <div className="mb-6">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 md:gap-2">
                     {steps.map((s, i) => {
                       const isActive = i === step
                       const isComplete = i < step
+                      // Rotate through the CCA palette so progress feels alive.
+                      const palette = [
+                        'bg-cca-blue',
+                        'bg-cca-green',
+                        'bg-cca-yellow',
+                        'bg-cca-pink',
+                        'bg-cca-teal',
+                        'bg-cca-coral',
+                      ]
+                      const completedColor = palette[i % palette.length]
                       return (
-                        <div key={s.id} className="flex-1 flex items-center gap-2">
-                          <div className="flex-1">
-                            <div
-                              className={cn(
-                                'h-1.5 rounded-full transition-colors',
-                                isComplete && 'bg-cca-green',
-                                isActive && 'bg-cca-blue',
-                                !isComplete && !isActive && 'bg-gray-200',
-                              )}
-                            />
-                          </div>
+                        <div key={s.id} className="flex-1">
+                          <div
+                            className={cn(
+                              'h-2 rounded-full transition-all duration-500',
+                              isComplete && completedColor,
+                              isActive &&
+                                'bg-gradient-to-r from-cca-blue to-cca-pink shadow-[0_2px_8px_-2px_rgba(59,112,176,0.4)]',
+                              !isComplete && !isActive && 'bg-cca-ink/10',
+                            )}
+                          />
                         </div>
                       )
                     })}
                   </div>
-                  <p className="mt-2 font-questrial text-xs text-cca-ink/40">
-                    Step {step + 1} of {steps.length}
-                    {currentStep?.title && (
-                      <span className="text-cca-ink/60"> &mdash; {currentStep.title}</span>
-                    )}
-                  </p>
+                  <div className="mt-3 flex items-baseline justify-between gap-3">
+                    <p className="font-questrial text-xs md:text-sm text-cca-ink/50">
+                      <span className="font-kollektif text-cca-ink">Step {step + 1}</span>
+                      <span className="mx-1.5">of</span>
+                      <span>{steps.length}</span>
+                      {currentStep?.title && (
+                        <>
+                          <span className="mx-2 text-cca-ink/25">&bull;</span>
+                          <span className="text-cca-ink/70">{currentStep.title}</span>
+                        </>
+                      )}
+                    </p>
+                    <p className="font-questrial text-[11px] md:text-xs text-cca-ink/35">
+                      {Math.round(((step + 1) / steps.length) * 100)}% complete
+                    </p>
+                  </div>
                 </div>
               )}
 
               {/* Form card */}
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_8px_24px_-8px_rgba(0,0,0,0.06)] p-6 md:p-8">
+              <div className="relative bg-white rounded-[28px] border border-cca-ink/5 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_24px_48px_-16px_rgba(59,112,176,0.12)] p-6 md:p-10 overflow-hidden">
+                {/* Subtle top accent line using brand palette */}
+                <div
+                  aria-hidden
+                  className="absolute top-0 left-0 right-0 h-1"
+                  style={{
+                    background:
+                      'linear-gradient(90deg, #3b70b0 0%, #5cb961 25%, #f2b020 50%, #f878af 75%, #4abdac 100%)',
+                  }}
+                />
                 {currentStep && (
                   <>
-                    <div className="mb-6">
-                      <h2 className="font-kollektif text-xl md:text-2xl text-cca-ink">
+                    <div className="mb-7">
+                      <h2 className="font-kollektif text-2xl md:text-3xl text-cca-ink text-balance">
                         {currentStep.title ?? title}
                       </h2>
                       {currentStep.description && (
-                        <p className="mt-1 font-questrial text-sm text-cca-ink/60">
+                        <p className="mt-2 font-questrial text-base text-cca-ink/60 text-pretty">
                           {currentStep.description}
                         </p>
                       )}
@@ -518,13 +618,13 @@ export function EnrollmentPageClient(props: Props) {
                     </div>
 
                     {/* Navigation */}
-                    <div className="mt-8 flex items-center justify-between">
+                    <div className="mt-10 pt-6 border-t border-cca-ink/5 flex items-center justify-between">
                       <button
                         type="button"
                         disabled={step === 0 || pending}
                         onClick={() => setStep(step - 1)}
                         className={cn(
-                          'flex items-center gap-1.5 font-kollektif text-sm text-cca-ink border border-gray-200 px-5 py-2.5 rounded-full hover:bg-gray-50 disabled:opacity-40 transition-colors',
+                          'flex items-center gap-1.5 font-kollektif text-sm text-cca-ink border border-cca-ink/10 bg-white px-5 py-2.5 rounded-full hover:bg-cca-cream hover:border-cca-ink/20 disabled:opacity-40 transition-all',
                           step === 0 && 'invisible',
                         )}
                       >
@@ -537,7 +637,7 @@ export function EnrollmentPageClient(props: Props) {
                           type="button"
                           disabled={!canAdvance()}
                           onClick={() => setStep(step + 1)}
-                          className="flex items-center gap-1.5 font-kollektif text-sm bg-cca-blue text-white px-6 py-2.5 rounded-full hover:bg-cca-blue/90 disabled:opacity-50 transition-colors shadow-sm"
+                          className="flex items-center gap-1.5 font-kollektif text-sm bg-cca-blue text-white px-7 py-3 rounded-full hover:bg-cca-blue/90 disabled:opacity-50 transition-all shadow-[0_8px_24px_-8px_rgba(59,112,176,0.5)] enabled:hover:shadow-[0_12px_28px_-8px_rgba(59,112,176,0.6)] enabled:hover:-translate-y-0.5"
                         >
                           Continue
                           <ArrowRight className="h-4 w-4" />
@@ -547,9 +647,9 @@ export function EnrollmentPageClient(props: Props) {
                           type="button"
                           disabled={!canAdvance() || pending}
                           onClick={handleSubmit}
-                          className="flex items-center gap-1.5 font-kollektif text-sm bg-cca-green text-white px-6 py-2.5 rounded-full hover:bg-cca-green/90 disabled:opacity-50 transition-colors shadow-sm"
+                          className="flex items-center gap-2 font-kollektif text-sm bg-cca-green text-white px-7 py-3 rounded-full hover:bg-cca-green/90 disabled:opacity-50 transition-all shadow-[0_8px_24px_-8px_rgba(92,185,97,0.55)] enabled:hover:shadow-[0_12px_28px_-8px_rgba(92,185,97,0.65)] enabled:hover:-translate-y-0.5"
                         >
-                          {pending ? 'Submitting...' : 'Submit Application'}
+                          {pending ? 'Submitting…' : 'Submit Application'}
                           <CheckCircle2 className="h-4 w-4" />
                         </button>
                       )}
@@ -563,17 +663,20 @@ export function EnrollmentPageClient(props: Props) {
       </main>
 
       {/* === FOOTER === */}
-      <footer className="py-6 px-6">
-        <div className="max-w-2xl mx-auto flex flex-col items-center gap-2">
-          <Image
-            src="/marketing/shared/cca-logo-full.png"
-            alt="Crandall Christian Academy"
-            width={120}
-            height={42}
-            className="h-8 w-auto opacity-40"
-          />
+      <footer className="pb-10 pt-4 px-6">
+        <div className="max-w-3xl mx-auto flex flex-col items-center gap-3">
+          <div className="flex items-center gap-3 text-cca-ink/35 font-questrial text-xs">
+            <a href={`mailto:${EMAIL}`} className="hover:text-cca-blue transition-colors">
+              {EMAIL}
+            </a>
+            <span className="text-cca-ink/20">&bull;</span>
+            <a href={PHONE_TEL} className="hover:text-cca-blue transition-colors">
+              {PHONE}
+            </a>
+          </div>
           <p className="font-questrial text-[11px] text-cca-ink/25">
-            &copy; {new Date().getFullYear()} Crandall Christian Academy
+            &copy; {new Date().getFullYear()} Crandall Christian Academy &mdash; Where Little Minds
+            Shine
           </p>
         </div>
       </footer>
@@ -894,7 +997,9 @@ function FieldInput({
               <p className="text-[10px] uppercase tracking-widest text-cca-ink/40 mb-2">
                 Electronic Signature
               </p>
-              <p className="text-3xl leading-tight text-cca-ink font-coming-soon">{sigVal}</p>
+              <p className="text-3xl leading-tight text-cca-ink font-[family-name:var(--font-signature)]">
+                {sigVal}
+              </p>
               <div className="mt-3 border-t border-gray-100 pt-2 flex items-center justify-between text-[10px] text-cca-ink/40">
                 <span>
                   {new Date().toLocaleDateString('en-US', {
