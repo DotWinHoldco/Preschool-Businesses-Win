@@ -48,5 +48,9 @@ next-env.d.ts
 *.swp
 *.swo
 
+# project config
+CLAUDE.md
+.claude/
+
 # videos served from Supabase Storage
 public/cca-assets/marketing/home/videos/

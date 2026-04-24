@@ -1,6 +1,6 @@
 # Portal QA Fix Punchlist — v1
 
-> **Source of truth:** Manual QA report on `https://crandallchristian.cc/portal/admin/*` and `/portal/staff/*` (Apr 2026). This doc converts that audit into a single-session, phased build for Claude Code.
+> **Source of truth:** Manual QA report on `https://crandallchristian.cc/portal/admin/*` and `/portal/staff/*` (Apr 2026). This doc converts that audit into a single-session, phased build.
 >
 > **Execution rules (Arkz pattern):**
 > - This is self-contained. CC should not need any doc outside this file and the files it already reads in-session.
@@ -542,7 +542,7 @@ Click each "Configure →" on `/portal/admin/settings`. Each loads a distinct su
    - **Where:** `src/app/portal/admin/**` · `src/components/portal/**` · `src/lib/actions/**` · `supabase/migrations/0053*`
    - **Status:** Complete
    ```
-6. **Archive this doc:** move to `docs/build-archives/PORTAL_QA_FIX_PUNCHLIST.md` and remove from `CLAUDE.md` active build docs if listed. Replace with nothing unless a V2 punchlist exists.
+6. **Archive this doc:** move to `docs/build-archives/PORTAL_QA_FIX_PUNCHLIST.md` and remove from active build docs if listed. Replace with nothing unless a V2 punchlist exists.
 
 ---
 

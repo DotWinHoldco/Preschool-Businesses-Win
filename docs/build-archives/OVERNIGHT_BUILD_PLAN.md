@@ -1,11 +1,10 @@
 # Preschool Businesses Win — Overnight Build Plan
-**For: Claude Code**
 **Last updated: 2026-04-10**
 **Status:** EXECUTE THIS. Do not stop until every phase is complete.
 
 > This is a continuous, phased build plan. Each phase builds on the previous one. Do not ask for permission between phases — just keep going. If something fails, fix it and continue. Log every phase completion in `BUILD_LOG.md`.
 
-> **Required reading before starting:** `CLAUDE.md` → `PLATFORM_ARCHITECTURE.md` → `CCA_BUILD_BRIEF.md` → `BRAND.md` → `CCA_MARKETING_BRIEF.md`
+> **Required reading before starting:** `PLATFORM_ARCHITECTURE.md` → `CCA_BUILD_BRIEF.md` → `BRAND.md` → `CCA_MARKETING_BRIEF.md`
 
 ---
 

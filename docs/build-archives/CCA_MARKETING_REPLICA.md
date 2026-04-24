@@ -2,7 +2,7 @@
 
 ## @anchor cca-marketing-replica-v1
 
-**Purpose:** Self-contained build doc for Claude Code to replicate the Wix-hosted `crandallchristianacademy.com` marketing site as a Next.js application within the existing multi-tenant "Preschool Businesses Win" platform. Execute start-to-finish in a single session. No prior context needed.
+**Purpose:** Self-contained build doc to replicate the Wix-hosted `crandallchristianacademy.com` marketing site as a Next.js application within the existing multi-tenant "Preschool Businesses Win" platform. Execute start-to-finish in a single session. No prior context needed.
 
 **Supabase project:** `oajfxyiqjqymuvevnoui` (Preschool Businesses Win)
 **Tenant ID:** `a0a0a0a0-cca0-4000-8000-000000000001` (CCA)
@@ -3256,7 +3256,7 @@ After each major section is complete, CC should append to `BUILD_LOG.md`:
 
 ## @anchor execution-notes
 
-### Notes for Claude Code execution
+### Execution notes
 
 1. **Check if the Next.js project already exists.** If `Preschool Businesses Win/` has a `package.json`, `app/` directory, and `node_modules/`, work within it. If not, scaffold from scratch.
 

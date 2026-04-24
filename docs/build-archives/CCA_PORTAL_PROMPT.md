@@ -1,6 +1,6 @@
-# Claude Code prompt — Preschool Businesses Win platform build
+# Preschool Businesses Win platform build
 
-> Paste this into a fresh Claude Code session inside the project directory. This is a **multi-tenant white-label preschool management SaaS platform**. One Next.js 16 repo. Four surfaces: platform site (`preschool.businesses.win`), tenant marketing sites (custom domains), tenant staff portal, tenant parent portal. First tenant: Crandall Christian Academy. Pushes to `main` auto-deploy via Vercel.
+> Build spec for the project directory. This is a **multi-tenant white-label preschool management SaaS platform**. One Next.js 16 repo. Four surfaces: platform site (`preschool.businesses.win`), tenant marketing sites (custom domains), tenant staff portal, tenant parent portal. First tenant: Crandall Christian Academy. Pushes to `main` auto-deploy via Vercel.
 
 ---
 

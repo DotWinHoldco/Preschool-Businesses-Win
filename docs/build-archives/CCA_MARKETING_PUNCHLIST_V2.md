@@ -4,7 +4,7 @@
 > **Target:** `crandallchristian.cc` (Next.js replica)  
 > **Goal:** The replica must look identical to the original or better. Every section, every icon, every color.
 
-**Read ONLY:** `CLAUDE.md` and this file. Execute fixes in numbered order. Log to `BUILD_LOG.md`. On completion move this file to `docs/build-archives/`.
+**Read ONLY:** this file. Execute fixes in numbered order. Log to `BUILD_LOG.md`. On completion move this file to `docs/build-archives/`.
 
 ---
 

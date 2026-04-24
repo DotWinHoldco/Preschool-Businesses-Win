@@ -1,6 +1,6 @@
-# Claude Code prompt — Form builder + custom fields (Phase 13)
+# Form builder + custom fields (Phase 13)
 
-> Paste this into a Claude Code session inside the `preschool-businesses-win` project directory. This builds the custom fields engine (§44) and form builder (§45) from `CCA_BUILD_BRIEF.md`. This corresponds to **Phase 13** of `OVERNIGHT_BUILD_PLAN.md`.
+> Build spec for the `preschool-businesses-win` project directory. This builds the custom fields engine (§44) and form builder (§45) from `CCA_BUILD_BRIEF.md`. This corresponds to **Phase 13** of `OVERNIGHT_BUILD_PLAN.md`.
 
 ---
 

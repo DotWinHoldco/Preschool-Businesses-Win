@@ -62,8 +62,8 @@
 - **Status:** Complete
 
 ### 2026-04-17 — Project cleanup and reorganization
-- **What:** Deleted ~515MB of duplicate folders (CCA/, Preschool Businesses Win/, duplicate logo dir). Archived 6 completed build specs to `docs/build-archives/`. Rewrote CLAUDE.md to be lean and marketing-focused. Established build archive system.
-- **Where:** `CLAUDE.md` · `docs/build-archives/` · root cleanup
+- **What:** Deleted ~515MB of duplicate folders (CCA/, Preschool Businesses Win/, duplicate logo dir). Archived 6 completed build specs to `docs/build-archives/`. Established build archive system.
+- **Where:** `docs/build-archives/` · root cleanup
 - **Status:** Complete
 
 ### 2026-04-16 — Phase 13B: System enrollment form + application pipeline + appointments

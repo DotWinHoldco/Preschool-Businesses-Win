@@ -1,5 +1,4 @@
 # Crandall Christian Academy — Marketing Site Build Brief
-**For: Claude Code**
 **Last updated: 2026-04-09**
 
 This document is the single source of truth for the CCA marketing site build. Read it in full before writing code. Read `BRAND.md` and `COPY.md` alongside it.

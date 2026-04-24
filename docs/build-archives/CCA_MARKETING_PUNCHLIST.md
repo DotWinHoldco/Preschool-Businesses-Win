@@ -4,7 +4,7 @@
 
 **Purpose:** Close the visual and interaction gaps between the replica at `crandallchristian.cc` and the original at `crandallchristianacademy.com`. The replica has the right content and structure but is missing the signature animations, sticky scroll-over sections, the spinning enrollment CTA, and the overall visual energy that makes the Wix original feel alive.
 
-**Read ONLY:** `CLAUDE.md` and this file. Do NOT read other docs. Log progress to `BUILD_LOG.md` after each section. On completion, move this file to `docs/build-archives/` and update `CLAUDE.md` per the archive protocol.
+**Read ONLY:** this file. Do NOT read other docs. Log progress to `BUILD_LOG.md` after each section. On completion, move this file to `docs/build-archives/`.
 
 **Reference the live original** at `crandallchristianacademy.com` for any visual questions. The goal: identical layout and feel, better code.
 

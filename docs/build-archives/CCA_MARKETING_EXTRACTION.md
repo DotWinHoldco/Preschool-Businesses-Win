@@ -1,6 +1,6 @@
 # CCA Marketing Site — Wix Extraction
 
-**Purpose:** Complete, self-contained capture of the Wix-hosted `crandallchristianacademy.com` marketing site as of 2026-04-17. This is the input artifact for the Next.js replica build (see `CCA_MARKETING_REPLICA.md` once written). Every string, section, component, color, font, form, and media asset on the live site is documented here so Claude Code can rebuild without ever hitting the Wix source again.
+**Purpose:** Complete, self-contained capture of the Wix-hosted `crandallchristianacademy.com` marketing site as of 2026-04-17. This is the input artifact for the Next.js replica build (see `CCA_MARKETING_REPLICA.md` once written). Every string, section, component, color, font, form, and media asset on the live site is documented here so the replica can be rebuilt without ever hitting the Wix source again.
 
 **Source of truth at extraction time:** Wix Thunderbolt render, site revision 216. The extraction used Chrome + rendered-DOM scraping because Wix is client-side rendered — a plain fetch returns only a React shell.
 
@@ -593,7 +593,7 @@ title-managing-separation-anxiety-tips-for-a-tear-free-preschool-experience     
 
 ---
 
-## Appendix B — Next step for Claude Code
+## Appendix B — Next steps
 
 Once Skylar signs off on this extraction, the replica build doc (`CCA_MARKETING_REPLICA.md`) should follow the Arkz pattern:
 

@@ -1,5 +1,4 @@
 # Preschool Businesses Win — Multi-Tenant Platform Architecture
-**For: Claude Code**
 **Last updated: 2026-04-10**
 **Status:** v1.0 — Defines multi-tenancy, app shell, theming, and domain resolution for the white-label platform.
 

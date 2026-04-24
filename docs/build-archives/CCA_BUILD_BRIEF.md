@@ -1,5 +1,4 @@
 # Preschool Businesses Win — Platform Build Brief
-**For: Claude Code**
 **Last updated: 2026-04-10**
 **Status:** v3.1 — Multi-tenant platform architecture. CCA is the first tenant. Expanded spec after competitive gap analysis against Brightwheel, Procare, Lillio, Kangarootime, Playground, Famly, Sandbox, and LineLeader. 48 feature areas. Added system forms (§46), application pipeline (§47), and appointment booking (§48). SuiteDash audit appendix to be added after read-only walkthrough.
 
@@ -1210,7 +1209,7 @@ Ground rules (same as Yes Mamms):
 - Provide a migration dashboard at `/portal/admin/migration`.
 
 ### Phase 0 — Data export (read-only)
-Use **Claude in Chrome** to navigate SuiteDash. Each adapter:
+Navigate SuiteDash to export data. Each adapter:
 - Navigates to a list view, paginates, scrapes IDs, opens each detail view, captures structured fields + attachments.
 - **Never** clicks save, send, delete, archive, or any mutation button.
 - Writes to `exports/suitedash/{entity}/{id}.json` plus a `manifest.csv`.
@@ -2613,7 +2612,7 @@ Migration: `0048_appointments.sql`
 
 ## Appendix A — SuiteDash migration map
 
-> **STATUS: PENDING** — This appendix will be filled in after the read-only SuiteDash audit. The audit will be performed using Claude in Chrome, following the same methodology as the Yes Mamms audit (see Yes Mamms `PORTAL_BUILD_BRIEF.md` Appendix A for the process template).
+> **STATUS: PENDING** — This appendix will be filled in after the read-only SuiteDash audit. The audit will follow the same methodology as the Yes Mamms audit (see Yes Mamms `PORTAL_BUILD_BRIEF.md` Appendix A for the process template).
 >
 > Ground rules:
 > - **Never write to SuiteDash.** Read-only. URL navigation and exports only.

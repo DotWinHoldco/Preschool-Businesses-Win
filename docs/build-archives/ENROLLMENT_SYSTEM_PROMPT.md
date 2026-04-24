@@ -1,6 +1,6 @@
-# Claude Code prompt — Enrollment System Form + Appointment Booking (Phase 13B)
+# Enrollment System Form + Appointment Booking (Phase 13B)
 
-> Paste this into a Claude Code session inside the `preschool-businesses-win` project directory. This builds the **system enrollment form**, **multi-step application pipeline**, **enrollment fee toggle with Stripe**, **form instance spawning**, and **Calendly-style appointment booking widget** with calendar integration.
+> Build spec for the `preschool-businesses-win` project directory. This builds the **system enrollment form**, **multi-step application pipeline**, **enrollment fee toggle with Stripe**, **form instance spawning**, and **Calendly-style appointment booking widget** with calendar integration.
 >
 > **Prerequisite:** Phase 13 (form builder + custom fields) must be complete. This prompt uses the form builder infrastructure from §44–§45 to create the first "system form."
 
