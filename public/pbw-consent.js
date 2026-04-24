@@ -6,10 +6,23 @@
 (function () {
   'use strict'
   var s = document.currentScript
-  var PRIVACY_URL = (s && s.getAttribute('data-privacy-url')) || '/privacy'
-  var ACCENT = (s && s.getAttribute('data-accent')) || '#1d4ed8'
-  var TEXT_COLOR = (s && s.getAttribute('data-text')) || '#0f172a'
-  var BG = (s && s.getAttribute('data-bg')) || '#ffffff'
+  if (!s) {
+    var all = document.getElementsByTagName('script')
+    for (var i = all.length - 1; i >= 0; i--) {
+      if (all[i].src && all[i].src.indexOf('pbw-consent') !== -1) { s = all[i]; break }
+    }
+  }
+  function getAttr(n, fallback) {
+    if (s && typeof s.getAttribute === 'function') {
+      var v = s.getAttribute(n)
+      if (v) return v
+    }
+    return fallback
+  }
+  var PRIVACY_URL = getAttr('data-privacy-url', '/privacy')
+  var ACCENT = getAttr('data-accent', '#1d4ed8')
+  var TEXT_COLOR = getAttr('data-text', '#0f172a')
+  var BG = getAttr('data-bg', '#ffffff')
   var CONSENT_COOKIE = '_pbwa_consent'
 
   function cookieVal(n) {

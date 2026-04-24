@@ -6,14 +6,40 @@
  */
 (function () {
   'use strict'
+  // document.currentScript is null for async scripts AND for scripts injected
+  // by host platforms (Wix, Squarespace, etc.) that move the tag through
+  // innerHTML. Find our own tag by src match instead.
   var currentScript = document.currentScript
-  if (!currentScript) return
-  var SITE_KEY = currentScript.getAttribute('data-site-key')
+  if (!currentScript) {
+    var scripts = document.getElementsByTagName('script')
+    for (var i = scripts.length - 1; i >= 0; i--) {
+      var s = scripts[i]
+      if (s.src && s.src.indexOf('pbw-analytics') !== -1) {
+        currentScript = s
+        break
+      }
+    }
+  }
+  if (!currentScript) {
+    // Last-ditch fallback so the snippet still works when we can't locate our
+    // own tag: derive config from window.__pbwa_config if present.
+    currentScript = { getAttribute: function () { return null } }
+  }
+  function attr(name) {
+    if (currentScript && typeof currentScript.getAttribute === 'function') {
+      var v = currentScript.getAttribute(name)
+      if (v !== null && v !== undefined) return v
+    }
+    var cfg = window.__pbwa_config || {}
+    var key = name.replace(/^data-/, '').replace(/-([a-z])/g, function (_m, c) { return c.toUpperCase() })
+    return cfg[key] || null
+  }
+  var SITE_KEY = attr('data-site-key')
   if (!SITE_KEY) { console.warn('[pbwa] missing data-site-key'); return }
-  var COLLECT_URL = currentScript.getAttribute('data-collect') || 'https://preschool.businesses.win/api/collect'
-  var CONSENT_REQUIRED = currentScript.getAttribute('data-consent') !== 'off'
-  var AUTO_ENROLL_MATCH = currentScript.getAttribute('data-auto-enroll-match') !== 'off'
-  var COOKIE_DOMAIN = currentScript.getAttribute('data-cookie-domain') || ''
+  var COLLECT_URL = attr('data-collect') || 'https://preschool.businesses.win/api/collect'
+  var CONSENT_REQUIRED = attr('data-consent') !== 'off'
+  var AUTO_ENROLL_MATCH = attr('data-auto-enroll-match') !== 'off'
+  var COOKIE_DOMAIN = attr('data-cookie-domain') || ''
 
   var VISITOR_COOKIE = '_pbwa_vid'
   var CONSENT_COOKIE = '_pbwa_consent'

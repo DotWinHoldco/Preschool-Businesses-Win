@@ -34,6 +34,35 @@ export function InstallForm({ site, collectorBase }: Props) {
   const [form, setForm] = useState<Site>(site)
   const [pending, startTransition] = useTransition()
   const [copied, setCopied] = useState<string | null>(null)
+  const [togglePending, setTogglePending] = useState(false)
+
+  async function saveNow(next: Site, label?: string) {
+    const clean = {
+      ...next,
+      origins: next.origins.map((o) => o.trim()).filter((o) => o.length > 0),
+    }
+    const result = await updateAnalyticsSite(clean)
+    if (result.ok) {
+      toast({
+        variant: 'success',
+        title: label ?? 'Saved',
+        description: result.debug ?? 'Analytics site updated.',
+      })
+    } else {
+      toast({ variant: 'error', title: 'Save failed', description: result.error })
+    }
+    return result.ok
+  }
+
+  async function toggleConsentBanner(enabled: boolean) {
+    setTogglePending(true)
+    const prev = form.consent_banner_enabled
+    const next = { ...form, consent_banner_enabled: enabled }
+    setForm(next)
+    const ok = await saveNow(next, enabled ? 'Consent banner ON' : 'Consent banner OFF')
+    if (!ok) setForm((f) => ({ ...f, consent_banner_enabled: prev }))
+    setTogglePending(false)
+  }
 
   const snippet = useMemo(() => {
     const analyticsTag = form.consent_banner_enabled
@@ -76,21 +105,8 @@ export function InstallForm({ site, collectorBase }: Props) {
   }
 
   function save() {
-    const clean = {
-      ...form,
-      origins: form.origins.map((o) => o.trim()).filter((o) => o.length > 0),
-    }
     startTransition(async () => {
-      const result = await updateAnalyticsSite(clean)
-      if (result.ok) {
-        toast({
-          variant: 'success',
-          title: 'Saved',
-          description: result.debug ?? 'Analytics site updated.',
-        })
-      } else {
-        toast({ variant: 'error', title: 'Save failed', description: result.error })
-      }
+      await saveNow(form)
     })
   }
 
@@ -173,12 +189,15 @@ export function InstallForm({ site, collectorBase }: Props) {
                 operate only in jurisdictions without a banner requirement.
               </p>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer shrink-0 mt-1">
+            <label
+              className={`relative inline-flex items-center shrink-0 mt-1 ${togglePending ? 'opacity-60 cursor-wait' : 'cursor-pointer'}`}
+            >
               <input
                 type="checkbox"
+                disabled={togglePending}
                 className="sr-only peer"
                 checked={form.consent_banner_enabled}
-                onChange={(e) => update('consent_banner_enabled', e.target.checked)}
+                onChange={(e) => toggleConsentBanner(e.target.checked)}
               />
               <div className="w-11 h-6 bg-[var(--color-muted)] rounded-full peer peer-checked:bg-[var(--color-primary)] transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-transform peer-checked:after:translate-x-5" />
             </label>
