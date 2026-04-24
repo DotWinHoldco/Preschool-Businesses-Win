@@ -3,6 +3,7 @@
 // @anchor: cca.messaging.send
 // Send a message in an existing conversation.
 
+import { revalidatePath } from 'next/cache'
 import { assertRole } from '@/lib/auth/session'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { SendMessageSchema } from '@/lib/schemas/messaging'
@@ -13,6 +14,76 @@ export type SendMessageState = {
   ok: boolean
   error?: string
   message_id?: string
+  id?: string
+}
+
+/**
+ * Convenience wrapper for calling sendMessage from React client components
+ * without constructing a FormData. Uses role 'aide' — any staff can reply.
+ */
+export async function sendMessageToConversation(
+  conversation_id: string,
+  body: string,
+): Promise<SendMessageState> {
+  try {
+    await assertRole('aide')
+    const parsed = SendMessageSchema.safeParse({
+      conversation_id,
+      body,
+      message_type: 'text',
+      urgent: false,
+    })
+    if (!parsed.success) {
+      return { ok: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' }
+    }
+
+    const tenantId = await getTenantId()
+    const supabase = await createTenantServerClient()
+    const senderId = await getActorId()
+
+    const { data: membership } = await supabase
+      .from('conversation_members')
+      .select('id')
+      .eq('conversation_id', parsed.data.conversation_id)
+      .eq('user_id', senderId)
+      .maybeSingle()
+
+    // Admins without explicit membership are still allowed to reply
+    const { data: message, error } = await supabase
+      .from('messages')
+      .insert({
+        tenant_id: tenantId,
+        conversation_id: parsed.data.conversation_id,
+        sender_id: senderId,
+        body: parsed.data.body,
+        message_type: parsed.data.message_type,
+        urgent: parsed.data.urgent,
+      })
+      .select('id')
+      .single()
+
+    if (error || !message) {
+      return { ok: false, error: error?.message ?? 'Failed to send message' }
+    }
+
+    await writeAudit(supabase, {
+      tenantId,
+      actorId: senderId,
+      action: 'messaging.send',
+      entityType: 'message',
+      entityId: message.id,
+      after: {
+        conversation_id: parsed.data.conversation_id,
+        via: membership ? 'member' : 'admin_override',
+      },
+    })
+
+    revalidatePath('/portal/admin/messaging')
+
+    return { ok: true, message_id: message.id, id: message.id }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'Unexpected error' }
+  }
 }
 
 export async function sendMessage(

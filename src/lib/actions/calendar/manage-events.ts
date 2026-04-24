@@ -1,9 +1,10 @@
 'use server'
 
 // @anchor: cca.calendar.manage-events
-// Create/update calendar events
+// Create/update/delete calendar events
 // See CCA_BUILD_BRIEF.md §36
 
+import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
 import { assertRole } from '@/lib/auth/session'
@@ -16,6 +17,7 @@ import {
   type UpdateCalendarEventInput,
   type CreateEventSignUpInput,
 } from '@/lib/schemas/calendar-event'
+import { z } from 'zod'
 
 export async function createCalendarEvent(input: CreateCalendarEventInput) {
   await assertRole('admin')
@@ -60,13 +62,15 @@ export async function createCalendarEvent(input: CreateCalendarEventInput) {
   await writeAudit(supabase, {
     tenantId: tenantId,
     actorId: actorId,
-    action: 'calendar.create_event',
+    action: 'calendar.event.created',
     entityType: 'calendar_event',
     entityId: data.id as string,
     after: { title: parsed.data.title, event_type: parsed.data.event_type },
   })
 
-  return { ok: true as const, eventId: data.id as string }
+  revalidatePath('/portal/admin/calendar')
+
+  return { ok: true as const, id: data.id as string, eventId: data.id as string }
 }
 
 export async function updateCalendarEvent(input: UpdateCalendarEventInput) {
@@ -110,13 +114,67 @@ export async function updateCalendarEvent(input: UpdateCalendarEventInput) {
   await writeAudit(supabase, {
     tenantId: tenantId,
     actorId: actorId,
-    action: 'calendar.update_event',
+    action: 'calendar.event.updated',
     entityType: 'calendar_event',
     entityId: d.event_id,
     after: updateData,
   })
 
-  return { ok: true as const }
+  revalidatePath('/portal/admin/calendar')
+
+  return { ok: true as const, id: d.event_id }
+}
+
+// ---------------------------------------------------------------------------
+// Delete calendar event
+// ---------------------------------------------------------------------------
+
+const DeleteCalendarEventSchema = z.object({
+  event_id: z.string().uuid(),
+})
+
+export async function deleteCalendarEvent(eventId: string) {
+  await assertRole('admin')
+
+  const parsed = DeleteCalendarEventSchema.safeParse({ event_id: eventId })
+  if (!parsed.success) {
+    return { ok: false as const, error: 'Invalid event id' }
+  }
+
+  const tenantId = await getTenantId()
+  const actorId = await getActorId()
+  const supabase = createAdminClient()
+
+  // Fetch before snapshot for audit
+  const { data: before } = await supabase
+    .from('calendar_events')
+    .select('id, title, event_type, start_at')
+    .eq('id', parsed.data.event_id)
+    .eq('tenant_id', tenantId)
+    .single()
+
+  const { error } = await supabase
+    .from('calendar_events')
+    .delete()
+    .eq('id', parsed.data.event_id)
+    .eq('tenant_id', tenantId)
+
+  if (error) {
+    return { ok: false as const, error: error.message }
+  }
+
+  await writeAudit(supabase, {
+    tenantId,
+    actorId,
+    action: 'calendar.event.deleted',
+    entityType: 'calendar_event',
+    entityId: parsed.data.event_id,
+    before: before ?? undefined,
+  })
+
+  revalidatePath('/portal/admin/calendar')
+
+  return { ok: true as const, id: parsed.data.event_id }
 }
 
 export async function createEventSignUp(input: CreateEventSignUpInput) {

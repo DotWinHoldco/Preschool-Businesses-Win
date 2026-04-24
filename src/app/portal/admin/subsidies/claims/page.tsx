@@ -1,15 +1,26 @@
 // @anchor: cca.subsidy.claims-page
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { ReconciliationBoard } from '@/components/portal/subsidies/reconciliation-board'
-import { FileText, Plus } from 'lucide-react'
+import { GenerateSubsidyClaimDialog } from '@/components/portal/subsidies/generate-subsidy-claim-dialog'
+import { SubsidyClaimRowActions } from '@/components/portal/subsidies/subsidy-claim-row-actions'
+import { FileText } from 'lucide-react'
 
 export default async function SubsidyClaimsPage() {
   const supabase = await createTenantServerClient()
 
-  const { data: claims } = await supabase
-    .from('subsidy_claims')
-    .select('*, subsidy_agencies(name)')
-    .order('claim_period_start', { ascending: false })
+  const [claimsResp, agenciesResp] = await Promise.all([
+    supabase
+      .from('subsidy_claims')
+      .select('*, subsidy_agencies(name)')
+      .order('claim_period_start', { ascending: false }),
+    supabase.from('subsidy_agencies').select('id, name').order('name'),
+  ])
+
+  const claims = claimsResp.data ?? []
+  const agencies = (agenciesResp.data ?? []).map((a: Record<string, unknown>) => ({
+    id: a.id as string,
+    name: a.name as string,
+  }))
 
   const mapped = (claims ?? []).map((c: Record<string, unknown>) => {
     const agency = c.subsidy_agencies as Record<string, unknown> | null
@@ -40,12 +51,14 @@ export default async function SubsidyClaimsPage() {
             Generate claims, track payments, and reconcile subsidies
           </p>
         </div>
-        <button className="flex items-center gap-2 rounded-[var(--radius)] bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-[var(--color-primary-foreground)] hover:opacity-90 transition-opacity">
-          <Plus className="h-4 w-4" /> Generate Claim
-        </button>
+        <GenerateSubsidyClaimDialog agencies={agencies} />
       </div>
 
-      <ReconciliationBoard claims={mapped} totalOutstanding={outstanding} />
+      <ReconciliationBoard
+        claims={mapped}
+        totalOutstanding={outstanding}
+        renderActions={(claim) => <SubsidyClaimRowActions claim={claim} />}
+      />
     </div>
   )
 }

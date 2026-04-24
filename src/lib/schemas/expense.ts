@@ -8,13 +8,7 @@ import { z } from 'zod'
 // Payment method enum
 // ---------------------------------------------------------------------------
 
-export const expensePaymentMethodEnum = z.enum([
-  'card',
-  'check',
-  'cash',
-  'ach',
-  'auto',
-])
+export const expensePaymentMethodEnum = z.enum(['card', 'check', 'cash', 'ach', 'auto'])
 
 export type ExpensePaymentMethod = z.infer<typeof expensePaymentMethodEnum>
 
@@ -22,11 +16,7 @@ export type ExpensePaymentMethod = z.infer<typeof expensePaymentMethodEnum>
 // Export type enum
 // ---------------------------------------------------------------------------
 
-export const exportTypeEnum = z.enum([
-  'quickbooks_csv',
-  'xero_csv',
-  'general_ledger',
-])
+export const exportTypeEnum = z.enum(['quickbooks_csv', 'xero_csv', 'general_ledger'])
 
 export type ExportType = z.infer<typeof exportTypeEnum>
 
@@ -95,3 +85,70 @@ export const ExportAccountingSchema = z.object({
 })
 
 export type ExportAccountingInput = z.infer<typeof ExportAccountingSchema>
+
+// ---------------------------------------------------------------------------
+// Vendor
+// ---------------------------------------------------------------------------
+
+export const CreateVendorSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(300),
+  contact_name: z.string().max(300).optional().nullable(),
+  email: z.string().email().optional().or(z.literal('')).nullable(),
+  phone: z.string().max(50).optional().nullable(),
+  address: z.string().max(500).optional().nullable(),
+  tax_id: z.string().max(50).optional().nullable(),
+  default_category_id: z.string().uuid().optional().nullable(),
+  payment_terms_days: z.number().int().min(0).max(365).optional().nullable(),
+  notes: z.string().max(2000).optional().nullable(),
+})
+export type CreateVendorInput = z.infer<typeof CreateVendorSchema>
+
+export const UpdateVendorSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1).max(300).optional(),
+  contact_name: z.string().max(300).optional().nullable(),
+  email: z.string().email().optional().or(z.literal('')).nullable(),
+  phone: z.string().max(50).optional().nullable(),
+  address: z.string().max(500).optional().nullable(),
+  tax_id: z.string().max(50).optional().nullable(),
+  default_category_id: z.string().uuid().optional().nullable(),
+  payment_terms_days: z.number().int().min(0).max(365).optional().nullable(),
+  is_active: z.boolean().optional(),
+  notes: z.string().max(2000).optional().nullable(),
+})
+export type UpdateVendorInput = z.infer<typeof UpdateVendorSchema>
+
+export const DeleteVendorSchema = z.object({ id: z.string().uuid() })
+export type DeleteVendorInput = z.infer<typeof DeleteVendorSchema>
+
+// ---------------------------------------------------------------------------
+// Expense approval
+// ---------------------------------------------------------------------------
+
+export const SubmitExpenseForApprovalSchema = z.object({
+  expense_id: z.string().uuid(),
+})
+export type SubmitExpenseForApprovalInput = z.infer<typeof SubmitExpenseForApprovalSchema>
+
+export const ApproveExpenseSchema = z.object({
+  approval_id: z.string().uuid(),
+  comments: z.string().max(2000).optional().nullable(),
+})
+export type ApproveExpenseInput = z.infer<typeof ApproveExpenseSchema>
+
+export const RejectExpenseSchema = z.object({
+  approval_id: z.string().uuid(),
+  comments: z.string().max(2000).optional().nullable(),
+})
+export type RejectExpenseInput = z.infer<typeof RejectExpenseSchema>
+
+// ---------------------------------------------------------------------------
+// Expense receipt
+// ---------------------------------------------------------------------------
+
+export const AddExpenseReceiptSchema = z.object({
+  expense_id: z.string().uuid(),
+  file_path: z.string().min(1, 'URL is required').max(1000),
+  file_name: z.string().max(300).optional().nullable(),
+})
+export type AddExpenseReceiptInput = z.infer<typeof AddExpenseReceiptSchema>

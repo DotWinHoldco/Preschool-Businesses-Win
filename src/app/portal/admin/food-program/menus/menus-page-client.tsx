@@ -7,6 +7,9 @@ import { MenuPlanner } from '@/components/portal/food-program/menu-planner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogOverlay, DialogContent, DialogClose } from '@/components/ui/dialog'
+import { toast } from '@/components/ui/toast'
+import { saveMealMenus } from '@/lib/actions/food-program/save-meal-menus'
+import type { MealType } from '@/lib/schemas/food-program'
 
 interface MealPlan {
   date: string
@@ -39,7 +42,7 @@ interface MenusPageClientProps {
 
 export function MenusPageClient({ weekStartDate, initialMeals }: MenusPageClientProps) {
   const [addDialogOpen, setAddDialogOpen] = useState(false)
-  const [saveToast, setSaveToast] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [extraMeals, setExtraMeals] = useState<MealPlan[]>([])
 
   // Quick-add form state
@@ -48,9 +51,52 @@ export function MenusPageClient({ weekStartDate, initialMeals }: MenusPageClient
   const [itemName, setItemName] = useState('')
   const [component, setComponent] = useState('grains')
 
-  function handleSave() {
-    setSaveToast(true)
-    setTimeout(() => setSaveToast(false), 3000)
+  async function handleSave(meals: MealPlan[]) {
+    if (saving) return
+    setSaving(true)
+    try {
+      const payload = meals
+        .filter((m) => m.items.length > 0)
+        .map((m) => ({
+          date: m.date,
+          meal_type: m.meal_type as MealType,
+          items: m.items,
+          food_components: {
+            grains: !!m.food_components.grains,
+            meat_alt: !!m.food_components.meat_alt,
+            vegetable: !!m.food_components.vegetable,
+            fruit: !!m.food_components.fruit,
+            milk: !!m.food_components.milk,
+          },
+        }))
+
+      const result = await saveMealMenus({ menus: payload })
+      if (!result.ok) {
+        toast({
+          variant: 'error',
+          title: 'Failed to save menus',
+          description: result.error ?? 'An unexpected error occurred',
+        })
+        return
+      }
+      toast({
+        variant: 'success',
+        title: `Saved ${result.count ?? 0} menu${(result.count ?? 0) === 1 ? '' : 's'}`,
+        description:
+          result.warnings && result.warnings.length > 0
+            ? `${result.warnings.length} meal(s) missing CACFP components`
+            : 'All meals meet the CACFP pattern',
+      })
+      setExtraMeals([])
+    } catch (err) {
+      toast({
+        variant: 'error',
+        title: 'Failed to save menus',
+        description: err instanceof Error ? err.message : 'Unknown error',
+      })
+    } finally {
+      setSaving(false)
+    }
   }
 
   function handleQuickAdd(e: React.FormEvent) {
@@ -77,32 +123,22 @@ export function MenusPageClient({ weekStartDate, initialMeals }: MenusPageClient
 
   return (
     <>
-      {/* Success toast */}
-      {saveToast && (
-        <div className="fixed top-4 right-4 z-[60] flex items-center gap-2 rounded-[var(--radius,0.75rem)] border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/10 px-4 py-3 text-sm font-medium text-[var(--color-primary)] shadow-lg motion-safe:animate-[fadeIn_200ms_ease-out]">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-          Menu saved successfully!
-        </div>
-      )}
-
       <div className="flex items-center gap-2 mb-4">
         <Button size="sm" variant="secondary" onClick={() => setAddDialogOpen(true)}>
           <Plus className="h-4 w-4" /> Quick Add Item
         </Button>
+        {saving && <span className="text-xs text-[var(--color-muted-foreground)]">Saving...</span>}
       </div>
 
-      <MenuPlanner
-        weekStartDate={weekStartDate}
-        initialMeals={allMeals}
-        onSave={handleSave}
-      />
+      <MenuPlanner weekStartDate={weekStartDate} initialMeals={allMeals} onSave={handleSave} />
 
       {/* Quick Add Dialog */}
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
         <DialogOverlay onClick={() => setAddDialogOpen(false)} />
-        <DialogContent title="Quick Add Menu Item" description="Add a single item to the weekly menu plan.">
+        <DialogContent
+          title="Quick Add Menu Item"
+          description="Add a single item to the weekly menu plan."
+        >
           <DialogClose onClick={() => setAddDialogOpen(false)} />
           <form onSubmit={handleQuickAdd} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
@@ -116,7 +152,9 @@ export function MenusPageClient({ weekStartDate, initialMeals }: MenusPageClient
                   className="w-full h-9 min-h-[48px] rounded-[var(--radius,0.75rem)] border border-[var(--color-border)] bg-[var(--color-background)] px-3 text-sm text-[var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-1"
                 >
                   {DAYS.map((d, i) => (
-                    <option key={d} value={i}>{d}</option>
+                    <option key={d} value={i}>
+                      {d}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -130,7 +168,9 @@ export function MenusPageClient({ weekStartDate, initialMeals }: MenusPageClient
                   className="w-full h-9 min-h-[48px] rounded-[var(--radius,0.75rem)] border border-[var(--color-border)] bg-[var(--color-background)] px-3 text-sm text-[var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-1"
                 >
                   {MEAL_SLOTS.map((s) => (
-                    <option key={s.key} value={s.key}>{s.label}</option>
+                    <option key={s.key} value={s.key}>
+                      {s.label}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -159,7 +199,9 @@ export function MenusPageClient({ weekStartDate, initialMeals }: MenusPageClient
                 className="w-full h-9 min-h-[48px] rounded-[var(--radius,0.75rem)] border border-[var(--color-border)] bg-[var(--color-background)] px-3 text-sm text-[var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-1"
               >
                 {CACFP_COMPONENTS.map((c) => (
-                  <option key={c.key} value={c.key}>{c.label}</option>
+                  <option key={c.key} value={c.key}>
+                    {c.label}
+                  </option>
                 ))}
               </select>
             </div>

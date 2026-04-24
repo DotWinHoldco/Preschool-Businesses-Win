@@ -3,14 +3,11 @@
 
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { LeadDetail } from '@/components/portal/enrollment/lead-detail'
+import { LeadActions } from '@/components/portal/enrollment/lead-actions'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 
-export default async function LeadDetailPage({
-  params,
-}: {
-  params: Promise<{ leadId: string }>
-}) {
+export default async function LeadDetailPage({ params }: { params: Promise<{ leadId: string }> }) {
   const { leadId } = await params
   const supabase = await createTenantServerClient()
 
@@ -30,7 +27,10 @@ export default async function LeadDetailPage({
     return (
       <div className="text-center py-12">
         <p className="text-sm text-[var(--color-muted-foreground)]">Lead not found</p>
-        <Link href="/portal/admin/leads" className="text-sm text-[var(--color-primary)] hover:underline mt-2 inline-block">
+        <Link
+          href="/portal/admin/leads"
+          className="text-sm text-[var(--color-primary)] hover:underline mt-2 inline-block"
+        >
           Back to pipeline
         </Link>
       </div>
@@ -75,6 +75,22 @@ export default async function LeadDetailPage({
           created_at: lead.created_at,
         }}
         activities={mappedActivities}
+      />
+
+      <LeadActions
+        lead={{
+          id: lead.id,
+          parent_first_name: lead.parent_first_name,
+          parent_last_name: lead.parent_last_name,
+          parent_email: lead.parent_email,
+          parent_phone: lead.parent_phone,
+          child_name: lead.child_name,
+          child_age_months: lead.child_age_months,
+          program_interest: lead.program_interest,
+          priority: lead.priority ?? 'warm',
+          status: lead.status ?? 'new',
+          notes: lead.notes,
+        }}
       />
     </div>
   )

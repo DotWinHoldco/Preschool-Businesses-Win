@@ -123,8 +123,14 @@ export type StepFamilyData = z.infer<typeof StepFamilySchema>
 
 export const StepAgreementSchema = z.object({
   parent_signature: z.string().min(1, 'Please type your full name as your signature'),
-  agree_to_contact: z.preprocess((v) => v ?? false, z.boolean().refine((v) => v === true, 'You must agree to be contacted')),
-  acknowledge_accuracy: z.preprocess((v) => v ?? false, z.boolean().refine((v) => v === true, 'You must acknowledge accuracy')),
+  agree_to_contact: z.preprocess(
+    (v) => v ?? false,
+    z.boolean().refine((v) => v === true, 'You must agree to be contacted'),
+  ),
+  acknowledge_accuracy: z.preprocess(
+    (v) => v ?? false,
+    z.boolean().refine((v) => v === true, 'You must acknowledge accuracy'),
+  ),
   payment_intent_id: z.string().optional(),
 })
 export type StepAgreementData = z.infer<typeof StepAgreementSchema>
@@ -133,8 +139,7 @@ export type StepAgreementData = z.infer<typeof StepAgreementSchema>
 // Combined schema
 // ---------------------------------------------------------------------------
 
-export const SystemEnrollmentSchema = StepParentSchema
-  .merge(StepChildrenSchema)
+export const SystemEnrollmentSchema = StepParentSchema.merge(StepChildrenSchema)
   .merge(StepFamilySchema)
   .merge(StepAgreementSchema)
   .extend({
@@ -176,6 +181,106 @@ export type LegacyEnrollmentData = z.infer<typeof LegacyEnrollmentSchema>
 
 // Exports kept for wizard-steps files that import them.
 export { StepParentSchema as StepParentLegacySchema }
+
+// ---------------------------------------------------------------------------
+// Waitlist offers (migration 0063)
+// ---------------------------------------------------------------------------
+
+export const SendWaitlistOfferSchema = z.object({
+  application_id: z.string().uuid('Invalid application ID'),
+  classroom_id: z.string().uuid('Invalid classroom ID'),
+  start_date: z.string().min(1, 'Start date is required'),
+  offer_expires_at: z.string().min(1, 'Offer expiration is required'),
+  notes: z.string().max(5000).optional(),
+})
+export type SendWaitlistOfferInput = z.infer<typeof SendWaitlistOfferSchema>
+
+export const RecordOfferResponseSchema = z.object({
+  offer_id: z.string().uuid('Invalid offer ID'),
+  accepted: z.boolean(),
+  decline_reason: z.string().max(2000).optional(),
+})
+export type RecordOfferResponseInput = z.infer<typeof RecordOfferResponseSchema>
+
+export const WithdrawOfferSchema = z.object({
+  offer_id: z.string().uuid('Invalid offer ID'),
+})
+export type WithdrawOfferInput = z.infer<typeof WithdrawOfferSchema>
+
+export const ReorderWaitlistSchema = z.object({
+  application_id: z.string().uuid('Invalid application ID'),
+  direction: z.enum(['up', 'down']),
+})
+export type ReorderWaitlistInput = z.infer<typeof ReorderWaitlistSchema>
+
+// ---------------------------------------------------------------------------
+// Application documents (migration 0063)
+// ---------------------------------------------------------------------------
+
+export const applicationDocumentTypeEnum = z.enum([
+  'tour_summary',
+  'immunization',
+  'enrollment_agreement',
+  'custody',
+  'other',
+])
+export type ApplicationDocumentType = z.infer<typeof applicationDocumentTypeEnum>
+
+export const AddApplicationDocumentSchema = z.object({
+  application_id: z.string().uuid('Invalid application ID'),
+  document_type: applicationDocumentTypeEnum,
+  file_path: z.string().min(1, 'URL or path is required').max(2000),
+  file_name: z.string().max(300).optional(),
+  expiry_date: z.string().optional(),
+  notes: z.string().max(2000).optional(),
+})
+export type AddApplicationDocumentInput = z.infer<typeof AddApplicationDocumentSchema>
+
+export const DeleteApplicationDocumentSchema = z.object({
+  id: z.string().uuid('Invalid document ID'),
+})
+export type DeleteApplicationDocumentInput = z.infer<typeof DeleteApplicationDocumentSchema>
+
+// ---------------------------------------------------------------------------
+// Enrollment deposits (migration 0063)
+// ---------------------------------------------------------------------------
+
+export const SetEnrollmentDepositSchema = z.object({
+  application_id: z.string().uuid('Invalid application ID'),
+  amount_cents: z.number().int().min(0, 'Amount must be non-negative'),
+  due_date: z.string().optional(),
+  notes: z.string().max(2000).optional(),
+})
+export type SetEnrollmentDepositInput = z.infer<typeof SetEnrollmentDepositSchema>
+
+export const DepositIdSchema = z.object({
+  deposit_id: z.string().uuid('Invalid deposit ID'),
+})
+export type DepositIdInput = z.infer<typeof DepositIdSchema>
+
+// ---------------------------------------------------------------------------
+// Acceptance letters (migration 0063)
+// ---------------------------------------------------------------------------
+
+export const GenerateAcceptanceLetterSchema = z.object({
+  application_id: z.string().uuid('Invalid application ID'),
+  classroom_id: z.string().uuid('Invalid classroom ID'),
+  start_date: z.string().min(1, 'Start date is required'),
+  tuition_summary: z.string().max(5000).optional(),
+  body: z.string().min(1, 'Letter body is required').max(20000),
+})
+export type GenerateAcceptanceLetterInput = z.infer<typeof GenerateAcceptanceLetterSchema>
+
+export const LetterIdSchema = z.object({
+  letter_id: z.string().uuid('Invalid letter ID'),
+})
+export type LetterIdInput = z.infer<typeof LetterIdSchema>
+
+export const MarkLetterAcceptedSchema = z.object({
+  letter_id: z.string().uuid('Invalid letter ID'),
+  accepted_by_name: z.string().min(1, 'Accepted-by name is required').max(200),
+})
+export type MarkLetterAcceptedInput = z.infer<typeof MarkLetterAcceptedSchema>
 
 // Per-step schema used by the wizard validateStep helper.
 export const StepChildLegacySchema = z.object({

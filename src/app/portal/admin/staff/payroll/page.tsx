@@ -1,5 +1,5 @@
 // @anchor: cca.payroll.dashboard
-// Payroll dashboard — list of payroll runs — real Supabase data.
+// Payroll dashboard — list of payroll runs, linked to detail pages.
 
 import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { DollarSign } from 'lucide-react'
+import { PayrollRowExport } from '@/components/portal/staff/payroll-row-export'
 
 export default async function PayrollDashboardPage() {
   const headerStore = await headers()
@@ -41,11 +42,11 @@ export default async function PayrollDashboardPage() {
     })
   }
 
-  function formatCurrency(cents: number | null) {
+  function formatCurrency(dollars: number | null) {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-    }).format((cents ?? 0) / 100)
+    }).format(dollars ?? 0)
   }
 
   return (
@@ -73,31 +74,40 @@ export default async function PayrollDashboardPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {payrollRuns.map((run) => (
-            <Card key={run.id}>
-              <CardContent className="p-4 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-[var(--color-foreground)]">
-                    {formatDate(run.period_start)} &mdash; {formatDate(run.period_end)}
-                  </p>
-                  <p className="text-xs text-[var(--color-muted-foreground)]">{run.status}</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="text-right">
-                    <span className="text-sm font-bold text-[var(--color-foreground)]">
-                      {formatCurrency(run.total_gross)}
-                    </span>
-                    {run.total_net != null && (
-                      <p className="text-xs text-[var(--color-muted-foreground)]">
-                        Net: {formatCurrency(run.total_net)}
-                      </p>
-                    )}
+          {payrollRuns.map((run) => {
+            const status = (run.status as string) ?? 'draft'
+            const isCompleted = status === 'approved' || status === 'paid' || status === 'exported'
+            return (
+              <Card key={run.id as string}>
+                <CardContent className="p-4 flex items-center justify-between gap-3 flex-wrap">
+                  <Link
+                    href={`/portal/admin/staff/payroll/${run.id}`}
+                    className="flex-1 min-w-0 group"
+                  >
+                    <p className="text-sm font-semibold text-[var(--color-foreground)] group-hover:underline">
+                      {formatDate(run.period_start as string | null)} &mdash;{' '}
+                      {formatDate(run.period_end as string | null)}
+                    </p>
+                    <p className="text-xs text-[var(--color-muted-foreground)]">{status}</p>
+                  </Link>
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <span className="text-sm font-bold text-[var(--color-foreground)]">
+                        {formatCurrency(run.total_gross as number | null)}
+                      </span>
+                      {run.total_net != null && (
+                        <p className="text-xs text-[var(--color-muted-foreground)]">
+                          Net: {formatCurrency(run.total_net as number)}
+                        </p>
+                      )}
+                    </div>
+                    <Badge variant={statusVariant(status)}>{status}</Badge>
+                    {isCompleted && <PayrollRowExport runId={run.id as string} />}
                   </div>
-                  <Badge variant={statusVariant(run.status)}>{run.status}</Badge>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            )
+          })}
         </div>
       )}
     </div>

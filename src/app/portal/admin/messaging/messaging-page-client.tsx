@@ -1,13 +1,16 @@
 'use client'
 
 // @anchor: cca.messaging.admin-client
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { ConversationList } from '@/components/portal/messaging/conversation-list'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogOverlay, DialogContent, DialogClose } from '@/components/ui/dialog'
 import { Megaphone, Send, MessageSquare, ArrowLeft } from 'lucide-react'
+import { sendBroadcast } from '@/lib/actions/messaging/broadcast'
+import { sendMessageToConversation } from '@/lib/actions/messaging/send-message'
 
 interface Conversation {
   id: string
@@ -24,51 +27,104 @@ interface Classroom {
 }
 
 const AUDIENCE_OPTIONS = [
-  { value: 'all_parents', label: 'All Parents', count: 48 },
-  { value: 'classroom', label: 'Classroom', count: 16 },
-  { value: 'staff', label: 'Staff', count: 12 },
+  { value: 'all_parents', label: 'All Parents' },
+  { value: 'classroom', label: 'Classroom' },
+  { value: 'all_staff', label: 'Staff' },
 ] as const
+
+const CHANNEL_OPTIONS = [
+  { value: 'in_app', label: 'In-app' },
+  { value: 'email', label: 'Email' },
+  { value: 'sms', label: 'SMS' },
+  { value: 'push', label: 'Push' },
+] as const
+
+type Audience = (typeof AUDIENCE_OPTIONS)[number]['value']
+type Channel = (typeof CHANNEL_OPTIONS)[number]['value']
 
 interface MessagingPageClientProps {
   conversations: Conversation[]
   classrooms: Classroom[]
 }
 
-export function MessagingPageClient({ conversations }: MessagingPageClientProps) {
+export function MessagingPageClient({ conversations, classrooms }: MessagingPageClientProps) {
+  const router = useRouter()
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null)
   const [broadcastOpen, setBroadcastOpen] = useState(false)
-  const [sentToast, setSentToast] = useState<string | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
 
   // Broadcast form state
-  const [audience, setAudience] = useState('all_parents')
+  const [audience, setAudience] = useState<Audience>('all_parents')
+  const [classroomId, setClassroomId] = useState<string>(classrooms[0]?.id ?? '')
   const [subject, setSubject] = useState('')
   const [body, setBody] = useState('')
+  const [channels, setChannels] = useState<Channel[]>(['in_app'])
+  const [sending, startSending] = useTransition()
+  const [error, setError] = useState<string | null>(null)
+
+  // Reply form state
+  const [reply, setReply] = useState('')
+  const [replying, startReplying] = useTransition()
 
   const selectedConv = conversations.find((c) => c.id === selectedConversation)
 
+  function toggleChannel(c: Channel) {
+    setChannels((prev) => (prev.includes(c) ? prev.filter((v) => v !== c) : [...prev, c]))
+  }
+
+  function showToast(msg: string) {
+    setToast(msg)
+    setTimeout(() => setToast(null), 4000)
+  }
+
   function handleSendBroadcast(e: React.FormEvent) {
     e.preventDefault()
-    if (!subject.trim() || !body.trim()) return
+    if (!body.trim()) return
+    setError(null)
 
-    const match = AUDIENCE_OPTIONS.find((a) => a.value === audience)
-    const count = match?.count ?? 0
-    const label = match?.label ?? audience
+    startSending(async () => {
+      const res = await sendBroadcast({
+        audience,
+        classroom_id: audience === 'classroom' ? classroomId : null,
+        subject: subject.trim() || null,
+        body: body.trim(),
+        channels,
+      })
 
-    setSentToast(`Broadcast sent to ${count} ${label.toLowerCase()} recipients`)
-    setSubject('')
-    setBody('')
-    setBroadcastOpen(false)
+      if (res.ok) {
+        showToast(`Broadcast sent to ${res.recipients_count ?? 0} recipients`)
+        setSubject('')
+        setBody('')
+        setBroadcastOpen(false)
+        router.refresh()
+      } else {
+        setError(res.error ?? 'Failed to send broadcast')
+      }
+    })
+  }
 
-    setTimeout(() => setSentToast(null), 4000)
+  function handleSendReply(e: React.FormEvent) {
+    e.preventDefault()
+    if (!reply.trim() || !selectedConversation) return
+
+    startReplying(async () => {
+      const res = await sendMessageToConversation(selectedConversation, reply.trim())
+      if (res.ok) {
+        setReply('')
+        router.refresh()
+      } else {
+        showToast(res.error ?? 'Failed to send reply')
+      }
+    })
   }
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Success toast */}
-      {sentToast && (
+      {/* Toast */}
+      {toast && (
         <div className="fixed top-4 right-4 z-[60] flex items-center gap-2 rounded-[var(--radius,0.75rem)] border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/10 px-4 py-3 text-sm font-medium text-[var(--color-primary)] shadow-lg motion-safe:animate-[fadeIn_200ms_ease-out]">
           <Send className="h-4 w-4" />
-          {sentToast}
+          {toast}
         </div>
       )}
 
@@ -114,7 +170,6 @@ export function MessagingPageClient({ conversations }: MessagingPageClientProps)
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {/* Show last message as a bubble */}
                   <div className="flex justify-start">
                     <div className="max-w-[80%] rounded-[var(--radius,0.75rem)] bg-[var(--color-muted)] px-4 py-2.5">
                       <p className="text-sm text-[var(--color-foreground)]">
@@ -129,12 +184,27 @@ export function MessagingPageClient({ conversations }: MessagingPageClientProps)
                   </div>
 
                   {/* Reply input */}
-                  <div className="flex gap-2 pt-2 border-t border-[var(--color-border)]">
-                    <Input inputSize="sm" placeholder="Type a reply..." className="flex-1" />
-                    <Button size="sm">
+                  <form
+                    onSubmit={handleSendReply}
+                    className="flex gap-2 pt-2 border-t border-[var(--color-border)]"
+                  >
+                    <Input
+                      inputSize="sm"
+                      placeholder="Type a reply..."
+                      className="flex-1"
+                      value={reply}
+                      onChange={(e) => setReply(e.target.value)}
+                      disabled={replying}
+                    />
+                    <Button
+                      type="submit"
+                      size="sm"
+                      disabled={replying || !reply.trim()}
+                      loading={replying}
+                    >
                       <Send className="h-4 w-4" />
                     </Button>
-                  </div>
+                  </form>
                 </div>
               </CardContent>
             </Card>
@@ -166,27 +236,50 @@ export function MessagingPageClient({ conversations }: MessagingPageClientProps)
               </label>
               <select
                 value={audience}
-                onChange={(e) => setAudience(e.target.value)}
+                onChange={(e) => setAudience(e.target.value as Audience)}
                 className="w-full h-9 min-h-[48px] rounded-[var(--radius,0.75rem)] border border-[var(--color-border)] bg-[var(--color-background)] px-3 text-sm text-[var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-1"
               >
                 {AUDIENCE_OPTIONS.map((a) => (
                   <option key={a.value} value={a.value}>
-                    {a.label} ({a.count} recipients)
+                    {a.label}
                   </option>
                 ))}
               </select>
             </div>
 
+            {audience === 'classroom' && (
+              <div>
+                <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
+                  Classroom *
+                </label>
+                <select
+                  value={classroomId}
+                  onChange={(e) => setClassroomId(e.target.value)}
+                  className="w-full h-9 min-h-[48px] rounded-[var(--radius,0.75rem)] border border-[var(--color-border)] bg-[var(--color-background)] px-3 text-sm text-[var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-1"
+                  required
+                >
+                  {classrooms.length === 0 ? (
+                    <option value="">— No classrooms —</option>
+                  ) : (
+                    classrooms.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+            )}
+
             <div>
               <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
-                Subject *
+                Subject
               </label>
               <Input
                 inputSize="sm"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
-                placeholder="Broadcast subject line"
-                required
+                placeholder="Optional subject line"
               />
             </div>
 
@@ -204,16 +297,52 @@ export function MessagingPageClient({ conversations }: MessagingPageClientProps)
               />
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
+                Channels
+              </label>
+              <div className="flex flex-wrap gap-3">
+                {CHANNEL_OPTIONS.map((c) => {
+                  const active = channels.includes(c.value)
+                  return (
+                    <button
+                      key={c.value}
+                      type="button"
+                      onClick={() => toggleChannel(c.value)}
+                      className="rounded-full border px-3 py-1 text-xs font-medium transition-colors"
+                      style={{
+                        borderColor: active ? 'var(--color-primary)' : 'var(--color-border)',
+                        backgroundColor: active
+                          ? 'color-mix(in srgb, var(--color-primary) 10%, transparent)'
+                          : 'transparent',
+                        color: active ? 'var(--color-primary)' : 'var(--color-muted-foreground)',
+                      }}
+                    >
+                      {c.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {error && <p className="text-sm text-[var(--color-destructive)]">{error}</p>}
+
             <div className="flex justify-end gap-2 pt-2">
               <Button
                 type="button"
                 variant="secondary"
                 size="sm"
                 onClick={() => setBroadcastOpen(false)}
+                disabled={sending}
               >
                 Cancel
               </Button>
-              <Button type="submit" size="sm">
+              <Button
+                type="submit"
+                size="sm"
+                loading={sending}
+                disabled={sending || !body.trim() || channels.length === 0}
+              >
                 <Send className="h-4 w-4" /> Send Broadcast
               </Button>
             </div>

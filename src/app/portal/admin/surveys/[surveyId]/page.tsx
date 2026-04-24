@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { createTenantAdminClient } from '@/lib/supabase/admin'
+import { SurveyDetailActions } from '@/components/portal/surveys/survey-detail-actions'
 
 export const metadata: Metadata = {
   title: 'Survey Detail | Admin Portal',
@@ -39,10 +40,7 @@ export default async function AdminSurveyDetailPage({
       .select('id, label, field_type, sort_order, options, is_required')
       .eq('form_id', surveyId)
       .order('sort_order', { ascending: true }),
-    supabase
-      .from('form_responses')
-      .select('id, created_at')
-      .eq('form_id', surveyId),
+    supabase.from('form_responses').select('id, created_at').eq('form_id', surveyId),
   ])
 
   const fields = fieldsRes.data ?? []
@@ -63,12 +61,11 @@ export default async function AdminSurveyDetailPage({
   // Compute per-field averages for numeric/rating fields
   const fieldSummaries = fields.map((field) => {
     const fieldVals = responseValues.filter((v) => v.field_id === field.id)
-    const numericVals = fieldVals
-      .map((v) => parseFloat(v.value))
-      .filter((n) => !isNaN(n))
-    const avg = numericVals.length > 0
-      ? (numericVals.reduce((s, n) => s + n, 0) / numericVals.length).toFixed(1)
-      : null
+    const numericVals = fieldVals.map((v) => parseFloat(v.value)).filter((n) => !isNaN(n))
+    const avg =
+      numericVals.length > 0
+        ? (numericVals.reduce((s, n) => s + n, 0) / numericVals.length).toFixed(1)
+        : null
     return {
       ...field,
       avgRating: avg,
@@ -97,7 +94,7 @@ export default async function AdminSurveyDetailPage({
               color: isActive ? 'var(--color-primary-foreground)' : 'var(--color-muted-foreground)',
             }}
           >
-            {isActive ? 'Active' : form.status ?? 'Draft'}
+            {isActive ? 'Active' : (form.status ?? 'Draft')}
           </span>
         </div>
       </div>
@@ -112,7 +109,10 @@ export default async function AdminSurveyDetailPage({
           <div
             key={stat.label}
             className="rounded-xl p-4"
-            style={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)' }}
+            style={{
+              backgroundColor: 'var(--color-card)',
+              border: '1px solid var(--color-border)',
+            }}
           >
             <p className="text-xs font-medium" style={{ color: 'var(--color-muted-foreground)' }}>
               {stat.label}
@@ -132,7 +132,10 @@ export default async function AdminSurveyDetailPage({
         {fieldSummaries.length === 0 ? (
           <div
             className="rounded-xl p-8 text-center"
-            style={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)' }}
+            style={{
+              backgroundColor: 'var(--color-card)',
+              border: '1px solid var(--color-border)',
+            }}
           >
             <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
               No questions defined for this survey.
@@ -143,7 +146,10 @@ export default async function AdminSurveyDetailPage({
             <div
               key={q.id}
               className="rounded-xl p-4"
-              style={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)' }}
+              style={{
+                backgroundColor: 'var(--color-card)',
+                border: '1px solid var(--color-border)',
+              }}
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -151,7 +157,8 @@ export default async function AdminSurveyDetailPage({
                     {i + 1}. {q.label}
                   </p>
                   <p className="mt-1 text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
-                    Type: {(q.field_type ?? 'text').replace(/_/g, ' ')} &middot; {q.responseCount} responses
+                    Type: {(q.field_type ?? 'text').replace(/_/g, ' ')} &middot; {q.responseCount}{' '}
+                    responses
                   </p>
                 </div>
                 {q.avgRating !== null && (
@@ -178,26 +185,7 @@ export default async function AdminSurveyDetailPage({
       )}
 
       {/* Actions */}
-      <div className="flex gap-3">
-        <button
-          className="rounded-lg px-4 py-2 text-sm font-medium"
-          style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-primary-foreground)' }}
-        >
-          Export Results (PDF)
-        </button>
-        <button
-          className="rounded-lg px-4 py-2 text-sm font-medium"
-          style={{ backgroundColor: 'var(--color-muted)', color: 'var(--color-foreground)' }}
-        >
-          Export Results (CSV)
-        </button>
-        <button
-          className="rounded-lg px-4 py-2 text-sm font-medium"
-          style={{ backgroundColor: 'var(--color-destructive)', color: 'var(--color-primary-foreground)' }}
-        >
-          Close Survey
-        </button>
-      </div>
+      <SurveyDetailActions surveyId={surveyId} isArchived={form.status === 'archived'} />
     </div>
   )
 }

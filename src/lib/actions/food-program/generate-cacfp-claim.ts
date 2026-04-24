@@ -1,6 +1,7 @@
 // @anchor: cca.cacfp.generate-claim
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import { GenerateCACFPClaimSchema, type GenerateCACFPClaimInput } from '@/lib/schemas/food-program'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
@@ -33,7 +34,7 @@ const CACFP_RATES_CENTS: Record<string, { free: number; reduced: number; paid: n
 }
 
 export async function generateCACFPClaim(
-  input: GenerateCACFPClaimInput
+  input: GenerateCACFPClaimInput,
 ): Promise<GenerateCACFPClaimState> {
   await assertRole('admin')
 
@@ -132,9 +133,15 @@ export async function generateCACFPClaim(
     after_data: { month: data.claim_month, year: data.claim_year, total_meals: totalMealsClaimed },
   })
 
+  revalidatePath('/portal/admin/food-program/claims')
+
   return {
     ok: true,
     id: claim.id,
-    summary: { total_meals_claimed: totalMealsClaimed, total_reimbursement_cents: totalReimbursementCents, lines },
+    summary: {
+      total_meals_claimed: totalMealsClaimed,
+      total_reimbursement_cents: totalReimbursementCents,
+      lines,
+    },
   }
 }

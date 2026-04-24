@@ -40,6 +40,39 @@ export async function markAllNotificationsRead(): Promise<{ ok: boolean; error?:
 }
 
 /**
+ * Delete (dismiss) a single notification for the current user.
+ */
+export async function deleteNotification(
+  notificationId: string,
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const session = await getSession()
+    if (!session) {
+      return { ok: false, error: 'Authentication required' }
+    }
+
+    const tenantId = await getTenantId()
+    const supabase = createAdminClient()
+
+    const { error } = await supabase
+      .from('notifications')
+      .delete()
+      .eq('id', notificationId)
+      .eq('user_id', session.user.id)
+      .eq('tenant_id', tenantId)
+
+    if (error) {
+      return { ok: false, error: error.message }
+    }
+
+    revalidatePath('/portal/admin/notifications')
+    return { ok: true }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'Unexpected error' }
+  }
+}
+
+/**
  * Mark a single notification as read.
  */
 export async function markNotificationRead(

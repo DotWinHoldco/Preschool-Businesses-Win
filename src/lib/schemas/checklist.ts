@@ -14,6 +14,10 @@ export const ChecklistItemTypeSchema = z.enum([
   'acknowledgment',
   'form_field',
   'custom',
+  'check',
+  'numeric',
+  'text',
+  'photo',
 ])
 export type ChecklistItemType = z.infer<typeof ChecklistItemTypeSchema>
 
@@ -21,18 +25,24 @@ export type ChecklistItemType = z.infer<typeof ChecklistItemTypeSchema>
 // Checklist target types
 // ---------------------------------------------------------------------------
 
-export const ChecklistTargetTypeSchema = z.enum(['parent', 'staff', 'student'])
+export const ChecklistTargetTypeSchema = z.enum([
+  'parent',
+  'staff',
+  'student',
+  'daily',
+  'weekly',
+  'monthly',
+  'classroom',
+  'opening',
+  'closing',
+])
 export type ChecklistTargetType = z.infer<typeof ChecklistTargetTypeSchema>
 
 // ---------------------------------------------------------------------------
 // Checklist assignment entity type
 // ---------------------------------------------------------------------------
 
-export const ChecklistAssignmentEntityTypeSchema = z.enum([
-  'family',
-  'student',
-  'staff',
-])
+export const ChecklistAssignmentEntityTypeSchema = z.enum(['family', 'student', 'staff'])
 export type ChecklistAssignmentEntityType = z.infer<typeof ChecklistAssignmentEntityTypeSchema>
 
 // ---------------------------------------------------------------------------
@@ -108,3 +118,60 @@ export const CompleteChecklistItemSchema = z.object({
   signature_data: z.string().optional(), // Base64 encoded signature image
 })
 export type CompleteChecklistItemInput = z.infer<typeof CompleteChecklistItemSchema>
+
+// ---------------------------------------------------------------------------
+// Update / archive template
+// ---------------------------------------------------------------------------
+
+export const ArchiveChecklistTemplateSchema = z.object({
+  template_id: z.string().uuid(),
+})
+export type ArchiveChecklistTemplateInput = z.infer<typeof ArchiveChecklistTemplateSchema>
+
+// ---------------------------------------------------------------------------
+// Checklist item update/delete
+// ---------------------------------------------------------------------------
+
+export const UpdateChecklistItemSchema = z.object({
+  item_id: z.string().uuid(),
+  title: z.string().min(1).max(300).optional(),
+  description: z.string().max(1000).optional().nullable(),
+  item_type: ChecklistItemTypeSchema.optional(),
+  required: z.boolean().optional(),
+  sort_order: z.number().int().min(0).optional(),
+  deadline_days_from_assignment: z.number().int().min(1).max(365).optional().nullable(),
+})
+export type UpdateChecklistItemInput = z.infer<typeof UpdateChecklistItemSchema>
+
+export const DeleteChecklistItemSchema = z.object({
+  item_id: z.string().uuid(),
+})
+export type DeleteChecklistItemInput = z.infer<typeof DeleteChecklistItemSchema>
+
+// ---------------------------------------------------------------------------
+// Checklist run + run item (the NEW migration 0063 tables)
+// ---------------------------------------------------------------------------
+
+export const AssignChecklistRunSchema = z.object({
+  template_id: z.string().uuid(),
+  assignees: z.array(z.string().uuid()).min(1, 'At least one assignee is required'),
+  due_date: z.string().optional().nullable(),
+  target_entity_type: z.string().optional().nullable(),
+  target_entity_id: z.string().uuid().optional().nullable(),
+  notes: z.string().max(2000).optional().nullable(),
+})
+export type AssignChecklistRunInput = z.infer<typeof AssignChecklistRunSchema>
+
+export const CompleteChecklistRunItemSchema = z.object({
+  run_item_id: z.string().uuid(),
+  is_checked: z.boolean(),
+  notes: z.string().max(2000).optional().nullable(),
+  photo_path: z.string().max(1000).optional().nullable(),
+})
+export type CompleteChecklistRunItemInput = z.infer<typeof CompleteChecklistRunItemSchema>
+
+export const CompleteChecklistRunSchema = z.object({
+  run_id: z.string().uuid(),
+  notes: z.string().max(2000).optional().nullable(),
+})
+export type CompleteChecklistRunInput = z.infer<typeof CompleteChecklistRunSchema>

@@ -10,7 +10,10 @@ export default async function WaitlistPage() {
     .from('enrollment_applications')
     .select('*')
     .eq('triage_status', 'waitlisted')
+    .order('triage_score', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: true })
+
+  const { data: classrooms } = await supabase.from('classrooms').select('id, name').order('name')
 
   const entries = (applications ?? []).map((a: Record<string, unknown>, i: number) => ({
     id: a.id as string,
@@ -35,7 +38,10 @@ export default async function WaitlistPage() {
         </p>
       </div>
 
-      <WaitlistManager entries={entries} />
+      <WaitlistManager
+        entries={entries}
+        classrooms={(classrooms ?? []) as Array<{ id: string; name: string }>}
+      />
     </div>
   )
 }

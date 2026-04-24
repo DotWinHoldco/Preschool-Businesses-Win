@@ -1,10 +1,12 @@
 'use client'
 
 // @anchor: cca.notifications.notification-row
-// Single notification row with click-to-mark-read behavior.
+// Notification row with click-to-mark-read, explicit Mark Read, and Dismiss.
 
 import { useTransition } from 'react'
-import { markNotificationRead } from '@/lib/actions/notifications/mark-read'
+import { useRouter } from 'next/navigation'
+import { Check, X } from 'lucide-react'
+import { markNotificationRead, deleteNotification } from '@/lib/actions/notifications/mark-read'
 
 interface NotificationRowProps {
   id: string
@@ -25,26 +27,50 @@ export function NotificationRow({
   timeAgo,
   isLast,
 }: NotificationRowProps) {
+  const router = useRouter()
   const [isPending, startTransition] = useTransition()
 
-  function handleClick() {
-    if (!read) {
-      startTransition(async () => { await markNotificationRead(id) })
+  function markRead(e?: React.MouseEvent) {
+    if (e) {
+      e.stopPropagation()
     }
+    if (read) return
+    startTransition(async () => {
+      await markNotificationRead(id)
+      router.refresh()
+    })
+  }
+
+  function handleRowClick() {
+    if (!read) markRead()
+  }
+
+  function dismiss(e: React.MouseEvent) {
+    e.stopPropagation()
+    startTransition(async () => {
+      await deleteNotification(id)
+      router.refresh()
+    })
   }
 
   const isUrgent = urgency === 'urgent' || urgency === 'critical'
 
   return (
-    <button
-      type="button"
-      onClick={handleClick}
-      disabled={isPending}
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={handleRowClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') handleRowClick()
+      }}
+      aria-disabled={isPending}
       className="flex w-full items-start gap-3 px-4 py-4 text-left transition-colors"
       style={{
         borderBottom: isLast ? 'none' : '1px solid var(--color-border)',
         borderLeft: read ? '3px solid transparent' : '3px solid var(--color-primary)',
-        backgroundColor: read ? 'transparent' : 'color-mix(in srgb, var(--color-primary) 4%, transparent)',
+        backgroundColor: read
+          ? 'transparent'
+          : 'color-mix(in srgb, var(--color-primary) 4%, transparent)',
         opacity: isPending ? 0.6 : 1,
         cursor: read ? 'default' : 'pointer',
       }}
@@ -99,6 +125,32 @@ export function NotificationRow({
           </span>
         )}
       </div>
-    </button>
+
+      {/* Row actions */}
+      <div className="flex flex-shrink-0 items-center gap-1">
+        {!read && (
+          <button
+            type="button"
+            onClick={markRead}
+            disabled={isPending}
+            className="inline-flex h-8 items-center gap-1 rounded-md px-2 text-xs font-medium hover:bg-[var(--color-muted)] disabled:opacity-50"
+            style={{ color: 'var(--color-muted-foreground)' }}
+            aria-label="Mark as read"
+          >
+            <Check size={14} /> Mark read
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={dismiss}
+          disabled={isPending}
+          className="inline-flex h-8 items-center gap-1 rounded-md px-2 text-xs font-medium hover:bg-[var(--color-muted)] disabled:opacity-50"
+          style={{ color: 'var(--color-muted-foreground)' }}
+          aria-label="Dismiss notification"
+        >
+          <X size={14} />
+        </button>
+      </div>
+    </div>
   )
 }

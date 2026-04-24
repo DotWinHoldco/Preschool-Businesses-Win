@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { createTenantAdminClient } from '@/lib/supabase/admin'
+import { ReportBuilderClient } from '@/components/portal/analytics/report-builder-client'
 
 export const metadata: Metadata = {
   title: 'Custom Reports | Admin Portal',
@@ -18,159 +19,42 @@ export default async function AdminCustomReportsPage() {
 
   const { data: savedReports } = await supabase
     .from('saved_reports')
-    .select('id, name, entity_type, columns, filters, sort, created_by, is_scheduled, created_at')
+    .select('id, name, entity_type, filters, is_scheduled, created_at')
     .eq('tenant_id', tenantId)
     .order('created_at', { ascending: false })
 
-  const reports = savedReports ?? []
+  const reports = (savedReports ?? []).map((r) => ({
+    id: r.id as string,
+    name: (r.name as string) ?? 'Untitled',
+    entity_type: (r.entity_type as string) ?? null,
+    is_scheduled: (r.is_scheduled as boolean) ?? false,
+    created_at: (r.created_at as string) ?? null,
+    filters: (r.filters as Record<string, unknown>) ?? null,
+  }))
 
-  const entityOptions = ['Students', 'Families', 'Staff', 'Attendance', 'Billing', 'Enrollment', 'Classrooms', 'Compliance']
+  const entityOptions = [
+    'students',
+    'families',
+    'staff',
+    'attendance',
+    'billing',
+    'enrollment',
+    'classrooms',
+    'compliance',
+  ]
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--color-foreground)' }}>
-            Custom Report Builder
-          </h1>
-          <p className="mt-1 text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
-            Build, save, and schedule custom reports from any data in the platform.
-          </p>
-        </div>
-        <button
-          className="rounded-lg px-4 py-2 text-sm font-medium"
-          style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-primary-foreground)' }}
-        >
-          + New Report
-        </button>
+      <div>
+        <h1 className="text-2xl font-bold" style={{ color: 'var(--color-foreground)' }}>
+          Custom Report Builder
+        </h1>
+        <p className="mt-1 text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
+          Build, save, and schedule custom reports from any data in the platform.
+        </p>
       </div>
 
-      {/* Report builder */}
-      <div
-        className="rounded-xl p-6"
-        style={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)' }}
-      >
-        <h2 className="text-lg font-semibold" style={{ color: 'var(--color-foreground)' }}>
-          Build a Report
-        </h2>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <label className="text-xs font-medium" style={{ color: 'var(--color-muted-foreground)' }}>Data Source</label>
-            <select
-              className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
-              style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-background)', color: 'var(--color-foreground)' }}
-            >
-              <option value="">Select entity...</option>
-              {entityOptions.map((e) => (
-                <option key={e} value={e.toLowerCase()}>{e}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="text-xs font-medium" style={{ color: 'var(--color-muted-foreground)' }}>Date Range</label>
-            <select
-              className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
-              style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-background)', color: 'var(--color-foreground)' }}
-            >
-              <option>This Week</option>
-              <option>This Month</option>
-              <option>This Quarter</option>
-              <option>This Year</option>
-              <option>Custom Range</option>
-            </select>
-          </div>
-          <div>
-            <label className="text-xs font-medium" style={{ color: 'var(--color-muted-foreground)' }}>Group By</label>
-            <select
-              className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
-              style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-background)', color: 'var(--color-foreground)' }}
-            >
-              <option>None</option>
-              <option>Classroom</option>
-              <option>Program</option>
-              <option>Staff Member</option>
-              <option>Month</option>
-            </select>
-          </div>
-          <div>
-            <label className="text-xs font-medium" style={{ color: 'var(--color-muted-foreground)' }}>Format</label>
-            <select
-              className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
-              style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-background)', color: 'var(--color-foreground)' }}
-            >
-              <option>Table</option>
-              <option>CSV Export</option>
-              <option>PDF Export</option>
-            </select>
-          </div>
-        </div>
-        <div className="mt-4 flex gap-3">
-          <button
-            className="rounded-lg px-4 py-2 text-sm font-medium"
-            style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-primary-foreground)' }}
-          >
-            Run Report
-          </button>
-          <button
-            className="rounded-lg px-4 py-2 text-sm font-medium"
-            style={{ backgroundColor: 'var(--color-muted)', color: 'var(--color-foreground)' }}
-          >
-            Save Report
-          </button>
-        </div>
-      </div>
-
-      {/* Saved reports */}
-      <div
-        className="overflow-hidden rounded-xl"
-        style={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)' }}
-      >
-        <div className="p-4">
-          <h2 className="text-lg font-semibold" style={{ color: 'var(--color-foreground)' }}>
-            Saved Reports
-          </h2>
-        </div>
-        {reports.length === 0 ? (
-          <div className="px-4 pb-6 text-center">
-            <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
-              No saved reports yet.
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                  {['Report Name', 'Data Source', 'Scheduled', 'Created', 'Actions'].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left font-medium" style={{ color: 'var(--color-muted-foreground)' }}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {reports.map((r) => (
-                  <tr key={r.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                    <td className="px-4 py-3 font-medium" style={{ color: 'var(--color-foreground)' }}>{r.name}</td>
-                    <td className="px-4 py-3" style={{ color: 'var(--color-muted-foreground)' }}>{r.entity_type ?? '\u2014'}</td>
-                    <td className="px-4 py-3" style={{ color: 'var(--color-muted-foreground)' }}>{r.is_scheduled ? 'Yes' : 'No'}</td>
-                    <td className="px-4 py-3" style={{ color: 'var(--color-muted-foreground)' }}>
-                      {r.created_at ? new Date(r.created_at).toLocaleDateString() : '\u2014'}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-2">
-                        <button className="text-xs font-medium" style={{ color: 'var(--color-primary)' }}>Run</button>
-                        <button className="text-xs font-medium" style={{ color: 'var(--color-muted-foreground)' }}>Edit</button>
-                        <button className="text-xs font-medium" style={{ color: 'var(--color-destructive)' }}>Delete</button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      <ReportBuilderClient savedReports={reports} entityOptions={entityOptions} />
     </div>
   )
 }

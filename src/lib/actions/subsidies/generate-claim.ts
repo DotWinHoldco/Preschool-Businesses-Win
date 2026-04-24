@@ -1,6 +1,7 @@
 // @anchor: cca.subsidy.generate-claim
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import { GenerateSubsidyClaimSchema, type GenerateSubsidyClaimInput } from '@/lib/schemas/subsidy'
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
@@ -17,7 +18,7 @@ export type GenerateSubsidyClaimState = {
 }
 
 export async function generateSubsidyClaim(
-  input: GenerateSubsidyClaimInput
+  input: GenerateSubsidyClaimInput,
 ): Promise<GenerateSubsidyClaimState> {
   await assertRole('admin')
 
@@ -118,8 +119,14 @@ export async function generateSubsidyClaim(
     action: 'subsidy.claim.generated',
     entity_type: 'subsidy_claim',
     entity_id: claim.id,
-    after_data: { agency_id: data.agency_id, total_claimed_cents: totalClaimedCents, lines: claimLines.length },
+    after_data: {
+      agency_id: data.agency_id,
+      total_claimed_cents: totalClaimedCents,
+      lines: claimLines.length,
+    },
   })
+
+  revalidatePath('/portal/admin/subsidies/claims')
 
   return {
     ok: true,

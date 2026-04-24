@@ -1,90 +1,69 @@
 // @anchor: cca.billing.plans
-// Billing plans management page.
+// Billing plans management — real data from billing_plans, CRUD via PlanManager.
 
 import Link from 'next/link'
-import { PlanSelector } from '@/components/portal/billing/plan-selector'
+import { headers } from 'next/headers'
+import { notFound } from 'next/navigation'
+import { createTenantAdminClient } from '@/lib/supabase/admin'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { PlanManager, type PlanRow } from '@/components/portal/billing/plan-manager'
 
 export default async function BillingPlansPage() {
-  // TODO: Fetch billing plans from Supabase
-  const plans = [
-    {
-      id: '1',
-      name: 'Infant Full Day',
-      description: 'Full-day program for infants 6-17 months',
-      amount_cents: 135000,
-      frequency: 'monthly',
-      sibling_discount_pct: 10,
-    },
-    {
-      id: '2',
-      name: 'Toddler Full Day',
-      description: 'Full-day program for toddlers 18-35 months',
-      amount_cents: 120000,
-      frequency: 'monthly',
-      sibling_discount_pct: 10,
-    },
-    {
-      id: '3',
-      name: 'Pre-K Full Day',
-      description: 'Full-day Pre-K for ages 3-5',
-      amount_cents: 95000,
-      frequency: 'monthly',
-      sibling_discount_pct: 10,
-    },
-    {
-      id: '4',
-      name: 'Half Day AM',
-      description: 'Morning half-day program',
-      amount_cents: 65000,
-      frequency: 'monthly',
-      sibling_discount_pct: 10,
-    },
-    {
-      id: '5',
-      name: 'Before Care',
-      description: '6:30 AM - 8:00 AM',
-      amount_cents: 25000,
-      frequency: 'monthly',
-    },
-    {
-      id: '6',
-      name: 'After Care',
-      description: '3:00 PM - 6:00 PM',
-      amount_cents: 30000,
-      frequency: 'monthly',
-    },
-  ]
+  const headerStore = await headers()
+  const tenantId = headerStore.get('x-tenant-id')
+  if (!tenantId) notFound()
+
+  const supabase = await createTenantAdminClient(tenantId)
+
+  const { data: rows } = await supabase
+    .from('billing_plans')
+    .select(
+      'id, name, description, amount_cents, frequency, program_type, age_group, registration_fee_cents, supply_fee_cents, late_fee_cents, late_fee_grace_days, sibling_discount_pct, staff_discount_pct, military_discount_pct, church_member_discount_pct, is_active',
+    )
+    .eq('tenant_id', tenantId)
+    .order('is_active', { ascending: false })
+    .order('amount_cents', { ascending: false })
+
+  const plans: PlanRow[] = (rows ?? []).map((r) => ({
+    id: r.id as string,
+    name: (r.name as string) ?? '',
+    description: (r.description as string | null) ?? null,
+    amount_cents: (r.amount_cents as number) ?? 0,
+    frequency: (r.frequency as string) ?? 'monthly',
+    program_type: (r.program_type as string | null) ?? null,
+    age_group: (r.age_group as string | null) ?? null,
+    registration_fee_cents: (r.registration_fee_cents as number) ?? 0,
+    supply_fee_cents: (r.supply_fee_cents as number) ?? 0,
+    late_fee_cents: (r.late_fee_cents as number) ?? 0,
+    late_fee_grace_days: (r.late_fee_grace_days as number) ?? 5,
+    sibling_discount_pct: Number(r.sibling_discount_pct ?? 0),
+    staff_discount_pct: Number(r.staff_discount_pct ?? 0),
+    military_discount_pct: Number(r.military_discount_pct ?? 0),
+    church_member_discount_pct: Number(r.church_member_discount_pct ?? 0),
+    is_active: (r.is_active as boolean) ?? true,
+  }))
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <Link
-            href="/portal/admin/billing"
-            className="text-sm text-[var(--color-primary)] hover:underline mb-2 inline-block"
-          >
-            &larr; Back to billing
-          </Link>
-          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Billing Plans</h1>
-          <p className="text-sm text-[var(--color-muted-foreground)]">
-            Manage tuition plans and pricing
-          </p>
-        </div>
-        <button
-          type="button"
-          className="rounded-[var(--radius,0.75rem)] bg-[var(--color-primary)] text-[var(--color-primary-foreground)] px-4 py-2 text-sm font-semibold min-h-[44px] hover:brightness-110 transition-all"
+      <div>
+        <Link
+          href="/portal/admin/billing"
+          className="text-sm text-[var(--color-primary)] hover:underline mb-2 inline-block"
         >
-          Add Plan
-        </button>
+          &larr; Back to billing
+        </Link>
+        <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Billing Plans</h1>
+        <p className="text-sm text-[var(--color-muted-foreground)]">
+          Manage tuition plans and pricing
+        </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Active Plans</CardTitle>
+          <CardTitle>Plans</CardTitle>
         </CardHeader>
-        <CardContent>
-          <PlanSelector plans={plans} />
+        <CardContent className="flex flex-col gap-4">
+          <PlanManager plans={plans} />
         </CardContent>
       </Card>
     </div>

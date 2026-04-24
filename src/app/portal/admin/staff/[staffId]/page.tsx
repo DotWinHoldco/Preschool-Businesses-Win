@@ -8,6 +8,9 @@ import { createTenantAdminClient } from '@/lib/supabase/admin'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CertStatusBadge } from '@/components/portal/staff/cert-status-badge'
 import { ScheduleGrid } from '@/components/portal/staff/schedule-grid'
+import { CertificationsEditor } from '@/components/portal/staff/certifications-editor'
+import { ScheduleEditor } from '@/components/portal/staff/schedule-editor'
+import { ProfileEditor } from '@/components/portal/staff/profile-editor'
 
 export default async function StaffDetailPage({
   params,
@@ -69,6 +72,15 @@ export default async function StaffDetailPage({
     expiry: c.expiry_date as string | null,
   }))
 
+  const certRows = (certs ?? []).map((c) => ({
+    id: c.id as string,
+    cert_name: (c.cert_name as string) ?? null,
+    issuing_body: (c.issuing_body as string) ?? null,
+    issued_date: (c.issued_date as string) ?? null,
+    expiry_date: (c.expiry_date as string) ?? null,
+    document_path: (c.document_path as string) ?? null,
+  }))
+
   const scheduleEntries = (schedules ?? []).map((s) => ({
     id: s.id as string,
     day_of_week: s.day_of_week as string,
@@ -99,6 +111,16 @@ export default async function StaffDetailPage({
             <CardTitle>Profile</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
+            <ProfileEditor
+              staffId={staffId}
+              profile={{
+                employment_type:
+                  (staffRow.employment_type as 'full_time' | 'part_time' | 'substitute' | null) ??
+                  null,
+                hourly_rate_cents: (staffRow.hourly_rate as number | null) ?? null,
+                bio: (staffRow.bio as string | null) ?? null,
+              }}
+            />
             <div className="flex justify-between">
               <span className="text-[var(--color-muted-foreground)]">Email</span>
               <span className="text-[var(--color-foreground)]">{staffEmail}</span>
@@ -139,18 +161,15 @@ export default async function StaffDetailPage({
           <CardHeader>
             <CardTitle>Certifications</CardTitle>
           </CardHeader>
-          <CardContent>
-            {certList.length === 0 ? (
-              <p className="text-sm text-[var(--color-muted-foreground)]">
-                No certifications on file.
-              </p>
-            ) : (
+          <CardContent className="space-y-4">
+            {certList.length > 0 && (
               <div className="flex flex-col gap-2">
                 {certList.map((cert) => (
                   <CertStatusBadge key={cert.name} certName={cert.name} expiryDate={cert.expiry} />
                 ))}
               </div>
             )}
+            <CertificationsEditor staffId={staffId} certs={certRows} />
           </CardContent>
         </Card>
       </div>
@@ -160,12 +179,9 @@ export default async function StaffDetailPage({
         <CardHeader>
           <CardTitle>Weekly Schedule</CardTitle>
         </CardHeader>
-        <CardContent>
-          {scheduleEntries.length === 0 ? (
-            <p className="text-sm text-[var(--color-muted-foreground)]">No schedule entries.</p>
-          ) : (
-            <ScheduleGrid entries={scheduleEntries} />
-          )}
+        <CardContent className="space-y-4">
+          {scheduleEntries.length > 0 && <ScheduleGrid entries={scheduleEntries} />}
+          <ScheduleEditor staffId={staffId} entries={scheduleEntries} />
         </CardContent>
       </Card>
 

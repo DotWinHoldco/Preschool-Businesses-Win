@@ -1,53 +1,17 @@
-// @anchor: cca.payroll.run-wizard
-// Payroll run wizard page — select period, review, and generate.
+// @anchor: cca.payroll.run-wizard-page
+// Payroll run wizard — real Calculate/Submit/Approve flow.
 
 import Link from 'next/link'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { PayrollTable } from '@/components/portal/staff/payroll-table'
-import { PayrollActions } from '@/components/portal/staff/payroll-actions'
+import { PayrollRunClient } from '@/components/portal/staff/payroll-run-client'
 
-export default async function PayrollRunPage() {
-  // TODO: This would be a client-side wizard with steps
-  // For now, show the payroll summary view
+export default function PayrollRunPage() {
+  // Default to the prior 2 weeks, Monday-to-Sunday style bounds.
+  const today = new Date()
+  const end = new Date(today)
+  const start = new Date(today)
+  start.setDate(start.getDate() - 13)
 
-  const lineItems = [
-    {
-      id: '1',
-      user_name: 'Jane Smith',
-      regular_hours: 78.5,
-      overtime_hours: 2.0,
-      regular_pay: 1413.0,
-      overtime_pay: 54.0,
-      pto_hours: 0,
-      pto_pay: 0,
-      gross_pay: 1467.0,
-      net_pay: 1467.0,
-    },
-    {
-      id: '2',
-      user_name: 'Maria Garcia',
-      regular_hours: 80.0,
-      overtime_hours: 0,
-      regular_pay: 1280.0,
-      overtime_pay: 0,
-      pto_hours: 0,
-      pto_pay: 0,
-      gross_pay: 1280.0,
-      net_pay: 1280.0,
-    },
-    {
-      id: '3',
-      user_name: 'Tom Wilson',
-      regular_hours: 40.0,
-      overtime_hours: 0,
-      regular_pay: 560.0,
-      overtime_pay: 0,
-      pto_hours: 0,
-      pto_pay: 0,
-      gross_pay: 560.0,
-      net_pay: 560.0,
-    },
-  ]
+  const fmt = (d: Date) => d.toISOString().slice(0, 10)
 
   return (
     <div className="flex flex-col gap-6">
@@ -59,61 +23,12 @@ export default async function PayrollRunPage() {
           &larr; Back to payroll
         </Link>
         <h1 className="text-2xl font-bold text-[var(--color-foreground)]">New Payroll Run</h1>
+        <p className="text-sm text-[var(--color-muted-foreground)]">
+          Calculate from time entries, preview, submit as draft, then approve.
+        </p>
       </div>
 
-      {/* Step 1: Select period */}
-      <Card>
-        <CardHeader>
-          <CardTitle>1. Select Period</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form className="flex flex-col sm:flex-row gap-4">
-            <label className="flex-1">
-              <span className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
-                Period Start
-              </span>
-              <input
-                type="date"
-                name="period_start"
-                defaultValue="2026-03-24"
-                className="w-full rounded-[var(--radius,0.75rem)] border border-[var(--color-border)] bg-transparent px-3 py-2.5 text-sm min-h-[44px]"
-              />
-            </label>
-            <label className="flex-1">
-              <span className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
-                Period End
-              </span>
-              <input
-                type="date"
-                name="period_end"
-                defaultValue="2026-04-06"
-                className="w-full rounded-[var(--radius,0.75rem)] border border-[var(--color-border)] bg-transparent px-3 py-2.5 text-sm min-h-[44px]"
-              />
-            </label>
-            <div className="flex items-end">
-              <button
-                type="submit"
-                className="rounded-[var(--radius,0.75rem)] bg-[var(--color-primary)] text-[var(--color-primary-foreground)] px-4 py-2.5 text-sm font-semibold min-h-[44px] hover:brightness-110 transition-all"
-              >
-                Calculate
-              </button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-
-      {/* Step 2: Review */}
-      <PayrollTable
-        periodStart="Mar 24, 2026"
-        periodEnd="Apr 6, 2026"
-        status="draft"
-        lineItems={lineItems}
-        totalGross={3307.0}
-        totalNet={3307.0}
-      />
-
-      {/* Step 3: Actions */}
-      <PayrollActions />
+      <PayrollRunClient defaultStart={fmt(start)} defaultEnd={fmt(end)} />
     </div>
   )
 }

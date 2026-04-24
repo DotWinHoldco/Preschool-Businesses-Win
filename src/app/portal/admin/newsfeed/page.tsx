@@ -9,6 +9,7 @@ import { Pagination } from '@/components/ui/pagination'
 import { parsePagination } from '@/lib/pagination'
 import { Newspaper, Heart, MessageSquare, Pin } from 'lucide-react'
 import { ComposePostButton } from '@/components/portal/newsfeed/compose-post'
+import { PostRowActions } from '@/components/portal/newsfeed/post-row-actions'
 
 export default async function AdminNewsfeedPage({
   searchParams,
@@ -85,14 +86,39 @@ export default async function AdminNewsfeedPage({
     return scope
   }
 
+  // Comment counts per post (for badges on the list)
+  const commentCountMap: Record<string, number> = {}
+  if (postIds.length > 0) {
+    const { data: comments } = await supabase
+      .from('newsfeed_comments')
+      .select('post_id, deleted_at')
+      .in('post_id', postIds)
+
+    for (const c of comments ?? []) {
+      if (c.deleted_at) continue
+      commentCountMap[c.post_id] = (commentCountMap[c.post_id] ?? 0) + 1
+    }
+  }
+
+  // Comments this month (for the stat card)
+  const { count: commentsThisMonth } = await supabase
+    .from('newsfeed_comments')
+    .select('id', { count: 'exact', head: true })
+    .is('deleted_at', null)
+    .gte('created_at', startOfMonth)
+
   // Map DB rows to display shape
   const recentPosts = posts.map((post) => ({
     id: post.id,
     author: authorMap[post.author_id] ?? 'Unknown',
     scope: scopeLabel(post.scope, post.classroom_id),
+    rawScope: (post.scope as 'school_wide' | 'classroom') ?? 'school_wide',
     type: post.post_type as string,
+    rawType:
+      (post.post_type as 'announcement' | 'reminder' | 'photo' | 'shoutout') ?? 'announcement',
     content: post.content ?? '',
     reactions: reactionCountMap[post.id] ?? 0,
+    comments: commentCountMap[post.id] ?? 0,
     pinned: post.pinned ?? false,
     createdAt: post.created_at,
   }))
@@ -169,7 +195,7 @@ export default async function AdminNewsfeedPage({
             </div>
             <div>
               <p className="text-2xl font-bold" style={{ color: 'var(--color-foreground)' }}>
-                —
+                {commentsThisMonth ?? 0}
               </p>
               <p className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
                 Comments This Month
@@ -223,6 +249,12 @@ export default async function AdminNewsfeedPage({
                         >
                           <Heart size={12} /> {post.reactions}
                         </span>
+                        <span
+                          className="flex items-center gap-1 text-xs"
+                          style={{ color: 'var(--color-muted-foreground)' }}
+                        >
+                          <MessageSquare size={12} /> {post.comments}
+                        </span>
                       </div>
                     </div>
                     <span
@@ -234,6 +266,15 @@ export default async function AdminNewsfeedPage({
                     >
                       {post.type}
                     </span>
+                  </div>
+                  <div className="mt-3 flex justify-end">
+                    <PostRowActions
+                      postId={post.id}
+                      pinned={post.pinned}
+                      content={post.content}
+                      scope={post.rawScope}
+                      postType={post.rawType}
+                    />
                   </div>
                 </div>
               ))}

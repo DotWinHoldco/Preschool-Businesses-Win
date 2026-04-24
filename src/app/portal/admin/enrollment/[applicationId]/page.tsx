@@ -11,6 +11,7 @@ import { PipelineActions } from '@/components/portal/enrollment/pipeline-actions
 import { PipelineProgress } from '@/components/portal/enrollment/pipeline-progress'
 import { ApplicationFormView } from '@/components/portal/enrollment/application-form-view'
 import { ApplicationToolbar } from '@/components/portal/enrollment/application-toolbar'
+import { ApplicationExtras } from '@/components/portal/enrollment/application-extras'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { notFound } from 'next/navigation'
@@ -49,6 +50,37 @@ export default async function ApplicationDetailPage({
     .select('id, start_at, end_at, status, notes')
     .eq('enrollment_application_id', applicationId)
     .order('start_at', { ascending: true })
+
+  const { data: appDocuments } = await supabase
+    .from('application_documents')
+    .select('id, document_type, file_path, file_name, notes, created_at')
+    .eq('application_id', applicationId)
+    .eq('tenant_id', tenantId)
+    .order('created_at', { ascending: false })
+
+  const { data: depositRow } = await supabase
+    .from('enrollment_deposits')
+    .select('id, amount_cents, status, due_date, paid_at')
+    .eq('application_id', applicationId)
+    .eq('tenant_id', tenantId)
+    .maybeSingle()
+
+  const { data: letterRow } = await supabase
+    .from('acceptance_letters')
+    .select(
+      'id, classroom_id, start_date, tuition_summary, body, sent_at, accepted_at, accepted_by_name',
+    )
+    .eq('application_id', applicationId)
+    .eq('tenant_id', tenantId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  const { data: classroomsData } = await supabase
+    .from('classrooms')
+    .select('id, name')
+    .eq('tenant_id', tenantId)
+    .order('name')
 
   // Resolve actor names for pipeline steps
   const actorIds = [
@@ -359,6 +391,15 @@ export default async function ApplicationDetailPage({
           />
         </CardContent>
       </Card>
+
+      {/* Documents, Deposit, Acceptance Letter */}
+      <ApplicationExtras
+        applicationId={applicationId}
+        documents={(appDocuments ?? []) as Parameters<typeof ApplicationExtras>[0]['documents']}
+        deposit={(depositRow ?? null) as Parameters<typeof ApplicationExtras>[0]['deposit']}
+        letter={(letterRow ?? null) as Parameters<typeof ApplicationExtras>[0]['letter']}
+        classrooms={(classroomsData ?? []) as Parameters<typeof ApplicationExtras>[0]['classrooms']}
+      />
     </div>
   )
 }

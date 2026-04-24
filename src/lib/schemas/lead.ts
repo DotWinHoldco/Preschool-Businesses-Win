@@ -165,3 +165,50 @@ export const ProcessApplicationSchema = z.object({
 })
 
 export type ProcessApplicationInput = z.infer<typeof ProcessApplicationSchema>
+
+// ---------------------------------------------------------------------------
+// Edit lead (broader dialog edit)
+// ---------------------------------------------------------------------------
+
+export const EditLeadSchema = z.object({
+  id: z.string().uuid('Invalid lead ID'),
+  parent_first_name: z.string().min(1).max(100).optional(),
+  parent_last_name: z.string().min(1).max(100).optional(),
+  parent_email: z.string().email('Invalid email').optional().nullable(),
+  parent_phone: z.string().max(30).optional().nullable(),
+  child_name: z.string().max(200).optional().nullable(),
+  child_age_months: z.number().int().min(0).max(120).optional().nullable(),
+  program_interest: z.string().max(200).optional().nullable(),
+  priority: leadPriorityEnum.optional(),
+  status: leadStatusEnum.optional(),
+  notes: z.string().max(5000).optional().nullable(),
+})
+export type EditLeadInput = z.infer<typeof EditLeadSchema>
+
+// ---------------------------------------------------------------------------
+// Delete lead
+// ---------------------------------------------------------------------------
+
+export const DeleteLeadSchema = z.object({
+  id: z.string().uuid('Invalid lead ID'),
+})
+export type DeleteLeadInput = z.infer<typeof DeleteLeadSchema>
+
+// ---------------------------------------------------------------------------
+// Convert lead to application
+// ---------------------------------------------------------------------------
+
+export const ConvertLeadToApplicationSchema = z.object({
+  lead_id: z.string().uuid('Invalid lead ID'),
+})
+export type ConvertLeadToApplicationInput = z.infer<typeof ConvertLeadToApplicationSchema>
+
+// ---------------------------------------------------------------------------
+// Add lead note (free-form)
+// ---------------------------------------------------------------------------
+
+export const AddLeadNoteSchema = z.object({
+  lead_id: z.string().uuid('Invalid lead ID'),
+  note_body: z.string().min(1, 'Note body is required').max(5000),
+})
+export type AddLeadNoteInput = z.infer<typeof AddLeadNoteSchema>

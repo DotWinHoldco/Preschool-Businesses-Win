@@ -8,14 +8,7 @@ import { z } from 'zod'
 // Invoice status enum
 // ---------------------------------------------------------------------------
 
-export const invoiceStatusEnum = z.enum([
-  'draft',
-  'sent',
-  'paid',
-  'overdue',
-  'voided',
-  'refunded',
-])
+export const invoiceStatusEnum = z.enum(['draft', 'sent', 'paid', 'overdue', 'voided', 'refunded'])
 
 export type InvoiceStatus = z.infer<typeof invoiceStatusEnum>
 
@@ -23,13 +16,7 @@ export type InvoiceStatus = z.infer<typeof invoiceStatusEnum>
 // Payment method enum
 // ---------------------------------------------------------------------------
 
-export const paymentMethodEnum = z.enum([
-  'card',
-  'ach',
-  'cash',
-  'check',
-  'other',
-])
+export const paymentMethodEnum = z.enum(['card', 'ach', 'cash', 'check', 'other'])
 
 export type PaymentMethod = z.infer<typeof paymentMethodEnum>
 
@@ -37,12 +24,7 @@ export type PaymentMethod = z.infer<typeof paymentMethodEnum>
 // Payment status enum
 // ---------------------------------------------------------------------------
 
-export const paymentStatusEnum = z.enum([
-  'succeeded',
-  'pending',
-  'failed',
-  'refunded',
-])
+export const paymentStatusEnum = z.enum(['succeeded', 'pending', 'failed', 'refunded'])
 
 export type PaymentStatus = z.infer<typeof paymentStatusEnum>
 
@@ -50,7 +32,7 @@ export type PaymentStatus = z.infer<typeof paymentStatusEnum>
 // Billing frequency enum
 // ---------------------------------------------------------------------------
 
-export const billingFrequencyEnum = z.enum(['weekly', 'monthly', 'annually'])
+export const billingFrequencyEnum = z.enum(['weekly', 'monthly', 'quarterly', 'annually'])
 export type BillingFrequency = z.infer<typeof billingFrequencyEnum>
 
 // ---------------------------------------------------------------------------
@@ -72,9 +54,38 @@ export const BillingPlanSchema = z.object({
   staff_discount_pct: z.number().min(0).max(100).default(0),
   military_discount_pct: z.number().min(0).max(100).default(0),
   church_member_discount_pct: z.number().min(0).max(100).default(0),
+  is_active: z.boolean().default(true),
 })
 
 export type BillingPlanInput = z.infer<typeof BillingPlanSchema>
+
+export const UpdateBillingPlanSchema = BillingPlanSchema.partial().extend({
+  id: z.string().uuid('Invalid plan ID'),
+})
+export type UpdateBillingPlanInput = z.infer<typeof UpdateBillingPlanSchema>
+
+// ---------------------------------------------------------------------------
+// Record payment (admin-entered, not Stripe)
+// ---------------------------------------------------------------------------
+
+export const RecordPaymentSchema = z.object({
+  invoice_id: z.string().uuid('Invalid invoice ID'),
+  amount_cents: z.number().int().min(1, 'Amount must be at least 1 cent'),
+  method: paymentMethodEnum,
+  reference: z.string().max(200).optional(),
+  notes: z.string().max(2000).optional(),
+})
+export type RecordPaymentInput = z.infer<typeof RecordPaymentSchema>
+
+// ---------------------------------------------------------------------------
+// Void invoice
+// ---------------------------------------------------------------------------
+
+export const VoidInvoiceSchema = z.object({
+  invoice_id: z.string().uuid('Invalid invoice ID'),
+  reason: z.string().min(1, 'Reason is required').max(2000),
+})
+export type VoidInvoiceInput = z.infer<typeof VoidInvoiceSchema>
 
 // ---------------------------------------------------------------------------
 // Generate invoices
@@ -106,11 +117,7 @@ export type ProcessPaymentInput = z.infer<typeof ProcessPaymentSchema>
 // Manage subscription / enrollment
 // ---------------------------------------------------------------------------
 
-export const enrollmentStatusBillingEnum = z.enum([
-  'active',
-  'paused',
-  'cancelled',
-])
+export const enrollmentStatusBillingEnum = z.enum(['active', 'paused', 'cancelled'])
 
 export const ManageSubscriptionSchema = z.object({
   family_id: z.string().uuid('Invalid family ID'),

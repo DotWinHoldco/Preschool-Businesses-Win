@@ -1,4 +1,5 @@
 // @anchor: cca.subsidy.reconciliation
+import type { ReactNode } from 'react'
 import { CheckCircle, Clock, AlertTriangle, XCircle } from 'lucide-react'
 import { cn } from '@/lib/cn'
 
@@ -15,6 +16,7 @@ interface SubsidyClaim {
 interface ReconciliationBoardProps {
   claims: SubsidyClaim[]
   totalOutstanding: number
+  renderActions?: (claim: SubsidyClaim) => ReactNode
 }
 
 const statusConfig: Record<
@@ -52,7 +54,11 @@ function formatCurrency(cents: number): string {
   return `$${(cents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
 }
 
-export function ReconciliationBoard({ claims, totalOutstanding }: ReconciliationBoardProps) {
+export function ReconciliationBoard({
+  claims,
+  totalOutstanding,
+  renderActions,
+}: ReconciliationBoardProps) {
   const totalClaimed = claims.reduce((s, c) => s + c.total_claimed_cents, 0)
   const totalPaid = claims.reduce((s, c) => s + (c.total_paid_cents ?? 0), 0)
   const pendingClaims = claims.filter((c) => c.status === 'submitted' || c.status === 'draft')
@@ -126,6 +132,11 @@ export function ReconciliationBoard({ claims, totalOutstanding }: Reconciliation
               <th className="p-3 text-right font-medium text-[var(--color-muted-foreground)]">
                 Variance
               </th>
+              {renderActions && (
+                <th className="p-3 text-right font-medium text-[var(--color-muted-foreground)]">
+                  Actions
+                </th>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -174,6 +185,11 @@ export function ReconciliationBoard({ claims, totalOutstanding }: Reconciliation
                       ? (variance >= 0 ? '+' : '') + formatCurrency(variance)
                       : '-'}
                   </td>
+                  {renderActions && (
+                    <td className="p-3 text-right">
+                      <div className="flex justify-end">{renderActions(claim)}</div>
+                    </td>
+                  )}
                 </tr>
               )
             })}

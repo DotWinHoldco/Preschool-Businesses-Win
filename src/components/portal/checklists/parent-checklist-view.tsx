@@ -33,13 +33,24 @@ const ITEM_TYPE_ICONS: Record<ChecklistItemType, typeof CheckSquare> = {
   acknowledgment: FileCheck,
   form_field: CheckSquare,
   custom: CheckSquare,
+  check: CheckSquare,
+  numeric: CheckSquare,
+  text: CheckSquare,
+  photo: Upload,
 }
 
 export function ParentChecklistView({ assignments }: ParentChecklistViewProps) {
   if (assignments.length === 0) {
     return (
-      <div className="rounded-lg border p-8 text-center" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-card)' }}>
-        <CheckSquare size={40} className="mx-auto mb-3" style={{ color: 'var(--color-success, #10B981)' }} />
+      <div
+        className="rounded-lg border p-8 text-center"
+        style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-card)' }}
+      >
+        <CheckSquare
+          size={40}
+          className="mx-auto mb-3"
+          style={{ color: 'var(--color-success, #10B981)' }}
+        />
         <p className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
           All caught up! No outstanding checklist items.
         </p>
@@ -105,13 +116,18 @@ export function ParentChecklistView({ assignments }: ParentChecklistViewProps) {
                           : 'var(--color-muted)',
                       }}
                     >
-                      <Icon size={14} style={{ color: isDone ? 'white' : 'var(--color-muted-foreground)' }} />
+                      <Icon
+                        size={14}
+                        style={{ color: isDone ? 'white' : 'var(--color-muted-foreground)' }}
+                      />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p
                         className="text-sm font-medium truncate"
                         style={{
-                          color: isDone ? 'var(--color-muted-foreground)' : 'var(--color-foreground)',
+                          color: isDone
+                            ? 'var(--color-muted-foreground)'
+                            : 'var(--color-foreground)',
                           textDecoration: isDone ? 'line-through' : 'none',
                         }}
                       >
@@ -121,7 +137,10 @@ export function ParentChecklistView({ assignments }: ParentChecklistViewProps) {
                         )}
                       </p>
                       {item.description && (
-                        <p className="text-xs truncate" style={{ color: 'var(--color-muted-foreground)' }}>
+                        <p
+                          className="text-xs truncate"
+                          style={{ color: 'var(--color-muted-foreground)' }}
+                        >
                           {item.description}
                         </p>
                       )}
@@ -129,7 +148,10 @@ export function ParentChecklistView({ assignments }: ParentChecklistViewProps) {
                     {!isDone && (
                       <span
                         className="text-xs font-medium rounded px-2 py-1"
-                        style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-primary-foreground)' }}
+                        style={{
+                          backgroundColor: 'var(--color-primary)',
+                          color: 'var(--color-primary-foreground)',
+                        }}
                       >
                         Complete
                       </span>

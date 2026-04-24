@@ -159,9 +159,63 @@ export type CreateAuthorizedPickupInput = z.infer<typeof CreateAuthorizedPickupS
 
 export const UpdateAuthorizedPickupSchema = CreateAuthorizedPickupSchema.extend({
   id: z.string().uuid('Invalid pickup ID'),
-}).partial().required({ id: true })
+})
+  .partial()
+  .required({ id: true })
 
 export const RemoveAuthorizedPickupSchema = z.object({
   id: z.string().uuid('Invalid pickup ID'),
   student_id: z.string().uuid('Invalid student ID'),
 })
+
+// ---------------------------------------------------------------------------
+// Family documents (migration 0063)
+// ---------------------------------------------------------------------------
+
+export const familyDocumentTypeEnum = z.enum([
+  'insurance',
+  'tax_form',
+  'subsidy_docs',
+  'custody',
+  'other',
+])
+export type FamilyDocumentType = z.infer<typeof familyDocumentTypeEnum>
+
+export const AddFamilyDocumentSchema = z.object({
+  family_id: z.string().uuid('Invalid family ID'),
+  document_type: familyDocumentTypeEnum,
+  file_path: z.string().min(1, 'URL or path is required').max(2000),
+  file_name: z.string().max(300).optional(),
+  expiry_date: z.string().optional(),
+  notes: z.string().max(2000).optional(),
+})
+export type AddFamilyDocumentInput = z.infer<typeof AddFamilyDocumentSchema>
+
+export const DeleteFamilyDocumentSchema = z.object({
+  id: z.string().uuid('Invalid document ID'),
+})
+export type DeleteFamilyDocumentInput = z.infer<typeof DeleteFamilyDocumentSchema>
+
+// ---------------------------------------------------------------------------
+// Billing preferences (stored in tenant_settings)
+// ---------------------------------------------------------------------------
+
+export const billingChannelEnum = z.enum(['email', 'sms', 'in_app'])
+export const billingFrequencyEnum = z.enum(['monthly', 'weekly'])
+
+export const SaveFamilyBillingPreferencesSchema = z.object({
+  family_id: z.string().uuid('Invalid family ID'),
+  autopay: z.boolean(),
+  channel: billingChannelEnum,
+  frequency: billingFrequencyEnum,
+})
+export type SaveFamilyBillingPreferencesInput = z.infer<typeof SaveFamilyBillingPreferencesSchema>
+
+// ---------------------------------------------------------------------------
+// Pickup verification
+// ---------------------------------------------------------------------------
+
+export const VerifyPickupSchema = z.object({
+  pickup_id: z.string().uuid('Invalid pickup ID'),
+})
+export type VerifyPickupInput = z.infer<typeof VerifyPickupSchema>

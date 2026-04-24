@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { FamilyMembersManager } from '@/components/portal/families/family-members-manager'
 import { AuthorizedPickupList } from '@/components/portal/families/authorized-pickup-list'
+import { FamilyExtras } from '@/components/portal/families/family-extras'
+import { loadTenantSettings } from '@/lib/actions/settings/tenant-settings'
 
 export default async function FamilyDetailPage({
   params,
@@ -50,17 +52,19 @@ export default async function FamilyDetailPage({
     .eq('tenant_id', tenantId)
 
   // Fetch authorized pickups for all linked students
-  const studentIds = studentLinks?.map(
-    (sl) => ((sl as Record<string, unknown>).students as { id: string })?.id,
-  ).filter(Boolean) ?? []
+  const studentIds =
+    studentLinks
+      ?.map((sl) => ((sl as Record<string, unknown>).students as { id: string })?.id)
+      .filter(Boolean) ?? []
 
-  const { data: pickups } = studentIds.length > 0
-    ? await supabase
-        .from('authorized_pickups')
-        .select('*')
-        .eq('family_id', familyId)
-        .eq('tenant_id', tenantId)
-    : { data: [] }
+  const { data: pickups } =
+    studentIds.length > 0
+      ? await supabase
+          .from('authorized_pickups')
+          .select('*')
+          .eq('family_id', familyId)
+          .eq('tenant_id', tenantId)
+      : { data: [] }
 
   // Fetch all students for link dropdown
   const { data: allStudents } = await supabase
@@ -79,6 +83,28 @@ export default async function FamilyDetailPage({
     .eq('tenant_id', tenantId)
     .order('created_at', { ascending: false })
     .limit(20)
+
+  // Fetch family documents
+  const { data: familyDocs } = await supabase
+    .from('family_documents')
+    .select('id, document_type, file_path, file_name, notes, created_at')
+    .eq('family_id', familyId)
+    .eq('tenant_id', tenantId)
+    .order('created_at', { ascending: false })
+
+  // Load billing prefs from tenant_settings
+  const prefsRaw = (await loadTenantSettings(`family.${familyId}.billing`)) as Record<
+    string,
+    unknown
+  >
+  const billingPrefs = {
+    autopay: typeof prefsRaw.autopay === 'boolean' ? prefsRaw.autopay : false,
+    channel:
+      prefsRaw.channel === 'sms' || prefsRaw.channel === 'in_app'
+        ? (prefsRaw.channel as 'sms' | 'in_app')
+        : ('email' as const),
+    frequency: prefsRaw.frequency === 'weekly' ? ('weekly' as const) : ('monthly' as const),
+  }
 
   // Map data for components
   const mappedMembers = (members ?? []).map((m) => ({
@@ -176,12 +202,30 @@ export default async function FamilyDetailPage({
             <AuthorizedPickupList
               pickups={mappedPickups}
               studentName={
-                mappedStudentLinks.length === 1
-                  ? mappedStudentLinks[0].student_name
-                  : 'children'
+                mappedStudentLinks.length === 1 ? mappedStudentLinks[0].student_name : 'children'
               }
             />
           )}
+
+          {/* Documents + Billing Prefs + Pickup verification */}
+          <FamilyExtras
+            familyId={familyId}
+            documents={(familyDocs ?? []).map((d) => ({
+              id: d.id,
+              document_type: d.document_type,
+              file_path: d.file_path,
+              file_name: d.file_name ?? null,
+              notes: (d.notes as string | null) ?? null,
+              created_at: d.created_at,
+            }))}
+            billingPrefs={billingPrefs}
+            pickups={(pickups ?? []).map((p) => ({
+              id: p.id,
+              person_name: p.person_name,
+              photo_verified: p.photo_verified ?? false,
+              government_id_verified_at: p.government_id_verified_at ?? null,
+            }))}
+          />
         </div>
 
         {/* Sidebar */}
@@ -195,19 +239,29 @@ export default async function FamilyDetailPage({
               <dl className="space-y-3">
                 {family.billing_email && (
                   <div>
-                    <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">Billing Email</dt>
-                    <dd className="text-sm text-[var(--color-foreground)]">{family.billing_email}</dd>
+                    <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">
+                      Billing Email
+                    </dt>
+                    <dd className="text-sm text-[var(--color-foreground)]">
+                      {family.billing_email}
+                    </dd>
                   </div>
                 )}
                 {family.billing_phone && (
                   <div>
-                    <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">Billing Phone</dt>
-                    <dd className="text-sm text-[var(--color-foreground)]">{family.billing_phone}</dd>
+                    <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">
+                      Billing Phone
+                    </dt>
+                    <dd className="text-sm text-[var(--color-foreground)]">
+                      {family.billing_phone}
+                    </dd>
                   </div>
                 )}
                 {family.mailing_address_line1 && (
                   <div>
-                    <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">Mailing Address</dt>
+                    <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">
+                      Mailing Address
+                    </dt>
                     <dd className="text-sm text-[var(--color-foreground)]">
                       {family.mailing_address_line1}
                       {family.mailing_address_line2 && <br />}
@@ -219,7 +273,9 @@ export default async function FamilyDetailPage({
                   </div>
                 )}
                 <div>
-                  <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">Auto-pay</dt>
+                  <dt className="text-xs font-medium text-[var(--color-muted-foreground)]">
+                    Auto-pay
+                  </dt>
                   <dd>
                     <Badge variant={family.auto_pay_enabled ? 'success' : 'outline'} size="sm">
                       {family.auto_pay_enabled ? 'Enabled' : 'Disabled'}
@@ -236,7 +292,7 @@ export default async function FamilyDetailPage({
               <CardTitle>Notes</CardTitle>
             </CardHeader>
             <CardContent>
-              {(!notes || notes.length === 0) ? (
+              {!notes || notes.length === 0 ? (
                 <p className="text-sm text-[var(--color-muted-foreground)]">No notes</p>
               ) : (
                 <div className="space-y-3">
@@ -245,7 +301,9 @@ export default async function FamilyDetailPage({
                       <p className="text-xs text-[var(--color-muted-foreground)]">
                         {new Date(note.created_at).toLocaleDateString()} · {note.note_type}
                       </p>
-                      <p className="mt-0.5 text-sm text-[var(--color-foreground)]">{note.content}</p>
+                      <p className="mt-0.5 text-sm text-[var(--color-foreground)]">
+                        {note.content}
+                      </p>
                     </div>
                   ))}
                 </div>

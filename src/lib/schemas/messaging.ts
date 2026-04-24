@@ -8,12 +8,7 @@ import { z } from 'zod'
 // Conversation type enum
 // ---------------------------------------------------------------------------
 
-export const conversationTypeEnum = z.enum([
-  'direct',
-  'classroom',
-  'broadcast',
-  'staff_only',
-])
+export const conversationTypeEnum = z.enum(['direct', 'classroom', 'broadcast', 'staff_only'])
 
 export type ConversationType = z.infer<typeof conversationTypeEnum>
 
@@ -66,13 +61,37 @@ export const BroadcastMessageSchema = z.object({
 export type BroadcastMessageInput = z.infer<typeof BroadcastMessageSchema>
 
 // ---------------------------------------------------------------------------
+// Broadcast audience + channels (used by admin messaging broadcast form)
+// ---------------------------------------------------------------------------
+
+export const BroadcastAudienceEnum = z.enum(['all_parents', 'all_staff', 'classroom', 'custom'])
+export type BroadcastAudience = z.infer<typeof BroadcastAudienceEnum>
+
+export const BroadcastChannelEnum = z.enum(['in_app', 'email', 'sms', 'push'])
+export type BroadcastChannel = z.infer<typeof BroadcastChannelEnum>
+
+export const SendBroadcastSchema = z
+  .object({
+    audience: BroadcastAudienceEnum,
+    classroom_id: z.string().uuid().optional().nullable(),
+    subject: z.string().max(200).optional().nullable(),
+    body: z.string().min(1, 'Message body is required').max(10000),
+    channels: z
+      .array(BroadcastChannelEnum)
+      .min(1, 'At least one channel required')
+      .default(['in_app']),
+  })
+  .refine((data) => data.audience !== 'classroom' || !!data.classroom_id, {
+    message: 'classroom_id is required when audience is classroom',
+    path: ['classroom_id'],
+  })
+
+export type SendBroadcastInput = z.infer<typeof SendBroadcastSchema>
+
+// ---------------------------------------------------------------------------
 // Conversation member role
 // ---------------------------------------------------------------------------
 
-export const conversationMemberRoleEnum = z.enum([
-  'sender',
-  'recipient',
-  'admin',
-])
+export const conversationMemberRoleEnum = z.enum(['sender', 'recipient', 'admin'])
 
 export type ConversationMemberRole = z.infer<typeof conversationMemberRoleEnum>
