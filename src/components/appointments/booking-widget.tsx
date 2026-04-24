@@ -84,7 +84,7 @@ export function BookingWidget({
   useEffect(() => {
     let cancelled = false
     setLoadingMonth(true)
-    getAvailableDates(appointmentType.id, viewMonth.toISOString())
+    getAvailableDates(appointmentType.id, viewMonth.toISOString().slice(0, 10))
       .then((dates) => {
         if (!cancelled) setAvailableDates(dates)
       })
@@ -103,7 +103,7 @@ export function BookingWidget({
     }
     let cancelled = false
     setLoadingSlots(true)
-    getAvailableSlots(appointmentType.id, selectedDate.toISOString())
+    getAvailableSlots(appointmentType.id, selectedDate.toISOString().slice(0, 10))
       .then((s) => {
         if (!cancelled) setSlots(s)
       })
@@ -166,8 +166,12 @@ export function BookingWidget({
       <div className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] shadow-sm">
         <header className="border-b border-[var(--color-border)] p-6">
           <div className="flex items-center gap-3">
-            {branding?.logo_icon_path && (
-              <div className="h-10 w-10 rounded-full bg-[var(--color-muted)]" aria-hidden />
+            {(branding?.logo_path || branding?.logo_icon_path) && (
+              <img
+                src={branding.logo_path ?? branding.logo_icon_path!}
+                alt={branding.school_name ?? ''}
+                className="h-12 w-auto object-contain"
+              />
             )}
             <div>
               <div className="text-xs font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">

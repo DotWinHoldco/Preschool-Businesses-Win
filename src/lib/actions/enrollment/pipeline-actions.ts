@@ -8,6 +8,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
 import { assertRole } from '@/lib/auth/session'
 import { writeAudit } from '@/lib/audit'
+import { sendInterviewInvitationEmail } from '@/lib/email/appointment-emails'
 
 type ActionResult = { ok: boolean; error?: string }
 
@@ -117,6 +118,40 @@ export async function runPipelineAction(input: PipelineActionInput): Promise<Act
     after: { pipeline_stage: newStage, notes },
   })
 
+  if (action === 'accept_and_invite_interview' && application.parent_email) {
+    try {
+      const { data: tenant } = await supabase
+        .from('tenants')
+        .select('slug, domain')
+        .eq('id', tenantId)
+        .single()
+
+      const { data: tourType } = await supabase
+        .from('appointment_types')
+        .select('slug')
+        .eq('tenant_id', tenantId)
+        .eq('linked_pipeline_stage', 'interview_scheduled')
+        .eq('is_active', true)
+        .limit(1)
+        .maybeSingle()
+
+      if (tenant && tourType) {
+        const domain = tenant.domain ?? `${tenant.slug}.preschool.businesses.win`
+        const bookingUrl = `https://${domain}/${tenant.slug}/book/${tourType.slug}?application_id=${application_id}&name=${encodeURIComponent(`${application.parent_first_name} ${application.parent_last_name}`)}&email=${encodeURIComponent(application.parent_email)}`
+
+        await sendInterviewInvitationEmail({
+          tenantId,
+          to: application.parent_email,
+          parentName: application.parent_first_name ?? 'there',
+          studentName: `${application.student_first_name} ${application.student_last_name}`,
+          bookingUrl,
+        })
+      }
+    } catch (err) {
+      console.error('[Pipeline] Interview invitation email failed:', err)
+    }
+  }
+
   return { ok: true }
 }
 
@@ -136,15 +171,9 @@ export async function deleteApplication(applicationId: string): Promise<ActionRe
   if (!application) return { ok: false, error: 'Application not found' }
 
   // Delete related records first (order matters for FK constraints)
-  await supabase
-    .from('appointments')
-    .delete()
-    .eq('enrollment_application_id', applicationId)
+  await supabase.from('appointments').delete().eq('enrollment_application_id', applicationId)
 
-  await supabase
-    .from('application_pipeline_steps')
-    .delete()
-    .eq('application_id', applicationId)
+  await supabase.from('application_pipeline_steps').delete().eq('application_id', applicationId)
 
   const { error: deleteError } = await supabase
     .from('enrollment_applications')

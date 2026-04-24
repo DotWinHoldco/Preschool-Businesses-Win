@@ -28,7 +28,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           'min-h-[48px]',
           error
             ? 'border-[var(--color-destructive)] focus:ring-[var(--color-destructive)]'
-            : 'border-[var(--color-border)] focus:ring-[var(--color-primary)]',
+            : 'border-[var(--color-border)] focus:ring-[var(--color-ring,#2563eb)]',
           sizeClasses[inputSize],
           className,
         )}

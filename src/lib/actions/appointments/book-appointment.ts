@@ -6,6 +6,7 @@ import { BookAppointmentSchema, type BookAppointmentInput } from '@/lib/schemas/
 import { createAdminClient } from '@/lib/supabase/admin'
 import { writeAudit } from '@/lib/audit'
 import { computeAvailableSlots } from '@/lib/calendar/availability-calculator'
+import { sendBookingConfirmationEmail } from '@/lib/email/appointment-emails'
 
 interface BookResult {
   ok: boolean
@@ -27,6 +28,7 @@ interface AppointmentTypeRow {
   max_per_slot: number
   assigned_staff: string[] | null
   round_robin: boolean
+  location: string | null
   linked_pipeline_stage: string | null
   auto_confirm: boolean
   require_confirmation: boolean
@@ -95,7 +97,12 @@ export async function bookAppointment(input: BookAppointmentInput): Promise<Book
 
   let staffUserId = data.staff_user_id ?? match.staff_user_id ?? null
 
-  if (apptType.round_robin && !staffUserId && apptType.assigned_staff && apptType.assigned_staff.length > 0) {
+  if (
+    apptType.round_robin &&
+    !staffUserId &&
+    apptType.assigned_staff &&
+    apptType.assigned_staff.length > 0
+  ) {
     const weekAgo = new Date()
     weekAgo.setDate(weekAgo.getDate() - 7)
     const { data: counts } = await supabase
@@ -179,6 +186,21 @@ export async function bookAppointment(input: BookAppointmentInput): Promise<Book
       booked_by_email: data.booked_by_email,
     },
   })
+
+  try {
+    await sendBookingConfirmationEmail({
+      tenantId,
+      to: data.booked_by_email,
+      bookerName: data.booked_by_name,
+      appointmentTypeName: apptType.name,
+      startAt: startAt.toISOString(),
+      endAt: endAt.toISOString(),
+      location: apptType.location,
+      confirmationToken: (inserted.confirmation_token as string) ?? null,
+    })
+  } catch (err) {
+    console.error('[BookAppointment] Confirmation email failed:', err)
+  }
 
   return {
     ok: true,

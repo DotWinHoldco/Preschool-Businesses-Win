@@ -45,7 +45,7 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           autoResize && 'resize-none overflow-hidden',
           error
             ? 'border-[var(--color-destructive)] focus:ring-[var(--color-destructive)]'
-            : 'border-[var(--color-border)] focus:ring-[var(--color-primary)]',
+            : 'border-[var(--color-border)] focus:ring-[var(--color-ring,#2563eb)]',
           className,
         )}
         aria-invalid={error || undefined}

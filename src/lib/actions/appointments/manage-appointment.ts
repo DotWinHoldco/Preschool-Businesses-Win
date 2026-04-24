@@ -13,6 +13,7 @@ import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
 import { assertRole } from '@/lib/auth/session'
 import { writeAudit } from '@/lib/audit'
 import { computeAvailableSlots } from '@/lib/calendar/availability-calculator'
+import { sendAppointmentCancelledEmail } from '@/lib/email/appointment-emails'
 
 type ActionResult = { ok: boolean; id?: string; error?: string }
 
@@ -65,7 +66,7 @@ export async function cancelAppointment(input: CancelAppointmentInput): Promise<
 
   const { data: appt } = await supabase
     .from('appointments')
-    .select('id, status')
+    .select('id, status, booked_by_name, booked_by_email, start_at, appointment_types(name)')
     .eq('id', id)
     .eq('tenant_id', tenantId)
     .single()
@@ -97,6 +98,22 @@ export async function cancelAppointment(input: CancelAppointmentInput): Promise<
     entityId: id,
     after: { status, reason },
   })
+
+  try {
+    const typeName =
+      (appt.appointment_types as unknown as { name: string } | null)?.name ?? 'Appointment'
+    await sendAppointmentCancelledEmail({
+      tenantId,
+      to: appt.booked_by_email as string,
+      bookerName: appt.booked_by_name as string,
+      appointmentTypeName: typeName,
+      startAt: appt.start_at as string,
+      reason: reason ?? null,
+      cancelledBy: cancelled_by,
+    })
+  } catch (err) {
+    console.error('[CancelAppointment] Cancellation email failed:', err)
+  }
 
   return { ok: true, id }
 }
