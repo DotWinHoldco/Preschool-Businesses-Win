@@ -14,6 +14,7 @@ import { AnalyticsSiteUpdateSchema, type AnalyticsSiteUpdate } from '@/lib/schem
 interface Result {
   ok: boolean
   error?: string
+  debug?: string
 }
 
 export async function updateAnalyticsSite(input: unknown): Promise<Result> {
@@ -25,11 +26,21 @@ export async function updateAnalyticsSite(input: unknown): Promise<Result> {
     return { ok: false, error: 'Not authorized' }
   }
 
+  const rawConsent =
+    typeof input === 'object' && input !== null
+      ? (input as Record<string, unknown>).consent_banner_enabled
+      : 'missing'
+
   const parsed = AnalyticsSiteUpdateSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' }
   }
   const data: AnalyticsSiteUpdate = parsed.data
+
+  console.log('[analytics/update-site] incoming consent_banner_enabled:', {
+    raw: rawConsent,
+    parsed: data.consent_banner_enabled,
+  })
 
   const tenantId = await getTenantId()
   const supabase = createAdminClient()
@@ -71,6 +82,14 @@ export async function updateAnalyticsSite(input: unknown): Promise<Result> {
     return { ok: false, error: 'Save failed' }
   }
 
+  // Read it back so we can confirm what actually landed in the DB.
+  const { data: verify } = await supabase
+    .from('analytics_sites')
+    .select('consent_banner_enabled, is_active, updated_at')
+    .eq('id', data.id)
+    .maybeSingle()
+  console.log('[analytics/update-site] post-write row:', verify)
+
   await writeAudit(supabase, {
     tenantId,
     actorId: session.user.id,
@@ -91,5 +110,8 @@ export async function updateAnalyticsSite(input: unknown): Promise<Result> {
   revalidatePath('/portal/admin/analytics/traffic/install')
   revalidatePath('/portal/admin/analytics/traffic')
 
-  return { ok: true }
+  return {
+    ok: true,
+    debug: `consent raw=${String(rawConsent)} parsed=${String(data.consent_banner_enabled)} saved=${String(verify?.consent_banner_enabled)}`,
+  }
 }

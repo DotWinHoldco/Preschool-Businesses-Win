@@ -9,6 +9,9 @@ import { Card, CardContent } from '@/components/ui/card'
 import { TrafficTabs } from '@/components/portal/analytics/traffic-tabs'
 import { InstallForm } from './install-form'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function TrafficInstallPage() {
   const headerStore = await headers()
   const tenantId = headerStore.get('x-tenant-id')

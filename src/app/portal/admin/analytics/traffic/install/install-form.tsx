@@ -83,7 +83,11 @@ export function InstallForm({ site, collectorBase }: Props) {
     startTransition(async () => {
       const result = await updateAnalyticsSite(clean)
       if (result.ok) {
-        toast({ variant: 'success', title: 'Saved', description: 'Analytics site updated.' })
+        toast({
+          variant: 'success',
+          title: 'Saved',
+          description: result.debug ?? 'Analytics site updated.',
+        })
       } else {
         toast({ variant: 'error', title: 'Save failed', description: result.error })
       }
