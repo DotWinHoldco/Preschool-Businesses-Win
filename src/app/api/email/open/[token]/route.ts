@@ -3,6 +3,7 @@
 // path (with .gif suffix tolerated by trimming).
 
 import { createAdminClient } from '@/lib/supabase/admin'
+import { emitEvent } from '@/lib/crm/events'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -40,6 +41,13 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
           title: `Opened: ${send.subject}`,
           related_entity_type: 'email_send',
           related_entity_id: send.id,
+        })
+        await emitEvent({
+          tenantId: send.tenant_id as string,
+          contactId: send.contact_id as string,
+          kind: 'email.opened',
+          payload: { send_id: send.id, subject: send.subject },
+          source: 'tracking_pixel',
         })
       }
     }

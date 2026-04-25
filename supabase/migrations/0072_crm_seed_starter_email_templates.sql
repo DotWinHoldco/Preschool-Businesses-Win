@@ -1,0 +1,7 @@
+-- 0072_crm_seed_starter_email_templates.sql — applied via apply_migration.
+-- Seeds 12 starter email templates for the CCA tenant, keyed by slug so the
+-- automation-template apply step resolves them at one-click install time.
+-- Idempotent (on conflict do nothing). Templates: welcome_lead, tour_booked,
+-- app_abandoned, app_submitted, app_approved, enrollment_welcome,
+-- classroom_intro, birthday_today, transition_upcoming, waitlist_added,
+-- reenrollment_open, reengage_dormant.

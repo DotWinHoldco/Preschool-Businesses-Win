@@ -5,6 +5,7 @@
 
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { emitEvent } from '@/lib/crm/events'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -97,6 +98,13 @@ export async function POST(req: Request) {
           related_entity_type: 'email_send',
           related_entity_id: send.id,
         })
+        await emitEvent({
+          tenantId: send.tenant_id as string,
+          contactId: send.contact_id as string,
+          kind: 'email.bounced',
+          payload: { send_id: send.id, subject: send.subject, reason },
+          source: 'resend_webhook',
+        })
       }
       break
     }
@@ -130,6 +138,13 @@ export async function POST(req: Request) {
           title: `Complaint: ${send.subject}`,
           related_entity_type: 'email_send',
           related_entity_id: send.id,
+        })
+        await emitEvent({
+          tenantId: send.tenant_id as string,
+          contactId: send.contact_id as string,
+          kind: 'email.unsubscribed',
+          payload: { send_id: send.id, reason: 'spam_complaint' },
+          source: 'resend_webhook',
         })
       }
       break

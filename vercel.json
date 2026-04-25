@@ -48,6 +48,10 @@
     {
       "path": "/api/cron/email-drip-tick",
       "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/automations-tick",
+      "schedule": "* * * * *"
     }
   ]
 }

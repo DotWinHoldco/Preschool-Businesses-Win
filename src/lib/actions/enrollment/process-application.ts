@@ -5,6 +5,8 @@ import { ProcessApplicationSchema, type ProcessApplicationInput } from '@/lib/sc
 import { createTenantServerClient } from '@/lib/supabase/server'
 import { getTenantId, getActorId } from '@/lib/actions/get-tenant-id'
 import { assertRole } from '@/lib/auth/session'
+import { emitEvent } from '@/lib/crm/events'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export type ProcessApplicationState = {
   ok: boolean
@@ -146,6 +148,59 @@ export async function processApplication(
     before_data: { status: application.triage_status },
     after_data: { status: newStatus, notes: data.notes },
   })
+
+  // Resolve the contact id by email so automations can fire on the application owner.
+  let contactId: string | null = null
+  if (application.parent_email) {
+    const admin = createAdminClient()
+    const { data: rpcRes } = await admin.rpc('ensure_contact_for_email', {
+      p_tenant_id: tenantId,
+      p_email: application.parent_email as string,
+      p_first_name: (application.parent_first_name as string | null) ?? null,
+      p_last_name: (application.parent_last_name as string | null) ?? null,
+      p_phone: (application.parent_phone as string | null) ?? null,
+      p_source: 'application',
+      p_source_detail: null,
+    })
+    contactId = (rpcRes as string | null) ?? null
+  }
+
+  if (data.action === 'approve') {
+    await emitEvent({
+      tenantId,
+      contactId,
+      kind: 'application.approved',
+      payload: {
+        application_id: data.application_id,
+        student_id: studentId,
+        family_id: familyId,
+      },
+      source: 'admin_console',
+    })
+    await emitEvent({
+      tenantId,
+      contactId,
+      kind: 'enrollment.completed',
+      payload: { application_id: data.application_id, student_id: studentId },
+      source: 'admin_console',
+    })
+  } else if (data.action === 'reject') {
+    await emitEvent({
+      tenantId,
+      contactId,
+      kind: 'application.declined',
+      payload: { application_id: data.application_id },
+      source: 'admin_console',
+    })
+  } else if (data.action === 'waitlist') {
+    await emitEvent({
+      tenantId,
+      contactId,
+      kind: 'waitlist.added',
+      payload: { application_id: data.application_id },
+      source: 'admin_console',
+    })
+  }
 
   return { ok: true, student_id: studentId, family_id: familyId }
 }

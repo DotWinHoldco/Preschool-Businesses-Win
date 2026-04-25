@@ -15,6 +15,7 @@ import { getTenantId } from '@/lib/actions/get-tenant-id'
 import { writeAudit } from '@/lib/audit'
 import { createApplicantAccount } from './create-applicant-account'
 import { emitServerConversion } from '@/lib/analytics/emit'
+import { emitEvent as crmEmit } from '@/lib/crm/events'
 
 interface SubmitResult {
   ok: boolean
@@ -241,6 +242,35 @@ export async function submitSystemEnrollment(raw: SystemEnrollmentData): Promise
           how_heard: data.how_heard,
         },
       })
+    }
+
+    // CRM emit: ensure contact + fire application.submitted.
+    try {
+      const { data: rpcRes } = await supabase.rpc('ensure_contact_for_email', {
+        p_tenant_id: tenantId,
+        p_email: data.parent_email,
+        p_first_name: data.parent_first_name,
+        p_last_name: data.parent_last_name,
+        p_phone: data.parent_phone,
+        p_source: 'application',
+        p_source_detail: 'enrollment_form',
+      })
+      const contactId = (rpcRes as string | null) ?? null
+      for (const appId of applicationIds) {
+        await crmEmit({
+          tenantId,
+          contactId,
+          kind: 'application.submitted',
+          payload: {
+            application_id: appId,
+            child_count: data.children.length,
+            how_heard: data.how_heard,
+          },
+          source: 'enrollment_form',
+        })
+      }
+    } catch (emitErr) {
+      console.error('[Enrollment] CRM emit failed (non-blocking):', emitErr)
     }
 
     // Mark any in-progress draft for this email as submitted so the nurture

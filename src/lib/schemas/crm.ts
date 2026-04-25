@@ -132,3 +132,54 @@ export const NoteSchema = z.object({
   contact_id: z.string().uuid(),
   body: z.string().trim().min(1).max(4000),
 })
+
+const AutomationActionSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('send_email'), template_id: z.string().uuid() }),
+  z.object({ type: z.literal('add_tag'), tag_id: z.string().uuid() }),
+  z.object({ type: z.literal('remove_tag'), tag_id: z.string().uuid() }),
+  z.object({ type: z.literal('set_lifecycle'), stage: z.enum(LIFECYCLE_STAGES) }),
+  z.object({ type: z.literal('add_to_audience'), audience_id: z.string().uuid() }),
+  z.object({ type: z.literal('enroll_in_drip'), campaign_id: z.string().uuid() }),
+  z.object({
+    type: z.literal('create_task'),
+    title: z.string().trim().min(1).max(200),
+    description: z.string().trim().max(2000).optional(),
+  }),
+])
+
+const AutomationConditionRule = z.object({
+  field: z.enum([
+    'contact.lifecycle_stage',
+    'contact.has_tag',
+    'contact.email_subscribed',
+    'contact.source',
+    'payload.equals',
+  ]),
+  op: z.enum(['equals', 'not_equals', 'in', 'not_in', 'is_true', 'is_false', 'has_any', 'has_all']),
+  value: z.unknown().optional(),
+  key: z.string().max(80).optional(),
+})
+
+export const AutomationUpsertSchema = z.object({
+  id: z.string().uuid().optional(),
+  name: z.string().trim().min(1).max(200),
+  description: z.string().trim().max(1000).optional().nullable(),
+  trigger_kind: z.string().min(1).max(120),
+  conditions_json: z
+    .object({
+      match: z.enum(['all', 'any']).default('all'),
+      rules: z.array(AutomationConditionRule).default([]),
+    })
+    .default({ match: 'all', rules: [] }),
+  actions_json: z.array(AutomationActionSchema).min(1, 'At least one action is required.'),
+  is_enabled: z.boolean().default(true),
+  cooldown_minutes: z
+    .number()
+    .int()
+    .min(0)
+    .max(60 * 24 * 30)
+    .default(0),
+  max_runs_per_contact: z.number().int().min(1).max(1000).optional().nullable(),
+  template_key: z.string().trim().max(80).optional().nullable(),
+})
+export type AutomationUpsertInput = z.infer<typeof AutomationUpsertSchema>

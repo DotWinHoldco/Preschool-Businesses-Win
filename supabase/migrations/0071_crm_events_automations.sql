@@ -1,0 +1,5 @@
+-- 0071_crm_events_automations.sql — applied via apply_migration.
+-- Tables: crm_events (append-only event log), crm_automations
+-- (trigger + conditions + action steps), crm_automation_runs
+-- (per-event execution record with unique dedupe on automation+event).
+-- Tenant-scoped RLS on every table.

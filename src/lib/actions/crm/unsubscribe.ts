@@ -2,6 +2,7 @@
 
 // @anchor: cca.crm.unsubscribe
 import { createAdminClient } from '@/lib/supabase/admin'
+import { emitEvent } from '@/lib/crm/events'
 
 export async function unsubscribeViaToken(token: string): Promise<{ ok: boolean; error?: string }> {
   if (!token || token.length < 8) return { ok: false, error: 'invalid_token' }
@@ -44,6 +45,13 @@ export async function unsubscribeViaToken(token: string): Promise<{ ok: boolean;
       title: 'Unsubscribed from emails',
       related_entity_type: 'email_send',
       related_entity_id: send.id,
+    })
+    await emitEvent({
+      tenantId: send.tenant_id as string,
+      contactId: send.contact_id as string,
+      kind: 'email.unsubscribed',
+      payload: { send_id: send.id, reason: 'one_click_unsubscribe' },
+      source: 'unsubscribe_link',
     })
   }
   return { ok: true }

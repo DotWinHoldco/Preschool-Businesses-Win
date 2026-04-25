@@ -1,6 +1,7 @@
 // @anchor: cca.crm.email-click
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { emitEvent } from '@/lib/crm/events'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -60,6 +61,13 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
         related_entity_type: 'email_send',
         related_entity_id: send.id,
         payload: { url: link.original_url },
+      })
+      await emitEvent({
+        tenantId: link.tenant_id as string,
+        contactId: send.contact_id as string,
+        kind: 'email.clicked',
+        payload: { send_id: send.id, subject: send.subject, url: link.original_url },
+        source: 'click_tracker',
       })
     }
   }

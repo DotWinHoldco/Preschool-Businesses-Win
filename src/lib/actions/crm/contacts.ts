@@ -17,6 +17,7 @@ import {
   TagAssignSchema,
   TagCreateSchema,
 } from '@/lib/schemas/crm'
+import { emitEvent } from '@/lib/crm/events'
 
 interface Result {
   ok: boolean
@@ -129,6 +130,27 @@ export async function createContact(input: unknown): Promise<Result> {
       },
     })
 
+    await emitEvent({
+      tenantId,
+      contactId,
+      kind: 'contact.created',
+      payload: {
+        source: data.source,
+        lifecycle_stage: data.lifecycle_stage,
+        email: data.email,
+      },
+      source: 'admin_console',
+    })
+    if (data.lifecycle_stage === 'lead') {
+      await emitEvent({
+        tenantId,
+        contactId,
+        kind: 'lead.created',
+        payload: { source: data.source },
+        source: 'admin_console',
+      })
+    }
+
     revalidatePath('/portal/admin/crm/contacts')
     revalidatePath(`/portal/admin/crm/contacts/${contactId}`)
     return { ok: true, id: contactId }
@@ -190,7 +212,21 @@ export async function updateContact(input: unknown): Promise<Result> {
       p_contact_id: data.id,
       p_target: data.lifecycle_stage,
     })
+    await emitEvent({
+      tenantId,
+      contactId: data.id,
+      kind: 'contact.lifecycle_changed',
+      payload: { from: existing.lifecycle_stage, to: data.lifecycle_stage },
+      source: 'admin_console',
+    })
   }
+  await emitEvent({
+    tenantId,
+    contactId: data.id,
+    kind: 'contact.updated',
+    payload: { fields: Object.keys(patch) },
+    source: 'admin_console',
+  })
 
   await writeAudit(supabase, {
     tenantId,
@@ -337,6 +373,14 @@ export async function addContactNote(input: unknown): Promise<Result> {
     .update({ last_activity_at: new Date().toISOString() })
     .eq('id', contact_id)
 
+  await emitEvent({
+    tenantId,
+    contactId: contact_id,
+    kind: 'note.added',
+    payload: { note_id: inserted.id as string, preview: body.slice(0, 240) },
+    source: 'admin_console',
+  })
+
   revalidatePath(`/portal/admin/crm/contacts/${contact_id}`)
   return { ok: true, id: inserted.id as string }
 }
@@ -476,6 +520,14 @@ export async function addTagToContact(input: unknown): Promise<Result> {
     related_entity_id: parsed.data.tag_id,
   })
 
+  await emitEvent({
+    tenantId,
+    contactId: parsed.data.contact_id,
+    kind: 'contact.tag_added',
+    payload: { tag_id: parsed.data.tag_id, tag_label: t.label },
+    source: 'admin_console',
+  })
+
   revalidatePath(`/portal/admin/crm/contacts/${parsed.data.contact_id}`)
   return { ok: true }
 }
@@ -521,6 +573,14 @@ export async function removeTagFromContact(input: unknown): Promise<Result> {
     actor_user_id: session.user.id,
     related_entity_type: 'contact_tag',
     related_entity_id: parsed.data.tag_id,
+  })
+
+  await emitEvent({
+    tenantId,
+    contactId: parsed.data.contact_id,
+    kind: 'contact.tag_removed',
+    payload: { tag_id: parsed.data.tag_id, tag_label: t?.label ?? null },
+    source: 'admin_console',
   })
 
   revalidatePath(`/portal/admin/crm/contacts/${parsed.data.contact_id}`)
