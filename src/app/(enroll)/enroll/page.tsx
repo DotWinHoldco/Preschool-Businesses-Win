@@ -1,7 +1,24 @@
 import { createAdminClient } from '@/lib/supabase/admin'
+import { loadDraftByToken } from '@/lib/actions/enrollment/drafts'
 import { EnrollmentPageClient } from './enrollment-page-client'
 
-export default async function EnrollPage() {
+export const dynamic = 'force-dynamic'
+
+interface EnrollSearchParams {
+  draft?: string
+}
+
+export default async function EnrollPage({
+  searchParams,
+}: {
+  searchParams: Promise<EnrollSearchParams>
+}) {
+  const sp = await searchParams
+  const draftToken = typeof sp?.draft === 'string' ? sp.draft : null
+  const loadedDraft = draftToken ? await loadDraftByToken(draftToken) : null
+  const initialDraft = loadedDraft?.ok ? loadedDraft.draft : null
+  const draftError = loadedDraft && !loadedDraft.ok ? loadedDraft.error : null
+
   let form: {
     id: string
     tenant_id: string
@@ -100,6 +117,8 @@ export default async function EnrollPage() {
         fields={[]}
         tenantName={tenantName}
         analyticsSiteKey={analyticsSiteKey}
+        initialDraft={initialDraft ?? null}
+        draftError={draftError ?? null}
       />
     )
   }
@@ -121,6 +140,8 @@ export default async function EnrollPage() {
       fields={fields}
       tenantName={tenantName}
       analyticsSiteKey={analyticsSiteKey}
+      initialDraft={initialDraft ?? null}
+      draftError={draftError ?? null}
     />
   )
 }

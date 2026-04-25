@@ -243,6 +243,23 @@ export async function submitSystemEnrollment(raw: SystemEnrollmentData): Promise
       })
     }
 
+    // Mark any in-progress draft for this email as submitted so the nurture
+    // sequence stops dead and the lead never lands on the abandoned list.
+    try {
+      const cleanEmail = data.parent_email.trim().toLowerCase()
+      await supabase
+        .from('enrollment_drafts')
+        .update({
+          submitted_at: new Date().toISOString(),
+          application_id: applicationIds[0] ?? null,
+        })
+        .eq('tenant_id', tenantId)
+        .eq('parent_email', cleanEmail)
+        .is('submitted_at', null)
+    } catch (draftErr) {
+      console.error('[Enrollment] Draft cleanup failed (non-blocking):', draftErr)
+    }
+
     return {
       ok: true,
       response_id: responseId,

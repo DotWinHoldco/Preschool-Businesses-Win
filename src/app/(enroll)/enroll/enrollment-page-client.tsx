@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import {
@@ -12,12 +12,15 @@ import {
   Trash2,
   Save,
   ArrowUpRight,
+  X,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { WizardFeeNotice } from '@/components/forms/wizard/fee-notice'
 import { evaluateLogicRules } from '@/lib/forms/logic-engine'
 import { submitSystemEnrollment } from '@/lib/actions/enrollment/submit-system-enrollment'
+import { autoSaveDraft } from '@/lib/actions/enrollment/drafts'
 import type { SystemEnrollmentData } from '@/lib/schemas/enrollment'
+import { SaveDraftModal } from './save-draft-modal'
 
 const WEBSITE_URL = 'https://crandallchristianacademy.com'
 const PHONE = '(945) 226-6584'
@@ -52,6 +55,16 @@ interface WizardSection {
   iterate_over_field_key?: string | null
 }
 
+interface InitialDraft {
+  id: string
+  values: Record<string, unknown>
+  current_step: number
+  parent_first_name: string | null
+  parent_last_name: string | null
+  parent_email: string
+  form_id: string | null
+}
+
 interface Props {
   formId: string
   title: string
@@ -65,6 +78,8 @@ interface Props {
   fields: WizardField[]
   tenantName: string
   analyticsSiteKey?: string | null
+  initialDraft?: InitialDraft | null
+  draftError?: string | null
 }
 
 const LAYOUT_TYPES = new Set([
@@ -90,6 +105,8 @@ export function EnrollmentPageClient(props: Props) {
     fields,
     tenantName,
     analyticsSiteKey,
+    initialDraft,
+    draftError,
   } = props
 
   const [analyticsIds, setAnalyticsIds] = useState<{
@@ -177,13 +194,23 @@ export function EnrollmentPageClient(props: Props) {
     }))
   }, [sections, fields])
 
-  const [step, setStep] = useState(0)
-  const [values, setValues] = useState<Record<string, unknown>>({})
+  // Hydrate from a server-side magic-link draft if one was loaded.
+  const initialValues = useMemo<Record<string, unknown>>(() => {
+    if (initialDraft) return initialDraft.values ?? {}
+    return {}
+  }, [initialDraft])
+  const initialStep = initialDraft?.current_step ?? 0
+
+  const [step, setStep] = useState(initialStep)
+  const [values, setValues] = useState<Record<string, unknown>>(initialValues)
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
-  const [saveToast, setSaveToast] = useState(false)
+  const [saveToast, setSaveToast] = useState<string | null>(null)
   const [hasDraft, setHasDraft] = useState(false)
+  const [resumedBanner, setResumedBanner] = useState(!!initialDraft)
+  const [draftErrorBanner, setDraftErrorBanner] = useState<string | null>(draftError ?? null)
+  const [saveModalOpen, setSaveModalOpen] = useState(false)
   const noForm = !formId
 
   useEffect(() => {
@@ -223,18 +250,61 @@ export function EnrollmentPageClient(props: Props) {
     setHasDraft(false)
   }, [])
 
-  const handleSave = useCallback(() => {
+  // Localstorage save retained as a quick "Save Progress" feedback when the
+  // visitor hasn't entered their email yet — the modal handles the email path.
+  const handleLocalSave = useCallback(() => {
     try {
       localStorage.setItem(
         STORAGE_KEY,
         JSON.stringify({ formId, step, values, savedAt: new Date().toISOString() }),
       )
-      setSaveToast(true)
-      setTimeout(() => setSaveToast(false), 2500)
+      setSaveToast('Saved on this device')
+      setTimeout(() => setSaveToast(null), 2500)
     } catch {
       /* ignore */
     }
   }, [formId, step, values])
+
+  const handleSave = useCallback(() => {
+    setSaveModalOpen(true)
+  }, [])
+
+  // ---- silent server-backed autosave ------------------------------------
+  // Watches form values; once we have a real email, we upsert a draft on the
+  // server every 1500ms of idle. No emails sent here.
+  const lastAutoSaveRef = useRef<string>('')
+  useEffect(() => {
+    if (noForm) return
+    const email = (values.parent_email as string | undefined)?.trim().toLowerCase() ?? ''
+    if (!email || !email.includes('@')) return
+    const firstName = (values.parent_first_name as string | undefined) ?? null
+    const lastName = (values.parent_last_name as string | undefined) ?? null
+    const phone = (values.parent_phone as string | undefined) ?? null
+    const visitorId =
+      typeof document !== 'undefined'
+        ? (document.cookie.match(/(?:^|; )_pbwa_vid=([^;]*)/)?.[1] ?? null)
+        : null
+    const visitor_id = visitorId ? decodeURIComponent(visitorId) : null
+    const fingerprint = JSON.stringify({ email, firstName, lastName, phone, step, values })
+    if (fingerprint === lastAutoSaveRef.current) return
+    const handle = setTimeout(() => {
+      lastAutoSaveRef.current = fingerprint
+      autoSaveDraft({
+        email,
+        first_name: firstName,
+        last_name: lastName,
+        phone,
+        values,
+        current_step: step,
+        form_id: formId,
+        analytics_visitor_id: visitor_id,
+        source: 'enroll_page',
+      }).catch(() => {
+        /* never break the form for autosave */
+      })
+    }, 1500)
+    return () => clearTimeout(handle)
+  }, [values, step, formId, noForm])
 
   const currentStep = steps[step]
   const isLast = step === steps.length - 1
@@ -410,16 +480,57 @@ export function EnrollmentPageClient(props: Props) {
       >
         <span className="flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4" />
-          Progress saved!
+          {saveToast ?? ''}
         </span>
       </div>
 
-      {/* === RESUME DRAFT BANNER === */}
-      {hasDraft && !submitted && (
-        <div className="bg-cca-blue/5 border-b border-cca-blue/10">
-          <div className="max-w-2xl mx-auto px-5 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-3">
+      {/* === RESUMED-FROM-MAGIC-LINK BANNER === */}
+      {resumedBanner && !submitted && (
+        <div className="bg-cca-green/10 border-b border-cca-green/30">
+          <div className="max-w-3xl mx-auto px-5 py-3 flex items-center justify-between gap-3">
             <p className="font-questrial text-sm text-cca-ink">
-              You have a saved application. Continue where you left off?
+              <span className="font-kollektif text-cca-green">Welcome back!</span> Your application
+              is right where you left it.
+            </p>
+            <button
+              onClick={() => setResumedBanner(false)}
+              className="text-cca-ink/40 hover:text-cca-ink/80 transition-colors"
+              aria-label="Dismiss"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* === DRAFT ERROR BANNER (expired / invalid token) === */}
+      {draftErrorBanner && (
+        <div className="bg-amber-50 border-b border-amber-200">
+          <div className="max-w-3xl mx-auto px-5 py-3 flex items-center justify-between gap-3">
+            <p className="font-questrial text-sm text-amber-900">
+              {draftErrorBanner === 'expired'
+                ? "This application link has expired. Don't worry — you can start fresh below."
+                : draftErrorBanner === 'already_submitted'
+                  ? "Looks like this application was already submitted. We'll be in touch soon!"
+                  : "We couldn't find a saved application for that link. Start a fresh one below."}
+            </p>
+            <button
+              onClick={() => setDraftErrorBanner(null)}
+              className="text-amber-900/40 hover:text-amber-900/80 transition-colors"
+              aria-label="Dismiss"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* === LEGACY LOCAL DRAFT BANNER (only shows if no server draft loaded) === */}
+      {hasDraft && !submitted && !initialDraft && (
+        <div className="bg-cca-blue/5 border-b border-cca-blue/10">
+          <div className="max-w-3xl mx-auto px-5 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p className="font-questrial text-sm text-cca-ink">
+              You have a saved application on this device. Continue where you left off?
             </p>
             <div className="flex gap-2">
               <button
@@ -671,6 +782,34 @@ export function EnrollmentPageClient(props: Props) {
           )}
         </div>
       </main>
+
+      {/* === SAVE & EMAIL MODAL === */}
+      {saveModalOpen && (
+        <SaveDraftModal
+          tenantName={tenantName}
+          formId={formId}
+          values={values}
+          step={step}
+          prefillFirstName={
+            (values.parent_first_name as string | undefined) ??
+            initialDraft?.parent_first_name ??
+            ''
+          }
+          prefillLastName={
+            (values.parent_last_name as string | undefined) ?? initialDraft?.parent_last_name ?? ''
+          }
+          prefillEmail={
+            (values.parent_email as string | undefined) ?? initialDraft?.parent_email ?? ''
+          }
+          onClose={() => setSaveModalOpen(false)}
+          onLocalSaveFallback={handleLocalSave}
+          onValuesPatch={(patch) => setValues((prev) => ({ ...prev, ...patch }))}
+          onSent={(msg) => {
+            setSaveToast(msg)
+            setTimeout(() => setSaveToast(null), 3500)
+          }}
+        />
+      )}
 
       {/* === FOOTER === */}
       <footer className="pb-10 pt-4 px-6">

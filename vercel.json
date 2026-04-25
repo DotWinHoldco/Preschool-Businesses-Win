@@ -40,6 +40,10 @@
     {
       "path": "/api/cron/analytics-forward",
       "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/enrollment-nurture",
+      "schedule": "*/30 * * * *"
     }
   ]
 }
