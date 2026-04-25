@@ -1,0 +1,5 @@
+-- 0070_crm_email_infra.sql — see live applied via apply_migration.
+-- Tables: tenant_email_settings, email_templates, email_sends,
+-- email_links, email_suppressions. Tenant-scoped RLS on every table.
+-- Seeds CCA tenant_email_settings with the verified Resend domain
+-- mail.crandallchristianacademy.com.
