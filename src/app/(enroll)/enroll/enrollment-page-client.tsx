@@ -368,16 +368,13 @@ export function EnrollmentPageClient(props: Props) {
       {!submitted && !noForm && (
         <section className="relative pt-10 md:pt-14 pb-4 md:pb-6 px-5">
           <div className="max-w-3xl mx-auto text-center">
-            {/* Sized at ~native resolution (200px-wide source) so it stays crisp.
-                Swap for a hi-res SVG/PNG when provided to go larger. */}
             <Image
-              src="/cca-assets/cca-full-with-tagline.png"
+              src="/cca-assets/full_logo_tag.png"
               alt="Crandall Christian Academy — Where Little Minds Shine"
-              width={200}
-              height={89}
-              className="h-20 md:h-24 w-auto mx-auto mb-6 md:mb-8"
+              width={900}
+              height={401}
+              className="h-44 md:h-56 w-auto mx-auto mb-6 md:mb-8 drop-shadow-[0_12px_32px_rgba(59,112,176,0.15)]"
               priority
-              unoptimized
             />
             <h1 className="font-kollektif text-2xl md:text-4xl text-cca-ink mb-3 text-balance">
               We&rsquo;re so glad you&rsquo;re here.
