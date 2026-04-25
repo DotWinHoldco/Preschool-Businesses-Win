@@ -46,10 +46,7 @@ import {
   CalendarCheck,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
-import {
-  PLATFORM_SHORT_NAME,
-  PLATFORM_LOGO_ICON_WHITE,
-} from '@/lib/constants'
+import { PLATFORM_SHORT_NAME, PLATFORM_LOGO_ICON_WHITE } from '@/lib/constants'
 import type { TenantFeature } from '@/lib/tenant/features'
 import { hasTenantFeature } from '@/lib/tenant/features'
 
@@ -101,9 +98,7 @@ interface SidebarProps {
 /* Navigation config — role-gated, feature-flag-gated                  */
 /* ------------------------------------------------------------------ */
 
-const ADMIN_STAFF_ROLES: UserRole[] = [
-  'cca_owner', 'cca_admin', 'lead_teacher', 'teacher', 'aide',
-]
+const ADMIN_STAFF_ROLES: UserRole[] = ['cca_owner', 'cca_admin', 'lead_teacher', 'teacher', 'aide']
 const ADMIN_ROLES: UserRole[] = ['cca_owner', 'cca_admin']
 const PARENT_ROLES: UserRole[] = ['parent', 'guardian']
 const APPLICANT_ROLES: UserRole[] = ['applicant_parent']
@@ -111,9 +106,7 @@ const APPLICANT_ROLES: UserRole[] = ['applicant_parent']
 const NAV_SECTIONS: NavSection[] = [
   {
     title: 'Overview',
-    items: [
-      { href: '/portal', label: 'Dashboard', icon: LayoutDashboard },
-    ],
+    items: [{ href: '/portal', label: 'Dashboard', icon: LayoutDashboard }],
   },
   {
     title: 'Manage',
@@ -127,65 +120,225 @@ const NAV_SECTIONS: NavSection[] = [
   {
     title: 'Daily',
     items: [
-      { href: '/portal/staff/check-in', label: 'Check-in', icon: LogIn, roles: ADMIN_STAFF_ROLES, featureKey: 'check_in' },
-      { href: '/portal/admin/attendance', label: 'Attendance', icon: ClipboardList, roles: ADMIN_STAFF_ROLES, featureKey: 'attendance_tracking' },
-      { href: '/portal/staff/daily-reports', label: 'Daily Reports', icon: FileText, roles: ADMIN_STAFF_ROLES, featureKey: 'daily_reports' },
-      { href: '/portal/staff/carline', label: 'Carline', icon: Car, roles: ADMIN_STAFF_ROLES, featureKey: 'carline' },
+      {
+        href: '/portal/staff/check-in',
+        label: 'Check-in',
+        icon: LogIn,
+        roles: ADMIN_STAFF_ROLES,
+        featureKey: 'check_in',
+      },
+      {
+        href: '/portal/admin/attendance',
+        label: 'Attendance',
+        icon: ClipboardList,
+        roles: ADMIN_STAFF_ROLES,
+        featureKey: 'attendance_tracking',
+      },
+      {
+        href: '/portal/staff/daily-reports',
+        label: 'Daily Reports',
+        icon: FileText,
+        roles: ADMIN_STAFF_ROLES,
+        featureKey: 'daily_reports',
+      },
+      {
+        href: '/portal/staff/carline',
+        label: 'Carline',
+        icon: Car,
+        roles: ADMIN_STAFF_ROLES,
+        featureKey: 'carline',
+      },
     ],
   },
   {
     title: 'Programs',
     items: [
-      { href: '/portal/admin/curriculum', label: 'Curriculum', icon: BookOpen, roles: ADMIN_STAFF_ROLES, featureKey: 'curriculum' },
-      { href: '/portal/admin/food-program', label: 'Food Program', icon: UtensilsCrossed, roles: ADMIN_ROLES, featureKey: 'cacfp' },
-      { href: '/portal/admin/portfolios', label: 'Portfolios', icon: GraduationCap, roles: ADMIN_STAFF_ROLES, featureKey: 'portfolios' },
+      {
+        href: '/portal/admin/curriculum',
+        label: 'Curriculum',
+        icon: BookOpen,
+        roles: ADMIN_STAFF_ROLES,
+        featureKey: 'curriculum',
+      },
+      {
+        href: '/portal/admin/food-program',
+        label: 'Food Program',
+        icon: UtensilsCrossed,
+        roles: ADMIN_ROLES,
+        featureKey: 'cacfp',
+      },
+      {
+        href: '/portal/admin/portfolios',
+        label: 'Portfolios',
+        icon: GraduationCap,
+        roles: ADMIN_STAFF_ROLES,
+        featureKey: 'portfolios',
+      },
     ],
   },
   {
     title: 'Business',
     items: [
-      { href: '/portal/admin/billing', label: 'Billing', icon: CreditCard, roles: ADMIN_ROLES, featureKey: 'billing' },
-      { href: '/portal/admin/expenses', label: 'Expenses', icon: Receipt, roles: ADMIN_ROLES, featureKey: 'expense_tracking' },
-      { href: '/portal/admin/subsidies', label: 'Subsidies', icon: Banknote, roles: ADMIN_ROLES, featureKey: 'subsidy_tracking' },
+      {
+        href: '/portal/admin/billing',
+        label: 'Billing',
+        icon: CreditCard,
+        roles: ADMIN_ROLES,
+        featureKey: 'billing',
+      },
+      {
+        href: '/portal/admin/expenses',
+        label: 'Expenses',
+        icon: Receipt,
+        roles: ADMIN_ROLES,
+        featureKey: 'expense_tracking',
+      },
+      {
+        href: '/portal/admin/subsidies',
+        label: 'Subsidies',
+        icon: Banknote,
+        roles: ADMIN_ROLES,
+        featureKey: 'subsidy_tracking',
+      },
       { href: '/portal/admin/enrollment', label: 'Enrollment', icon: UserPlus, roles: ADMIN_ROLES },
-      { href: '/portal/admin/leads', label: 'Leads', icon: PieChart, roles: ADMIN_ROLES, featureKey: 'enrollment_crm' },
-      { href: '/portal/admin/appointments', label: 'Appointments', icon: CalendarCheck, roles: ADMIN_ROLES },
-      { href: '/portal/admin/forms', label: 'Forms', icon: FilePlus2, roles: ADMIN_ROLES, featureKey: 'form_builder' },
-      { href: '/portal/admin/drop-in', label: 'Drop-in', icon: CalendarClock, roles: ADMIN_ROLES, featureKey: 'drop_in' },
+      {
+        href: '/portal/admin/crm/contacts',
+        label: 'CRM',
+        icon: PieChart,
+        roles: ADMIN_ROLES,
+        featureKey: 'enrollment_crm',
+      },
+      {
+        href: '/portal/admin/appointments',
+        label: 'Appointments',
+        icon: CalendarCheck,
+        roles: ADMIN_ROLES,
+      },
+      {
+        href: '/portal/admin/forms',
+        label: 'Forms',
+        icon: FilePlus2,
+        roles: ADMIN_ROLES,
+        featureKey: 'form_builder',
+      },
+      {
+        href: '/portal/admin/drop-in',
+        label: 'Drop-in',
+        icon: CalendarClock,
+        roles: ADMIN_ROLES,
+        featureKey: 'drop_in',
+      },
     ],
   },
   {
     title: 'Communication',
     items: [
-      { href: '/portal/admin/messaging', label: 'Messaging', icon: MessageSquare, featureKey: 'messaging' },
-      { href: '/portal/admin/newsfeed', label: 'Newsfeed', icon: Newspaper, featureKey: 'newsfeed' },
-      { href: '/portal/admin/surveys', label: 'Surveys', icon: ClipboardCheck, roles: ADMIN_ROLES, featureKey: 'surveys' },
-      { href: '/portal/admin/calendar', label: 'Calendar', icon: CalendarDays, featureKey: 'calendar_events' },
+      {
+        href: '/portal/admin/messaging',
+        label: 'Messaging',
+        icon: MessageSquare,
+        featureKey: 'messaging',
+      },
+      {
+        href: '/portal/admin/newsfeed',
+        label: 'Newsfeed',
+        icon: Newspaper,
+        featureKey: 'newsfeed',
+      },
+      {
+        href: '/portal/admin/surveys',
+        label: 'Surveys',
+        icon: ClipboardCheck,
+        roles: ADMIN_ROLES,
+        featureKey: 'surveys',
+      },
+      {
+        href: '/portal/admin/calendar',
+        label: 'Calendar',
+        icon: CalendarDays,
+        featureKey: 'calendar_events',
+      },
     ],
   },
   {
     title: 'Operations',
     items: [
-      { href: '/portal/admin/documents', label: 'Documents', icon: FolderOpen, featureKey: 'document_vault' },
-      { href: '/portal/admin/checklists', label: 'Checklists', icon: CheckSquare, featureKey: 'checklists' },
-      { href: '/portal/admin/training', label: 'Training', icon: GraduationCap, roles: ADMIN_ROLES, featureKey: 'training_tracker' },
-      { href: '/portal/admin/analytics', label: 'Analytics', icon: BarChart3, roles: ADMIN_ROLES, featureKey: 'analytics' },
+      {
+        href: '/portal/admin/documents',
+        label: 'Documents',
+        icon: FolderOpen,
+        featureKey: 'document_vault',
+      },
+      {
+        href: '/portal/admin/checklists',
+        label: 'Checklists',
+        icon: CheckSquare,
+        featureKey: 'checklists',
+      },
+      {
+        href: '/portal/admin/training',
+        label: 'Training',
+        icon: GraduationCap,
+        roles: ADMIN_ROLES,
+        featureKey: 'training_tracker',
+      },
+      {
+        href: '/portal/admin/analytics',
+        label: 'Analytics',
+        icon: BarChart3,
+        roles: ADMIN_ROLES,
+        featureKey: 'analytics',
+      },
     ],
   },
   {
     title: 'Safety',
     items: [
-      { href: '/portal/admin/doors', label: 'Door Control', icon: DoorOpen, roles: ADMIN_ROLES, featureKey: 'door_control' },
-      { href: '/portal/admin/cameras', label: 'Cameras', icon: Camera, roles: ADMIN_ROLES, featureKey: 'camera_feeds' },
-      { href: '/portal/admin/emergency', label: 'Emergency', icon: AlertTriangle, roles: ADMIN_ROLES, featureKey: 'emergency_system' },
-      { href: '/portal/admin/compliance', label: 'Compliance', icon: ShieldCheck, roles: ADMIN_ROLES, featureKey: 'dfps_compliance' },
+      {
+        href: '/portal/admin/doors',
+        label: 'Door Control',
+        icon: DoorOpen,
+        roles: ADMIN_ROLES,
+        featureKey: 'door_control',
+      },
+      {
+        href: '/portal/admin/cameras',
+        label: 'Cameras',
+        icon: Camera,
+        roles: ADMIN_ROLES,
+        featureKey: 'camera_feeds',
+      },
+      {
+        href: '/portal/admin/emergency',
+        label: 'Emergency',
+        icon: AlertTriangle,
+        roles: ADMIN_ROLES,
+        featureKey: 'emergency_system',
+      },
+      {
+        href: '/portal/admin/compliance',
+        label: 'Compliance',
+        icon: ShieldCheck,
+        roles: ADMIN_ROLES,
+        featureKey: 'dfps_compliance',
+      },
     ],
   },
   {
     title: 'My Application',
     items: [
-      { href: '/portal/applicant', label: 'Application Status', icon: ClipboardList, roles: APPLICANT_ROLES },
-      { href: '/portal/applicant#book-tour', label: 'Book Tour', icon: CalendarCheck, roles: APPLICANT_ROLES },
+      {
+        href: '/portal/applicant',
+        label: 'Application Status',
+        icon: ClipboardList,
+        roles: APPLICANT_ROLES,
+      },
+      {
+        href: '/portal/applicant#book-tour',
+        label: 'Book Tour',
+        icon: CalendarCheck,
+        roles: APPLICANT_ROLES,
+      },
     ],
   },
   {
@@ -193,12 +346,48 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: '/portal/parent', label: 'Dashboard', icon: LayoutDashboard, roles: PARENT_ROLES },
       { href: '/portal/parent/children', label: 'My Children', icon: Users, roles: PARENT_ROLES },
-      { href: '/portal/parent/check-in', label: 'Check-in', icon: LogIn, roles: PARENT_ROLES, featureKey: 'check_in' },
-      { href: '/portal/parent/billing', label: 'Billing', icon: CreditCard, roles: PARENT_ROLES, featureKey: 'billing' },
-      { href: '/portal/parent/messaging', label: 'Messages', icon: MessageSquare, roles: PARENT_ROLES, featureKey: 'messaging' },
-      { href: '/portal/parent/calendar', label: 'Calendar', icon: CalendarDays, roles: PARENT_ROLES, featureKey: 'calendar_events' },
-      { href: '/portal/parent/documents', label: 'Documents', icon: FolderOpen, roles: PARENT_ROLES, featureKey: 'document_vault' },
-      { href: '/portal/parent/drop-in', label: 'Book Drop-in', icon: CalendarClock, roles: PARENT_ROLES, featureKey: 'drop_in' },
+      {
+        href: '/portal/parent/check-in',
+        label: 'Check-in',
+        icon: LogIn,
+        roles: PARENT_ROLES,
+        featureKey: 'check_in',
+      },
+      {
+        href: '/portal/parent/billing',
+        label: 'Billing',
+        icon: CreditCard,
+        roles: PARENT_ROLES,
+        featureKey: 'billing',
+      },
+      {
+        href: '/portal/parent/messaging',
+        label: 'Messages',
+        icon: MessageSquare,
+        roles: PARENT_ROLES,
+        featureKey: 'messaging',
+      },
+      {
+        href: '/portal/parent/calendar',
+        label: 'Calendar',
+        icon: CalendarDays,
+        roles: PARENT_ROLES,
+        featureKey: 'calendar_events',
+      },
+      {
+        href: '/portal/parent/documents',
+        label: 'Documents',
+        icon: FolderOpen,
+        roles: PARENT_ROLES,
+        featureKey: 'document_vault',
+      },
+      {
+        href: '/portal/parent/drop-in',
+        label: 'Book Drop-in',
+        icon: CalendarClock,
+        roles: PARENT_ROLES,
+        featureKey: 'drop_in',
+      },
     ],
   },
   {
@@ -260,10 +449,7 @@ export function PortalSidebar({
       }}
     >
       {/* Logo area */}
-      <div
-        className="shrink-0 border-b"
-        style={{ borderColor: 'var(--color-border)' }}
-      >
+      <div className="shrink-0 border-b" style={{ borderColor: 'var(--color-border)' }}>
         {collapsed ? (
           <div className="flex flex-col items-center gap-2 py-3">
             {logoIconUrl && (
@@ -325,10 +511,7 @@ export function PortalSidebar({
       </div>
 
       {/* Navigation */}
-      <nav
-        className="flex-1 overflow-y-auto py-3 px-2 space-y-5"
-        aria-label="Portal navigation"
-      >
+      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-5" aria-label="Portal navigation">
         {NAV_SECTIONS.filter(isSectionVisible).map((section) => (
           <div key={section.title}>
             {!collapsed && (
@@ -349,15 +532,11 @@ export function PortalSidebar({
                       href={item.href}
                       className={cn(
                         'flex items-center gap-3 px-2 py-2 rounded-lg text-sm font-medium transition-colors',
-                        active
-                          ? 'bg-[var(--color-primary)]/10'
-                          : 'hover:bg-[var(--color-muted)]',
+                        active ? 'bg-[var(--color-primary)]/10' : 'hover:bg-[var(--color-muted)]',
                         collapsed && 'justify-center',
                       )}
                       style={{
-                        color: active
-                          ? 'var(--color-primary)'
-                          : 'var(--color-foreground)',
+                        color: active ? 'var(--color-primary)' : 'var(--color-foreground)',
                       }}
                       title={collapsed ? item.label : undefined}
                     >
@@ -387,10 +566,7 @@ export function PortalSidebar({
                 height={16}
                 className="h-4 w-4 opacity-40"
               />
-              <span
-                className="text-xs"
-                style={{ color: 'var(--color-muted-foreground)' }}
-              >
+              <span className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
                 Powered by {PLATFORM_SHORT_NAME}
               </span>
             </>
