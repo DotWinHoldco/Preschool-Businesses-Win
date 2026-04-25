@@ -9,6 +9,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { renderEmail, extractLinks } from './email-render'
 import { getResendClient } from '@/lib/email/resend'
 import type { MergeContext } from './merge-tags'
+import { buildCustomFieldMergeTags } from './merge-tags'
 
 export interface SendArgs {
   tenantId: string
@@ -103,7 +104,53 @@ export async function sendCampaignEmail(args: SendArgs): Promise<SendResult> {
 
   // 4. Render with tokens substituted in.
   const unsubscribeUrl = `${args.collectorBase}/unsubscribe/${unsubToken}`
-  const ctx: MergeContext = { ...args.ctx, unsubscribeUrl, preferencesUrl: unsubscribeUrl }
+
+  // Load any tenant custom-field merge tags + this contact's values.
+  const { data: cfDefs } = await supabase
+    .from('custom_fields')
+    .select('id, field_key, label, merge_tag_sample')
+    .eq('tenant_id', args.tenantId)
+    .eq('entity_type', 'contact')
+    .eq('is_merge_tag', true)
+    .is('deleted_at', null)
+  const cfRows = (cfDefs ?? []) as {
+    id: string
+    field_key: string
+    label: string
+    merge_tag_sample: string | null
+  }[]
+  const extraTags = buildCustomFieldMergeTags(cfRows)
+  let cfValues: Record<string, unknown> | undefined
+  if (cfRows.length > 0 && args.contactId) {
+    const { data: vals } = await supabase
+      .from('custom_field_values')
+      .select('custom_field_id, value_text, value_numeric, value_boolean, value_date, value_json')
+      .eq('tenant_id', args.tenantId)
+      .eq('entity_type', 'contact')
+      .eq('entity_id', args.contactId)
+      .in(
+        'custom_field_id',
+        cfRows.map((r) => r.id),
+      )
+    if (vals && vals.length > 0) {
+      const idToKey = new Map(cfRows.map((r) => [r.id, r.field_key] as const))
+      cfValues = {}
+      for (const v of vals as Record<string, unknown>[]) {
+        const key = idToKey.get(v.custom_field_id as string)
+        if (!key) continue
+        const resolved =
+          v.value_text ?? v.value_numeric ?? v.value_boolean ?? v.value_date ?? v.value_json ?? null
+        if (resolved != null) cfValues[key] = resolved
+      }
+    }
+  }
+
+  const ctx: MergeContext = {
+    ...args.ctx,
+    contact: { ...args.ctx.contact, custom_fields: cfValues },
+    unsubscribeUrl,
+    preferencesUrl: unsubscribeUrl,
+  }
 
   let rendered
   try {
@@ -117,6 +164,7 @@ export async function sendCampaignEmail(args: SendArgs): Promise<SendResult> {
       send: { id: sendId, openToken, trackedLinks },
       schoolName: args.schoolName,
       mailingAddress: args.mailingAddress,
+      extraTags,
     })
   } catch (e) {
     await supabase

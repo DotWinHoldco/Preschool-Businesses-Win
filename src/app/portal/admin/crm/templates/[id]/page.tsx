@@ -12,13 +12,27 @@ export default async function TemplateEditPage({ params }: { params: Promise<{ i
   const tenantId = h.get('x-tenant-id')
   if (!tenantId) notFound()
   const supabase = await createTenantAdminClient(tenantId)
-  const { data: tpl } = await supabase
-    .from('email_templates')
-    .select('id, name, subject, preheader, html, design_json')
-    .eq('id', id)
-    .eq('tenant_id', tenantId)
-    .maybeSingle()
+  const [{ data: tpl }, { data: cf }] = await Promise.all([
+    supabase
+      .from('email_templates')
+      .select('id, name, subject, preheader, html, design_json')
+      .eq('id', id)
+      .eq('tenant_id', tenantId)
+      .maybeSingle(),
+    supabase
+      .from('custom_fields')
+      .select('field_key, label')
+      .eq('tenant_id', tenantId)
+      .eq('entity_type', 'contact')
+      .eq('is_merge_tag', true)
+      .is('deleted_at', null)
+      .order('label'),
+  ])
   if (!tpl) notFound()
+  const customTags = (cf ?? []).map((r) => ({
+    key: `contact.${r.field_key as string}`,
+    label: r.label as string,
+  }))
   return (
     <TemplateEditorClient
       initial={{
@@ -29,6 +43,7 @@ export default async function TemplateEditPage({ params }: { params: Promise<{ i
         html: tpl.html as string,
         design_json: (tpl.design_json as Record<string, unknown>) ?? {},
       }}
+      customTags={customTags}
     />
   )
 }

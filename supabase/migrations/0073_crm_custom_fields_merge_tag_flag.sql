@@ -1,0 +1,4 @@
+-- 0073_crm_custom_fields_merge_tag_flag.sql — applied via apply_migration.
+-- Adds is_merge_tag (boolean) and merge_tag_sample (text) columns to
+-- custom_fields. When is_merge_tag is true, the field is exposed as a
+-- {{contact.<field_key>}} merge tag in email/SMS templates.

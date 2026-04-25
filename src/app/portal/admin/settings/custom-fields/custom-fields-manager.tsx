@@ -3,7 +3,11 @@
 // @anchor: platform.custom-fields.manager-component
 
 import { useState } from 'react'
-import { createCustomField, deleteCustomField } from '@/lib/actions/custom-fields'
+import {
+  createCustomField,
+  deleteCustomField,
+  updateCustomField,
+} from '@/lib/actions/custom-fields'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -28,6 +32,7 @@ interface Field {
   is_filterable: boolean
   is_visible_to_parents: boolean
   is_parent_editable: boolean
+  is_merge_tag?: boolean
   section_label: string | null
   sort_order: number
   custom_field_options?: { label: string; value: string; color?: string }[]
@@ -107,6 +112,14 @@ export function CustomFieldsManager({
     if (result.ok) setFields((prev) => prev.filter((f) => f.id !== id))
   }
 
+  async function toggleMergeTag(id: string, next: boolean) {
+    setFields((prev) => prev.map((f) => (f.id === id ? { ...f, is_merge_tag: next } : f)))
+    const result = await updateCustomField({ id, is_merge_tag: next })
+    if (!result.ok) {
+      setFields((prev) => prev.map((f) => (f.id === id ? { ...f, is_merge_tag: !next } : f)))
+    }
+  }
+
   return (
     <div>
       <div className="flex gap-2 overflow-x-auto pb-2 mb-6">
@@ -168,15 +181,33 @@ export function CustomFieldsManager({
                     Parent-visible
                   </Badge>
                 )}
+                {field.is_merge_tag && (
+                  <Badge variant="outline" className="text-xs">
+                    Merge tag
+                  </Badge>
+                )}
               </div>
             </div>
-            <button
-              onClick={() => handleDelete(field.id)}
-              className="text-xs px-2 py-1 rounded hover:bg-red-50"
-              style={{ color: 'var(--color-destructive)' }}
-            >
-              Archive
-            </button>
+            <div className="flex items-center gap-3">
+              {field.entity_type === 'contact' && (
+                <label className="inline-flex items-center gap-1.5 text-xs cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4"
+                    checked={!!field.is_merge_tag}
+                    onChange={(e) => toggleMergeTag(field.id, e.target.checked)}
+                  />
+                  Merge tag
+                </label>
+              )}
+              <button
+                onClick={() => handleDelete(field.id)}
+                className="text-xs px-2 py-1 rounded hover:bg-red-50"
+                style={{ color: 'var(--color-destructive)' }}
+              >
+                Archive
+              </button>
+            </div>
           </div>
         ))}
       </div>

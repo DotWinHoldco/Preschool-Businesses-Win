@@ -20,7 +20,18 @@ interface InitialTemplate {
   design_json: Record<string, unknown>
 }
 
-export function TemplateEditorClient({ initial }: { initial?: InitialTemplate }) {
+interface CustomTagOption {
+  key: string
+  label: string
+}
+
+export function TemplateEditorClient({
+  initial,
+  customTags = [],
+}: {
+  initial?: InitialTemplate
+  customTags?: CustomTagOption[]
+}) {
   const router = useRouter()
   const [name, setName] = useState(initial?.name ?? 'Untitled template')
   const [subject, setSubject] = useState(initial?.subject ?? 'Hi {{contact.first_name}},')
@@ -129,7 +140,7 @@ export function TemplateEditorClient({ initial }: { initial?: InitialTemplate })
         </CardContent>
       </Card>
 
-      <EmailEditor initialHtml={html} onChange={setHtml} />
+      <EmailEditor initialHtml={html} onChange={setHtml} customTags={customTags} />
 
       {error && (
         <div className="rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">

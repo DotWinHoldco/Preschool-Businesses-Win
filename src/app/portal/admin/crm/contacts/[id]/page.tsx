@@ -30,6 +30,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
     { data: lead },
     { data: application },
     { data: family },
+    { data: sends },
   ] = await Promise.all([
     supabase
       .from('contact_activities')
@@ -73,6 +74,15 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
           .eq('id', contact.family_id)
           .maybeSingle()
       : Promise.resolve({ data: null }),
+    supabase
+      .from('email_sends')
+      .select(
+        'id, subject, status, sent_at, delivered_at, first_opened_at, first_clicked_at, bounced_at, unsubscribed_at, open_count, click_count, campaign_id',
+      )
+      .eq('tenant_id', tenantId)
+      .eq('contact_id', id)
+      .order('created_at', { ascending: false })
+      .limit(50),
   ])
 
   return (
@@ -84,6 +94,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
       lead={lead}
       application={application}
       family={family}
+      sends={sends ?? []}
     />
   )
 }

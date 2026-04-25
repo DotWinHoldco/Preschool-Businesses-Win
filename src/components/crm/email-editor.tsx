@@ -36,9 +36,15 @@ import {
 import { useState } from 'react'
 import { STANDARD_MERGE_TAGS } from '@/lib/crm/merge-tags'
 
+interface CustomTag {
+  key: string
+  label: string
+}
+
 interface Props {
   initialHtml?: string
   onChange: (html: string) => void
+  customTags?: CustomTag[]
 }
 
 function ToolbarBtn({
@@ -65,7 +71,7 @@ function ToolbarBtn({
   )
 }
 
-export function EmailEditor({ initialHtml, onChange }: Props) {
+export function EmailEditor({ initialHtml, onChange, customTags = [] }: Props) {
   const [tagOpen, setTagOpen] = useState(false)
 
   const editor = useEditor({
@@ -252,6 +258,26 @@ export function EmailEditor({ initialHtml, onChange }: Props) {
                   </div>
                 </button>
               ))}
+              {customTags.length > 0 && (
+                <>
+                  <div className="px-3 pt-2 pb-1 text-[10px] uppercase tracking-wider text-[var(--color-muted-foreground)] border-t border-[var(--color-border)] mt-1">
+                    Custom fields
+                  </div>
+                  {customTags.map((t) => (
+                    <button
+                      key={t.key}
+                      type="button"
+                      onClick={() => insertTag(t.key)}
+                      className="w-full text-left px-3 py-2 hover:bg-[var(--color-muted)] text-sm"
+                    >
+                      <div className="font-medium">{t.label}</div>
+                      <div className="text-[11px] text-[var(--color-muted-foreground)] font-mono">
+                        {`{{${t.key}}}`}
+                      </div>
+                    </button>
+                  ))}
+                </>
+              )}
             </div>
           )}
         </div>

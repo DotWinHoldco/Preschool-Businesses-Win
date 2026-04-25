@@ -3,9 +3,23 @@
 import { z } from 'zod'
 
 export const fieldTypeEnum = z.enum([
-  'text','textarea','number','currency','date','datetime','boolean',
-  'select','multi_select','email','phone','url','file','image',
-  'rating','color','json',
+  'text',
+  'textarea',
+  'number',
+  'currency',
+  'date',
+  'datetime',
+  'boolean',
+  'select',
+  'multi_select',
+  'email',
+  'phone',
+  'url',
+  'file',
+  'image',
+  'rating',
+  'color',
+  'json',
 ])
 export type CustomFieldType = z.infer<typeof fieldTypeEnum>
 
@@ -19,15 +33,21 @@ export const CreateCustomFieldSchema = z.object({
   is_filterable: z.boolean().optional().default(false),
   is_visible_to_parents: z.boolean().optional().default(false),
   is_parent_editable: z.boolean().optional().default(false),
+  is_merge_tag: z.boolean().optional().default(false),
+  merge_tag_sample: z.string().max(200).optional(),
   default_value: z.unknown().optional(),
   validation_rules: z.record(z.string(), z.unknown()).optional().default({}),
   section_label: z.string().max(100).optional(),
-  options: z.array(z.object({
-    label: z.string().min(1),
-    value: z.string().min(1),
-    color: z.string().optional(),
-    icon: z.string().optional(),
-  })).optional(),
+  options: z
+    .array(
+      z.object({
+        label: z.string().min(1),
+        value: z.string().min(1),
+        color: z.string().optional(),
+        icon: z.string().optional(),
+      }),
+    )
+    .optional(),
 })
 export type CreateCustomFieldInput = z.input<typeof CreateCustomFieldSchema>
 

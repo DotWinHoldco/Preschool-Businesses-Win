@@ -31,6 +31,11 @@ const TABS: { href: string; label: string; matches: (p: string) => boolean }[] =
     matches: (p) => p.startsWith('/portal/admin/crm/automations'),
   },
   {
+    href: '/portal/admin/crm/suppressions',
+    label: 'Suppressions',
+    matches: (p) => p.startsWith('/portal/admin/crm/suppressions'),
+  },
+  {
     href: '/portal/admin/crm/settings',
     label: 'Settings',
     matches: (p) => p.startsWith('/portal/admin/crm/settings'),

@@ -8,7 +8,7 @@
 
 import juice from 'juice'
 import { htmlToText } from 'html-to-text'
-import { renderMergeTags, type MergeContext } from './merge-tags'
+import { renderMergeTags, type MergeContext, type MergeTag } from './merge-tags'
 
 const SHELL = (body: string, brand: { primaryColor: string }) => `<!doctype html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
@@ -61,6 +61,7 @@ export interface RenderOptions {
   send: { id: string; openToken: string; trackedLinks: { token: string; url: string }[] }
   schoolName: string
   mailingAddress: string // CAN-SPAM required
+  extraTags?: MergeTag[]
 }
 
 export interface RenderResult {
@@ -75,11 +76,12 @@ export interface RenderResult {
  * inserting the email_send row) so links + tracking pixel embed cleanly.
  */
 export function renderEmail(opts: RenderOptions): RenderResult {
-  const subject = renderMergeTags(opts.subject, opts.ctx)
-  const preheader = renderMergeTags(opts.preheader ?? '', opts.ctx)
+  const extra = opts.extraTags ?? []
+  const subject = renderMergeTags(opts.subject, opts.ctx, extra)
+  const preheader = renderMergeTags(opts.preheader ?? '', opts.ctx, extra)
 
   // 1. Resolve merge tags in body.
-  let body = renderMergeTags(opts.bodyHtml, opts.ctx)
+  let body = renderMergeTags(opts.bodyHtml, opts.ctx, extra)
 
   // 2. Rewrite every external link through the click tracker.
   body = body.replace(/href="(https?:\/\/[^"]+)"/g, (m, url) => {

@@ -16,8 +16,12 @@ import {
   Link2,
   Save,
   X,
+  Eye,
+  MousePointer,
+  AlertCircle,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/toast'
@@ -59,6 +63,21 @@ interface Activity {
   related_entity_id: string | null
 }
 
+interface SendRow {
+  id: string
+  subject: string
+  status: string
+  sent_at: string | null
+  delivered_at: string | null
+  first_opened_at: string | null
+  first_clicked_at: string | null
+  bounced_at: string | null
+  unsubscribed_at: string | null
+  open_count: number
+  click_count: number
+  campaign_id: string | null
+}
+
 interface Props {
   contact: Record<string, unknown>
   activities: Activity[]
@@ -67,9 +86,10 @@ interface Props {
   lead: Record<string, unknown> | null
   application: Record<string, unknown> | null
   family: Record<string, unknown> | null
+  sends: SendRow[]
 }
 
-type Tab = 'overview' | 'timeline' | 'tags' | 'linked'
+type Tab = 'overview' | 'timeline' | 'email' | 'tags' | 'linked'
 
 export function ContactDetailClient({
   contact,
@@ -79,6 +99,7 @@ export function ContactDetailClient({
   lead,
   application,
   family,
+  sends,
 }: Props) {
   const router = useRouter()
   const [tab, setTab] = useState<Tab>('overview')
@@ -210,6 +231,7 @@ export function ContactDetailClient({
           [
             ['overview', 'Overview'],
             ['timeline', 'Timeline'],
+            ['email', 'Email'],
             ['tags', 'Tags'],
             ['linked', 'Linked records'],
           ] as [Tab, string][]
@@ -246,6 +268,13 @@ export function ContactDetailClient({
 
       {tab === 'timeline' && (
         <TimelineTab contactId={contact.id as string} activities={activities} />
+      )}
+
+      {tab === 'email' && (
+        <EmailHistoryTab
+          sends={sends}
+          subscribed={(contact.email_subscribed as boolean | null) ?? true}
+        />
       )}
 
       {tab === 'tags' && (
@@ -765,4 +794,112 @@ function relTime(iso: string): string {
   const d = Math.round(h / 24)
   if (d < 30) return `${d}d ago`
   return new Date(iso).toLocaleDateString()
+}
+
+function EmailHistoryTab({ sends, subscribed }: { sends: SendRow[]; subscribed: boolean }) {
+  if (sends.length === 0) {
+    return (
+      <Card>
+        <CardContent className="p-10 text-center space-y-2">
+          <div className="h-12 w-12 mx-auto rounded-full bg-[var(--color-muted)] flex items-center justify-center">
+            <Mail size={20} className="text-[var(--color-muted-foreground)]" />
+          </div>
+          <p className="font-semibold">No email history</p>
+          <p className="text-sm text-[var(--color-muted-foreground)]">
+            Sends, opens, clicks, bounces, and unsubscribes will appear here.
+          </p>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  const totalSent = sends.length
+  const opened = sends.filter((s) => (s.open_count ?? 0) > 0).length
+  const clicked = sends.filter((s) => (s.click_count ?? 0) > 0).length
+
+  return (
+    <div className="space-y-3">
+      {!subscribed && (
+        <Card>
+          <CardContent className="p-3 text-sm flex items-center gap-2 text-amber-800 bg-amber-50 rounded-md">
+            <AlertCircle size={14} />
+            This contact has unsubscribed. New campaigns will skip them automatically.
+          </CardContent>
+        </Card>
+      )}
+      <div className="grid grid-cols-3 gap-2">
+        <MiniStat icon={Mail} label="Sent" value={totalSent} />
+        <MiniStat icon={Eye} label="Opened" value={opened} />
+        <MiniStat icon={MousePointer} label="Clicked" value={clicked} />
+      </div>
+      <Card>
+        <CardContent className="p-0">
+          <ul className="divide-y divide-[var(--color-border)]">
+            {sends.map((s) => {
+              const status = sendStatusLabel(s)
+              const variant = sendStatusVariant(s)
+              const ts = s.sent_at ?? s.delivered_at ?? null
+              return (
+                <li key={s.id} className="px-4 py-3 flex items-center justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{s.subject}</p>
+                    <p className="text-xs text-[var(--color-muted-foreground)] mt-0.5 truncate">
+                      {ts ? relTime(ts) : 'queued'}
+                      {s.first_opened_at && ` · opened ${relTime(s.first_opened_at)}`}
+                      {s.first_clicked_at && ` · clicked ${relTime(s.first_clicked_at)}`}
+                      {s.bounced_at && ` · bounced`}
+                      {s.unsubscribed_at && ` · unsubscribed`}
+                    </p>
+                  </div>
+                  <Badge variant={variant}>{status}</Badge>
+                </li>
+              )
+            })}
+          </ul>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+function MiniStat({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Mail
+  label: string
+  value: number
+}) {
+  return (
+    <Card>
+      <CardContent className="p-3">
+        <div className="flex items-center gap-2 text-[11px] text-[var(--color-muted-foreground)] uppercase tracking-wider">
+          <Icon size={11} />
+          {label}
+        </div>
+        <p className="text-lg font-bold mt-1">{value.toLocaleString()}</p>
+      </CardContent>
+    </Card>
+  )
+}
+
+function sendStatusLabel(s: SendRow): string {
+  if (s.unsubscribed_at) return 'unsubscribed'
+  if (s.bounced_at) return 'bounced'
+  if ((s.click_count ?? 0) > 0) return 'clicked'
+  if ((s.open_count ?? 0) > 0) return 'opened'
+  if (s.delivered_at) return 'delivered'
+  if (s.sent_at) return 'sent'
+  return s.status
+}
+
+function sendStatusVariant(
+  s: SendRow,
+): 'success' | 'warning' | 'secondary' | 'outline' | 'default' {
+  if (s.unsubscribed_at || s.bounced_at) return 'warning'
+  if ((s.click_count ?? 0) > 0) return 'success'
+  if ((s.open_count ?? 0) > 0) return 'success'
+  if (s.delivered_at || s.sent_at) return 'default'
+  return 'secondary'
 }

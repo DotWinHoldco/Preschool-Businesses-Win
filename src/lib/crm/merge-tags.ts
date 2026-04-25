@@ -121,6 +121,26 @@ export const STANDARD_MERGE_TAGS: MergeTag[] = [
 ]
 
 /**
+ * Build merge tags from custom_fields rows flagged with is_merge_tag.
+ * Resolver reads from contact.custom_fields[field_key].
+ */
+export interface CustomFieldRow {
+  field_key: string
+  label: string
+  merge_tag_sample: string | null
+}
+
+export function buildCustomFieldMergeTags(rows: CustomFieldRow[]): MergeTag[] {
+  return rows.map((r) => ({
+    key: `contact.${r.field_key}`,
+    label: r.label,
+    sample: r.merge_tag_sample ?? '',
+    description: 'Custom field',
+    resolve: (c) => safe(c.contact.custom_fields?.[r.field_key]),
+  }))
+}
+
+/**
  * Replace every {{tag.key}} occurrence in a string with the resolved value.
  * Unknown tags are left alone (so admins see them and notice the typo).
  */

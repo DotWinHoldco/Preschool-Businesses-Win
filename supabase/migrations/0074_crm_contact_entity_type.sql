@@ -1,0 +1,3 @@
+-- 0074_crm_contact_entity_type.sql — applied via execute_sql.
+-- Registers the CRM `contact` entity type for tenant CCA so admins can
+-- attach custom fields to contacts (and toggle them on as merge tags).
