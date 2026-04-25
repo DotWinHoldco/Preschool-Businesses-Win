@@ -101,12 +101,19 @@ a,
 button,
 [role='button'],
 input[type='submit'],
+input[type='button'],
+input[type='reset'],
 select,
+summary,
 label[for],
 .cursor-pointer {
-  cursor:
-    url('/cca-assets/sunshine-cursor-2x.png') 24 24,
-    pointer;
+  cursor: pointer;
+}
+
+button:disabled,
+[aria-disabled='true'],
+[role='button'][aria-disabled='true'] {
+  cursor: not-allowed;
 }
 
 /* ------------------------------------------------------------------ */
