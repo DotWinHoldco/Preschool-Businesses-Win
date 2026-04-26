@@ -108,9 +108,10 @@ export interface DropdownMenuContentProps extends HTMLAttributes<HTMLDivElement>
 }
 
 const DropdownMenuContent = forwardRef<HTMLDivElement, DropdownMenuContentProps>(
-  ({ align = 'start', className, children, ...props }, ref) => {
+  ({ align = 'end', className, children, ...props }, ref) => {
     const { open, close: _close } = useContext(Ctx)
     const menuRef = useRef<HTMLDivElement | null>(null)
+    const [shiftLeft, setShiftLeft] = useState(0)
 
     const setRef = useCallback(
       (node: HTMLDivElement | null) => {
@@ -120,6 +121,27 @@ const DropdownMenuContent = forwardRef<HTMLDivElement, DropdownMenuContentProps>
       },
       [ref],
     )
+
+    // Keep the menu inside the viewport — nudge left if it would overflow the right edge.
+    useEffect(() => {
+      const el = menuRef.current
+      if (!open || !el) {
+        setShiftLeft(0)
+        return
+      }
+      const measure = () => {
+        const rect = el.getBoundingClientRect()
+        const overflow = rect.right - window.innerWidth + 8 // 8px gutter
+        setShiftLeft(overflow > 0 ? overflow : 0)
+      }
+      measure()
+      window.addEventListener('resize', measure)
+      window.addEventListener('scroll', measure, true)
+      return () => {
+        window.removeEventListener('resize', measure)
+        window.removeEventListener('scroll', measure, true)
+      }
+    }, [open])
 
     // Keyboard navigation
     useEffect(() => {
@@ -162,6 +184,7 @@ const DropdownMenuContent = forwardRef<HTMLDivElement, DropdownMenuContentProps>
         ref={setRef}
         role="menu"
         aria-orientation="vertical"
+        style={shiftLeft > 0 ? { transform: `translateX(-${shiftLeft}px)` } : undefined}
         className={cn(
           'absolute z-50 mt-1 min-w-[180px] overflow-hidden rounded-[var(--radius,0.75rem)] border border-[var(--color-border)] bg-[var(--color-card)] p-1 shadow-lg',
           'motion-safe:animate-[fadeIn_150ms_ease-out]',
