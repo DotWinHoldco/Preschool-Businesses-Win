@@ -26,6 +26,7 @@ export interface SendArgs {
   schoolName: string
   mailingAddress: string
   brandColor?: string
+  logoUrl?: string
   fromName: string
   fromEmail: string
   replyTo?: string
@@ -164,6 +165,7 @@ export async function sendCampaignEmail(args: SendArgs): Promise<SendResult> {
       send: { id: sendId, openToken, trackedLinks },
       schoolName: args.schoolName,
       mailingAddress: args.mailingAddress,
+      logoUrl: args.logoUrl,
       extraTags,
     })
   } catch (e) {
@@ -273,7 +275,7 @@ export async function loadTenantEmailSettings(tenantId: string) {
     supabase
       .from('tenant_branding')
       .select(
-        'school_name, color_primary, address_line1, address_line2, city, state, zip, support_email, support_phone',
+        'school_name, color_primary, logo_path, logo_icon_path, address_line1, address_line2, city, state, zip, support_email, support_phone',
       )
       .eq('tenant_id', tenantId)
       .maybeSingle(),

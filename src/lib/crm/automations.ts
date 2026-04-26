@@ -410,6 +410,7 @@ async function runAction(
         schoolName: (branding?.school_name as string) ?? 'School',
         mailingAddress,
         brandColor: (branding?.color_primary as string | undefined) ?? '#3b70b0',
+        logoUrl: (branding?.logo_path as string | undefined) ?? undefined,
         fromName: settings.from_name as string,
         fromEmail: settings.from_email as string,
         replyTo: (settings.reply_to as string | null) ?? undefined,

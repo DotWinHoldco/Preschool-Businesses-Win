@@ -10,11 +10,19 @@ import juice from 'juice'
 import { htmlToText } from 'html-to-text'
 import { renderMergeTags, type MergeContext, type MergeTag } from './merge-tags'
 
-const SHELL = (body: string, brand: { primaryColor: string }) => `<!doctype html>
+const SHELL = (
+  body: string,
+  brand: { primaryColor: string; logoUrl?: string; schoolName: string },
+) => `<!doctype html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#faf9f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#141413;">
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#faf9f5;padding:32px 16px;">
 <tr><td align="center">
+${
+  brand.logoUrl
+    ? `<table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px;margin-bottom:16px;"><tr><td align="center" style="padding:8px 0 16px;"><img src="${brand.logoUrl}" alt="${escapeHtml(brand.schoolName)}" width="180" style="display:block;max-width:180px;height:auto;border:0;outline:none;text-decoration:none;"></td></tr></table>`
+    : ''
+}
 <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px;background:#ffffff;border-radius:16px;padding:40px;box-shadow:0 1px 2px rgba(0,0,0,0.04);">
 <tr><td style="font-size:16px;line-height:1.6;color:#141413;">
 ${body}
@@ -61,6 +69,7 @@ export interface RenderOptions {
   send: { id: string; openToken: string; trackedLinks: { token: string; url: string }[] }
   schoolName: string
   mailingAddress: string // CAN-SPAM required
+  logoUrl?: string // absolute URL or path resolved against collectorBase
   extraTags?: MergeTag[]
 }
 
@@ -103,8 +112,15 @@ export function renderEmail(opts: RenderOptions): RenderResult {
   const preheaderBlock = preheader
     ? `<div style="display:none;max-height:0;overflow:hidden;color:transparent;">${escapeHtml(preheader)}</div>`
     : ''
+  const logoAbs = opts.logoUrl
+    ? opts.logoUrl.startsWith('http')
+      ? opts.logoUrl
+      : `${opts.collectorBase}${opts.logoUrl.startsWith('/') ? '' : '/'}${opts.logoUrl}`
+    : undefined
   const shellHtml = SHELL(preheaderBlock + body + pixel, {
     primaryColor: opts.brandColor ?? '#3b70b0',
+    logoUrl: logoAbs,
+    schoolName: opts.schoolName,
   }).replace('__FOOTER__', footer)
 
   const inlined = juice(shellHtml, { applyStyleTags: true, removeStyleTags: true })

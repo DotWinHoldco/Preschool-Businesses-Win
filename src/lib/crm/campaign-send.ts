@@ -108,6 +108,7 @@ export async function dispatchBroadcast(opts: DispatchOptions): Promise<Dispatch
       schoolName: (branding?.school_name as string) ?? 'School',
       mailingAddress,
       brandColor: (branding?.color_primary as string | undefined) ?? '#3b70b0',
+      logoUrl: (branding?.logo_path as string | undefined) ?? undefined,
       fromName: settings.from_name as string,
       fromEmail: settings.from_email as string,
       replyTo: (settings.reply_to as string | null) ?? undefined,
@@ -230,6 +231,7 @@ export async function tickDripCampaigns(collectorBase: string): Promise<Dispatch
       schoolName: (branding?.school_name as string) ?? 'School',
       mailingAddress,
       brandColor: (branding?.color_primary as string | undefined) ?? '#3b70b0',
+      logoUrl: (branding?.logo_path as string | undefined) ?? undefined,
       fromName: settings.from_name as string,
       fromEmail: settings.from_email as string,
       replyTo: (settings.reply_to as string | null) ?? undefined,
@@ -320,13 +322,11 @@ export async function enrollAudienceInCampaign(
   let inserted = 0
   for (let i = 0; i < rows.length; i += CHUNK) {
     const slice = rows.slice(i, i + CHUNK)
-    const { count } = await supabase
-      .from('email_campaign_runs')
-      .upsert(slice, {
-        onConflict: 'campaign_id,contact_id',
-        ignoreDuplicates: true,
-        count: 'exact',
-      })
+    const { count } = await supabase.from('email_campaign_runs').upsert(slice, {
+      onConflict: 'campaign_id,contact_id',
+      ignoreDuplicates: true,
+      count: 'exact',
+    })
     inserted += count ?? 0
   }
   return inserted
