@@ -252,7 +252,7 @@ export async function submitSystemEnrollment(raw: SystemEnrollmentData): Promise
         p_first_name: data.parent_first_name,
         p_last_name: data.parent_last_name,
         p_phone: data.parent_phone,
-        p_source: 'application',
+        p_source: 'enrollment_form',
         p_source_detail: 'enrollment_form',
       })
       const contactId = (rpcRes as string | null) ?? null

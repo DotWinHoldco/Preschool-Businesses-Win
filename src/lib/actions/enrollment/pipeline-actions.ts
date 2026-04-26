@@ -216,15 +216,18 @@ async function dispatchPipelineEmail(
     return
   }
 
-  const { data: contactRpc } = await supabase.rpc('ensure_contact_for_email', {
+  const { data: contactRpc, error: contactErr } = await supabase.rpc('ensure_contact_for_email', {
     p_tenant_id: tenantId,
     p_email: parentEmail,
     p_first_name: (application.parent_first_name as string | null) ?? null,
     p_last_name: (application.parent_last_name as string | null) ?? null,
     p_phone: (application.parent_phone as string | null) ?? null,
-    p_source: 'application',
+    p_source: 'enrollment_form',
     p_source_detail: plan.templateSlug,
   })
+  if (contactErr) {
+    console.error('[Pipeline] ensure_contact_for_email failed:', contactErr.message)
+  }
   const contactId = (contactRpc as string | null) ?? null
 
   let collectorBase = `https://crandallchristianacademy.com`
@@ -305,9 +308,27 @@ async function dispatchPipelineEmail(
   })
 
   if (!result.ok) {
-    console.error('[Pipeline] send failed for', plan.templateSlug, result.error)
+    console.error(
+      '[Pipeline] send failed for',
+      plan.templateSlug,
+      'to',
+      parentEmail,
+      'reason:',
+      result.error,
+      'suppressed:',
+      result.suppressed,
+    )
     return
   }
+
+  console.log(
+    '[Pipeline] send OK',
+    plan.templateSlug,
+    'to',
+    parentEmail,
+    'send_id:',
+    result.send_id,
+  )
 
   if (contactId) {
     await emitEvent({

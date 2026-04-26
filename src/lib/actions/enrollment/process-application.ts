@@ -159,7 +159,7 @@ export async function processApplication(
       p_first_name: (application.parent_first_name as string | null) ?? null,
       p_last_name: (application.parent_last_name as string | null) ?? null,
       p_phone: (application.parent_phone as string | null) ?? null,
-      p_source: 'application',
+      p_source: 'enrollment_form',
       p_source_detail: null,
     })
     contactId = (rpcRes as string | null) ?? null
