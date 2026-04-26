@@ -1,0 +1,5 @@
+-- 0075_crm_unflag_seed_templates_system.sql — applied via execute_sql.
+-- Unflag the 12 starter templates seeded in 0072 so admins can edit them
+-- in place. They were originally seeded with is_system=true, which the
+-- template upsert action treats as locked. Starters are intended as
+-- editable copy, not protected core templates.
