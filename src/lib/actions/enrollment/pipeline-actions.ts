@@ -196,16 +196,25 @@ async function dispatchPipelineEmail(
   const parentEmail = application.parent_email as string
   if (!parentEmail) return 'no_parent_email'
 
-  const [{ data: tenant }, { data: template }, settingsLoad] = await Promise.all([
-    supabase.from('tenants').select('slug, domain').eq('id', tenantId).single(),
-    supabase
-      .from('email_templates')
-      .select('id, subject, preheader, html')
-      .eq('tenant_id', tenantId)
-      .eq('slug', plan.templateSlug)
-      .maybeSingle(),
-    loadTenantEmailSettings(tenantId),
-  ])
+  const [{ data: tenant }, { data: primaryDomain }, { data: template }, settingsLoad] =
+    await Promise.all([
+      supabase.from('tenants').select('id, slug, name').eq('id', tenantId).maybeSingle(),
+      supabase
+        .from('tenant_domains')
+        .select('domain')
+        .eq('tenant_id', tenantId)
+        .eq('is_primary', true)
+        .order('domain')
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from('email_templates')
+        .select('id, subject, preheader, html')
+        .eq('tenant_id', tenantId)
+        .eq('slug', plan.templateSlug)
+        .maybeSingle(),
+      loadTenantEmailSettings(tenantId),
+    ])
 
   if (!tenant || !template) {
     console.error('[Pipeline] missing prerequisites', {
@@ -251,7 +260,8 @@ async function dispatchPipelineEmail(
     // headers() is request-scoped — fall through to default if absent.
   }
 
-  const tenantDomain = tenant.domain ?? `${tenant.slug}.preschool.businesses.win`
+  const tenantDomain =
+    (primaryDomain?.domain as string | undefined) ?? `${tenant.slug}.preschool.businesses.win`
   const applicantPortalUrl = `https://${tenantDomain}/portal/applicant`
 
   let bookInterviewUrl: string | undefined
