@@ -12,6 +12,7 @@ import {
   type HTMLAttributes,
   type ReactNode,
 } from 'react'
+import { createPortal } from 'react-dom'
 import { cn } from '@/lib/cn'
 
 // ---------------------------------------------------------------------------
@@ -22,9 +23,15 @@ interface DropdownCtx {
   open: boolean
   toggle: () => void
   close: () => void
+  triggerRef: React.MutableRefObject<HTMLButtonElement | null>
 }
 
-const Ctx = createContext<DropdownCtx>({ open: false, toggle: () => {}, close: () => {} })
+const Ctx = createContext<DropdownCtx>({
+  open: false,
+  toggle: () => {},
+  close: () => {},
+  triggerRef: { current: null },
+})
 
 // ---------------------------------------------------------------------------
 // Root
@@ -38,19 +45,7 @@ function DropdownMenu({ children }: DropdownMenuProps) {
   const [open, setOpen] = useState(false)
   const toggle = useCallback(() => setOpen((v) => !v), [])
   const close = useCallback(() => setOpen(false), [])
-  const rootRef = useRef<HTMLDivElement>(null)
-
-  // Close on click outside
-  useEffect(() => {
-    if (!open) return
-    const handler = (e: MouseEvent) => {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
-        close()
-      }
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [open, close])
+  const triggerRef = useRef<HTMLButtonElement | null>(null)
 
   // Close on escape
   useEffect(() => {
@@ -63,10 +58,8 @@ function DropdownMenu({ children }: DropdownMenuProps) {
   }, [open, close])
 
   return (
-    <Ctx.Provider value={{ open, toggle, close }}>
-      <div ref={rootRef} className="relative inline-block">
-        {children}
-      </div>
+    <Ctx.Provider value={{ open, toggle, close, triggerRef }}>
+      <span className="relative inline-block">{children}</span>
     </Ctx.Provider>
   )
 }
@@ -79,10 +72,18 @@ export type DropdownMenuTriggerProps = ButtonHTMLAttributes<HTMLButtonElement>
 
 const DropdownMenuTrigger = forwardRef<HTMLButtonElement, DropdownMenuTriggerProps>(
   ({ className, ...props }, ref) => {
-    const { open, toggle } = useContext(Ctx)
+    const { open, toggle, triggerRef } = useContext(Ctx)
+    const setRef = useCallback(
+      (node: HTMLButtonElement | null) => {
+        triggerRef.current = node
+        if (typeof ref === 'function') ref(node)
+        else if (ref) ref.current = node
+      },
+      [ref, triggerRef],
+    )
     return (
       <button
-        ref={ref}
+        ref={setRef}
         type="button"
         aria-haspopup="menu"
         aria-expanded={open}
@@ -109,9 +110,14 @@ export interface DropdownMenuContentProps extends HTMLAttributes<HTMLDivElement>
 
 const DropdownMenuContent = forwardRef<HTMLDivElement, DropdownMenuContentProps>(
   ({ align = 'end', className, children, ...props }, ref) => {
-    const { open, close: _close } = useContext(Ctx)
+    const { open, close, triggerRef } = useContext(Ctx)
     const menuRef = useRef<HTMLDivElement | null>(null)
-    const [shiftLeft, setShiftLeft] = useState(0)
+    const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
+    const [mounted, setMounted] = useState(false)
+
+    useEffect(() => {
+      setMounted(true)
+    }, [])
 
     const setRef = useCallback(
       (node: HTMLDivElement | null) => {
@@ -122,26 +128,55 @@ const DropdownMenuContent = forwardRef<HTMLDivElement, DropdownMenuContentProps>
       [ref],
     )
 
-    // Keep the menu inside the viewport — nudge left if it would overflow the right edge.
+    // Position the menu relative to the trigger using fixed coordinates so
+    // overflow:hidden ancestors can never clip it.
     useEffect(() => {
-      const el = menuRef.current
-      if (!open || !el) {
-        setShiftLeft(0)
-        return
-      }
+      if (!open) return
       const measure = () => {
-        const rect = el.getBoundingClientRect()
-        const overflow = rect.right - window.innerWidth + 8 // 8px gutter
-        setShiftLeft(overflow > 0 ? overflow : 0)
+        const trigger = triggerRef.current
+        const menu = menuRef.current
+        if (!trigger) return
+        const tRect = trigger.getBoundingClientRect()
+        const menuW = menu?.offsetWidth ?? 180
+        const menuH = menu?.offsetHeight ?? 0
+        const gutter = 8
+
+        let left = align === 'end' ? tRect.right - menuW : tRect.left
+        // Keep horizontally inside the viewport.
+        left = Math.max(gutter, Math.min(left, window.innerWidth - menuW - gutter))
+
+        let top = tRect.bottom + 4
+        // Flip above the trigger if there's no room below.
+        if (menuH > 0 && top + menuH > window.innerHeight - gutter) {
+          const above = tRect.top - 4 - menuH
+          if (above >= gutter) top = above
+        }
+        setPos({ top, left })
       }
       measure()
+      // Re-measure on next frame in case menu just rendered (for height-based flip).
+      const raf = requestAnimationFrame(measure)
       window.addEventListener('resize', measure)
       window.addEventListener('scroll', measure, true)
       return () => {
+        cancelAnimationFrame(raf)
         window.removeEventListener('resize', measure)
         window.removeEventListener('scroll', measure, true)
       }
-    }, [open])
+    }, [open, align, triggerRef])
+
+    // Click outside (counts trigger as inside).
+    useEffect(() => {
+      if (!open) return
+      const handler = (e: MouseEvent) => {
+        const target = e.target as Node
+        if (menuRef.current?.contains(target)) return
+        if (triggerRef.current?.contains(target)) return
+        close()
+      }
+      document.addEventListener('mousedown', handler)
+      return () => document.removeEventListener('mousedown', handler)
+    }, [open, close, triggerRef])
 
     // Keyboard navigation
     useEffect(() => {
@@ -170,25 +205,28 @@ const DropdownMenuContent = forwardRef<HTMLDivElement, DropdownMenuContentProps>
       }
 
       el.addEventListener('keydown', handler)
-      // Focus first item on open
       const first = items()[0]
       first?.focus()
 
       return () => el.removeEventListener('keydown', handler)
     }, [open])
 
-    if (!open) return null
+    if (!open || !mounted) return null
 
-    return (
+    const node = (
       <div
         ref={setRef}
         role="menu"
         aria-orientation="vertical"
-        style={shiftLeft > 0 ? { transform: `translateX(-${shiftLeft}px)` } : undefined}
+        style={{
+          position: 'fixed',
+          top: pos?.top ?? -9999,
+          left: pos?.left ?? -9999,
+          visibility: pos ? 'visible' : 'hidden',
+        }}
         className={cn(
-          'absolute z-50 mt-1 min-w-[180px] overflow-hidden rounded-[var(--radius,0.75rem)] border border-[var(--color-border)] bg-[var(--color-card)] p-1 shadow-lg',
+          'z-[1000] min-w-[180px] overflow-hidden rounded-[var(--radius,0.75rem)] border border-[var(--color-border)] bg-[var(--color-card)] p-1 shadow-lg',
           'motion-safe:animate-[fadeIn_150ms_ease-out]',
-          align === 'end' ? 'right-0' : 'left-0',
           className,
         )}
         {...props}
@@ -196,6 +234,8 @@ const DropdownMenuContent = forwardRef<HTMLDivElement, DropdownMenuContentProps>
         {children}
       </div>
     )
+
+    return createPortal(node, document.body)
   },
 )
 DropdownMenuContent.displayName = 'DropdownMenuContent'

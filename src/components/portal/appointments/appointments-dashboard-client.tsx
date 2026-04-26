@@ -18,6 +18,7 @@ import {
   CalendarCheck,
   CalendarX,
   UserX,
+  Trash2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogOverlay, DialogContent, DialogClose } from '@/components/ui/dialog'
@@ -33,6 +34,7 @@ import {
   completeAppointment,
   markNoShow,
   updateAppointmentNotes,
+  deleteAppointment,
 } from '@/lib/actions/appointments/manage-appointment'
 
 interface Appointment {
@@ -185,6 +187,21 @@ export function AppointmentsDashboardClient({
       const res = await markNoShow(id)
       if (res.ok) router.refresh()
       else setError(res.error ?? 'Failed to mark no-show')
+    })
+  }
+
+  function handleDelete(id: string) {
+    if (
+      !confirm(
+        'Permanently delete this appointment? This cannot be undone — the audit log keeps a record.',
+      )
+    )
+      return
+    setError(null)
+    startTransition(async () => {
+      const res = await deleteAppointment(id)
+      if (res.ok) router.refresh()
+      else setError(res.error ?? 'Failed to delete')
     })
   }
 
@@ -566,6 +583,9 @@ export function AppointmentsDashboardClient({
                               </DropdownMenuItem>
                             </>
                           )}
+                          <DropdownMenuItem destructive onClick={() => handleDelete(appt.id)}>
+                            <Trash2 className="h-4 w-4 mr-2" /> Delete
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>

@@ -300,6 +300,47 @@ export async function markNoShow(id: string): Promise<ActionResult> {
   return { ok: true, id }
 }
 
+export async function deleteAppointment(id: string): Promise<ActionResult> {
+  await assertRole('admin')
+  const tenantId = await getTenantId()
+  const actorId = await getActorId()
+  const supabase = createAdminClient()
+
+  const { data: appt } = await supabase
+    .from('appointments')
+    .select('id, status, booked_by_email, booked_by_name, type_name, start_at')
+    .eq('id', id)
+    .eq('tenant_id', tenantId)
+    .single()
+
+  if (!appt) return { ok: false, error: 'Appointment not found' }
+
+  const { error } = await supabase
+    .from('appointments')
+    .delete()
+    .eq('id', id)
+    .eq('tenant_id', tenantId)
+
+  if (error) return { ok: false, error: error.message }
+
+  await writeAudit(supabase, {
+    tenantId,
+    actorId,
+    action: 'appointment.deleted',
+    entityType: 'appointment',
+    entityId: id,
+    before: {
+      status: appt.status,
+      email: appt.booked_by_email,
+      name: appt.booked_by_name,
+      start_at: appt.start_at,
+    },
+    after: { deleted: true },
+  })
+
+  return { ok: true, id }
+}
+
 export async function updateAppointmentNotes(
   input: UpdateAppointmentNotesInput,
 ): Promise<ActionResult> {
