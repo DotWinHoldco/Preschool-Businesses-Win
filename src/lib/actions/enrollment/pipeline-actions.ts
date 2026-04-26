@@ -1,7 +1,9 @@
 'use server'
 
 // @anchor: cca.applications.pipeline.actions
-// Pipeline stage transitions for enrollment applications.
+// Pipeline stage transitions for enrollment applications. Every action
+// updates state, audit-logs, then sends a branded CRM email and emits
+// the matching CRM event so downstream automations can also fire.
 
 import { headers } from 'next/headers'
 import { PipelineActionSchema, type PipelineActionInput } from '@/lib/schemas/appointment'
@@ -14,7 +16,7 @@ import {
   loadTenantEmailSettings,
   composeMailingAddress,
 } from '@/lib/crm/send-email'
-import { emitEvent } from '@/lib/crm/events'
+import { emitEvent, type CrmEventKind } from '@/lib/crm/events'
 
 type ActionResult = { ok: boolean; error?: string }
 
@@ -29,6 +31,45 @@ const STAGE_MAP: Record<ActionName, string> = {
   waitlist: 'waitlisted',
   reject: 'rejected',
   withdraw: 'withdrawn',
+}
+
+interface EmailPlan {
+  templateSlug: string
+  eventKind: CrmEventKind
+  needsBookingUrl?: boolean
+}
+
+const EMAIL_PLAN: Partial<Record<ActionName, EmailPlan>> = {
+  accept_and_invite_interview: {
+    templateSlug: 'interview_invitation',
+    eventKind: 'application.approved',
+    needsBookingUrl: true,
+  },
+  mark_interview_complete: {
+    templateSlug: 'interview_thank_you',
+    eventKind: 'tour.completed',
+  },
+  send_offer: {
+    templateSlug: 'enrollment_offer',
+    eventKind: 'application.approved',
+  },
+  accept_offer: {
+    templateSlug: 'enrollment_welcome',
+    eventKind: 'enrollment.completed',
+  },
+  request_info: {
+    templateSlug: 'application_info_requested',
+    eventKind: 'contact.updated',
+  },
+  waitlist: {
+    templateSlug: 'waitlist_added',
+    eventKind: 'waitlist.added',
+  },
+  reject: {
+    templateSlug: 'application_declined',
+    eventKind: 'application.declined',
+  },
+  // withdraw is parent-initiated — no notification email.
 }
 
 export async function runPipelineAction(input: PipelineActionInput): Promise<ActionResult> {
@@ -73,7 +114,6 @@ export async function runPipelineAction(input: PipelineActionInput): Promise<Act
     updates.offer_sent_at = now
   } else if (action === 'accept_offer') {
     updates.offer_accepted_at = now
-    // Upgrade applicant_parent → parent when enrolled
     if (application.parent_user_id) {
       await supabase
         .from('user_tenant_memberships')
@@ -106,7 +146,6 @@ export async function runPipelineAction(input: PipelineActionInput): Promise<Act
     completed_by: actorId,
   })
 
-  // Complete the previous active step
   await supabase
     .from('application_pipeline_steps')
     .update({ status: 'completed', completed_at: now, completed_by: actorId })
@@ -124,49 +163,43 @@ export async function runPipelineAction(input: PipelineActionInput): Promise<Act
     after: { pipeline_stage: newStage, notes },
   })
 
-  if (action === 'accept_and_invite_interview' && application.parent_email) {
+  const plan = EMAIL_PLAN[action]
+  if (plan && application.parent_email) {
     try {
-      await sendInterviewInvitationViaCrm(supabase, tenantId, application)
+      await dispatchPipelineEmail(supabase, tenantId, application, plan, notes ?? null)
     } catch (err) {
-      console.error('[Pipeline] Interview invitation email failed:', err)
+      console.error('[Pipeline] email dispatch failed for', action, err)
     }
   }
 
   return { ok: true }
 }
 
-async function sendInterviewInvitationViaCrm(
+async function dispatchPipelineEmail(
   supabase: ReturnType<typeof createAdminClient>,
   tenantId: string,
   application: Record<string, unknown>,
+  plan: EmailPlan,
+  notes: string | null,
 ): Promise<void> {
   const parentEmail = application.parent_email as string
   if (!parentEmail) return
 
-  const [{ data: tenant }, { data: tourType }, { data: template }, settingsLoad] =
-    await Promise.all([
-      supabase.from('tenants').select('slug, domain').eq('id', tenantId).single(),
-      supabase
-        .from('appointment_types')
-        .select('slug')
-        .eq('tenant_id', tenantId)
-        .eq('linked_pipeline_stage', 'interview_scheduled')
-        .eq('is_active', true)
-        .limit(1)
-        .maybeSingle(),
-      supabase
-        .from('email_templates')
-        .select('id, subject, preheader, html')
-        .eq('tenant_id', tenantId)
-        .eq('slug', 'interview_invitation')
-        .maybeSingle(),
-      loadTenantEmailSettings(tenantId),
-    ])
+  const [{ data: tenant }, { data: template }, settingsLoad] = await Promise.all([
+    supabase.from('tenants').select('slug, domain').eq('id', tenantId).single(),
+    supabase
+      .from('email_templates')
+      .select('id, subject, preheader, html')
+      .eq('tenant_id', tenantId)
+      .eq('slug', plan.templateSlug)
+      .maybeSingle(),
+    loadTenantEmailSettings(tenantId),
+  ])
 
-  if (!tenant || !tourType || !template) {
-    console.error('[Pipeline] Missing prerequisites for interview invitation', {
+  if (!tenant || !template) {
+    console.error('[Pipeline] missing prerequisites', {
+      slug: plan.templateSlug,
       hasTenant: !!tenant,
-      hasTourType: !!tourType,
       hasTemplate: !!template,
     })
     return
@@ -174,7 +207,7 @@ async function sendInterviewInvitationViaCrm(
 
   const { settings, branding } = settingsLoad
   if (!settings || !settings.from_email) {
-    console.error('[Pipeline] Sender not configured (tenant_email_settings)')
+    console.error('[Pipeline] sender not configured (tenant_email_settings)')
     return
   }
   const mailingAddress = settings.mailing_address || composeMailingAddress(branding)
@@ -183,7 +216,6 @@ async function sendInterviewInvitationViaCrm(
     return
   }
 
-  // Resolve a contact_id by email so the send is timeline-attached and tracking-aware.
   const { data: contactRpc } = await supabase.rpc('ensure_contact_for_email', {
     p_tenant_id: tenantId,
     p_email: parentEmail,
@@ -191,27 +223,43 @@ async function sendInterviewInvitationViaCrm(
     p_last_name: (application.parent_last_name as string | null) ?? null,
     p_phone: (application.parent_phone as string | null) ?? null,
     p_source: 'application',
-    p_source_detail: 'interview_invitation',
+    p_source_detail: plan.templateSlug,
   })
   const contactId = (contactRpc as string | null) ?? null
 
-  // Best-effort host resolution. Falls back to the CCA marketing domain.
-  let collectorBase = `https://${branding?.school_name ? 'crandallchristianacademy.com' : 'preschool.businesses.win'}`
+  let collectorBase = `https://crandallchristianacademy.com`
   try {
     const h = await headers()
     const host = h.get('x-forwarded-host') ?? h.get('host')
     const proto = h.get('x-forwarded-proto') ?? 'https'
     if (host) collectorBase = `${proto}://${host}`
   } catch {
-    // headers() is only valid in request scope. If absent, fall through to default.
+    // headers() is request-scoped — fall through to default if absent.
   }
 
   const tenantDomain = tenant.domain ?? `${tenant.slug}.preschool.businesses.win`
-  const bookingUrl =
-    `https://${tenantDomain}/${tenant.slug}/book/${tourType.slug}` +
-    `?application_id=${application.id}` +
-    `&name=${encodeURIComponent(`${application.parent_first_name ?? ''} ${application.parent_last_name ?? ''}`.trim())}` +
-    `&email=${encodeURIComponent(parentEmail)}`
+  const applicantPortalUrl = `https://${tenantDomain}/portal/applicant`
+
+  let bookInterviewUrl: string | undefined
+  if (plan.needsBookingUrl) {
+    const { data: tourType } = await supabase
+      .from('appointment_types')
+      .select('slug')
+      .eq('tenant_id', tenantId)
+      .eq('linked_pipeline_stage', 'interview_scheduled')
+      .eq('is_active', true)
+      .limit(1)
+      .maybeSingle()
+    if (!tourType) {
+      console.error('[Pipeline] no appointment_type with linked_pipeline_stage=interview_scheduled')
+      return
+    }
+    bookInterviewUrl =
+      `https://${tenantDomain}/${tenant.slug}/book/${tourType.slug}` +
+      `?application_id=${application.id}` +
+      `&name=${encodeURIComponent(`${application.parent_first_name ?? ''} ${application.parent_last_name ?? ''}`.trim())}` +
+      `&email=${encodeURIComponent(parentEmail)}`
+  }
 
   const result = await sendCampaignEmail({
     tenantId,
@@ -242,7 +290,9 @@ async function sendInterviewInvitationViaCrm(
         first_name: application.student_first_name as string | null,
         last_name: application.student_last_name as string | null,
       },
-      bookInterviewUrl: bookingUrl,
+      bookInterviewUrl,
+      applicantPortalUrl,
+      pipelineNotes: notes ?? undefined,
     },
     collectorBase,
     schoolName: (branding?.school_name as string) ?? 'School',
@@ -255,15 +305,20 @@ async function sendInterviewInvitationViaCrm(
   })
 
   if (!result.ok) {
-    console.error('[Pipeline] Interview invitation send failed:', result.error)
-  } else if (contactId) {
+    console.error('[Pipeline] send failed for', plan.templateSlug, result.error)
+    return
+  }
+
+  if (contactId) {
     await emitEvent({
       tenantId,
       contactId,
-      kind: 'application.approved',
+      kind: plan.eventKind,
       payload: {
         application_id: application.id,
-        invitation_send_id: result.send_id ?? null,
+        template_slug: plan.templateSlug,
+        send_id: result.send_id ?? null,
+        notes: notes ?? null,
       },
       source: 'pipeline_action',
     })
@@ -285,9 +340,7 @@ export async function deleteApplication(applicationId: string): Promise<ActionRe
 
   if (!application) return { ok: false, error: 'Application not found' }
 
-  // Delete related records first (order matters for FK constraints)
   await supabase.from('appointments').delete().eq('enrollment_application_id', applicationId)
-
   await supabase.from('application_pipeline_steps').delete().eq('application_id', applicationId)
 
   const { error: deleteError } = await supabase
@@ -298,14 +351,12 @@ export async function deleteApplication(applicationId: string): Promise<ActionRe
 
   if (deleteError) return { ok: false, error: deleteError.message }
 
-  // Check if this parent has any remaining applications
   const { count } = await supabase
     .from('enrollment_applications')
     .select('id', { count: 'exact', head: true })
     .eq('parent_email', application.parent_email)
     .eq('tenant_id', tenantId)
 
-  // If no remaining applications, clean up lead and applicant account
   if (count === 0) {
     await supabase
       .from('enrollment_leads')

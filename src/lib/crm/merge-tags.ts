@@ -34,6 +34,8 @@ export interface MergeContext {
   preferencesUrl?: string
   resumeUrl?: string
   bookInterviewUrl?: string
+  applicantPortalUrl?: string
+  pipelineNotes?: string
 }
 
 export const STANDARD_MERGE_TAGS: MergeTag[] = [
@@ -125,6 +127,20 @@ export const STANDARD_MERGE_TAGS: MergeTag[] = [
     sample: 'https://example.com/book/interview',
     description: 'Personalized booking URL — only resolves on the interview invitation send.',
     resolve: (c) => c.bookInterviewUrl ?? '',
+  },
+  {
+    key: 'links.applicant_portal',
+    label: 'Applicant portal link',
+    sample: 'https://example.com/portal/applicant',
+    description: 'Family portal where applicants can view their application and accept offers.',
+    resolve: (c) => c.applicantPortalUrl ?? '',
+  },
+  {
+    key: 'pipeline.notes',
+    label: 'Admin pipeline note',
+    sample: 'Please send a copy of your immunization record.',
+    description: 'Free-text note attached to the most recent pipeline action (e.g. request_info).',
+    resolve: (c) => c.pipelineNotes ?? '',
   },
 ]
 

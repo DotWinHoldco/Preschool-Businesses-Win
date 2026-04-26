@@ -1,0 +1,11 @@
+-- 0077_crm_seed_pipeline_email_templates.sql — applied via execute_sql.
+-- Seeds the 4 remaining enrollment-pipeline email templates so every
+-- pipeline action notifies the family through the CRM send pipeline:
+--   interview_thank_you       — mark_interview_complete
+--   enrollment_offer          — send_offer
+--   application_info_requested — request_info
+--   application_declined      — reject
+-- (accept_and_invite_interview uses interview_invitation from 0076,
+--  accept_offer uses enrollment_welcome from 0072,
+--  waitlist uses waitlist_added from 0072.)
+-- Bodies use {{links.applicant_portal}} and {{pipeline.notes}} merge tags.
