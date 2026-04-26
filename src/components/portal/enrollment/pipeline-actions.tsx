@@ -56,7 +56,8 @@ type Variant = 'primary' | 'secondary' | 'ghost' | 'destructive'
 
 const VARIANT_CLASSES: Record<Variant, string> = {
   primary: 'bg-[var(--color-primary)] text-[var(--color-primary-foreground)] hover:opacity-90',
-  secondary: 'bg-[var(--color-secondary)] text-[var(--color-secondary-foreground)] hover:opacity-90',
+  secondary:
+    'bg-[var(--color-secondary)] text-[var(--color-secondary-foreground)] hover:opacity-90',
   ghost:
     'border border-[var(--color-border)] text-[var(--color-foreground)] hover:bg-[var(--color-muted)]',
   destructive:
@@ -94,10 +95,11 @@ export function PipelineActions({ applicationId }: { applicationId: string }) {
       if (!result.ok) {
         setError(result.error ?? 'Action failed')
       } else {
-        setLastAction(action)
+        setLastAction(`${action} · email=${result.emailStatus ?? 'n/a'}`)
         setNotesOpen(null)
         setNotes('')
-        window.location.reload()
+        // Skip immediate reload so the diagnostic line stays visible.
+        setTimeout(() => window.location.reload(), 4000)
       }
     })
   }
@@ -112,7 +114,11 @@ export function PipelineActions({ applicationId }: { applicationId: string }) {
               key={a.key}
               disabled={pending}
               onClick={() => {
-                if (a.key === 'reject' || a.key === 'request_info' || a.key === 'mark_interview_complete') {
+                if (
+                  a.key === 'reject' ||
+                  a.key === 'request_info' ||
+                  a.key === 'mark_interview_complete'
+                ) {
                   setNotesOpen(a.key)
                 } else {
                   trigger(a.key)

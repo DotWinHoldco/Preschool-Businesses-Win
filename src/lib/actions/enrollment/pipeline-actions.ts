@@ -18,7 +18,7 @@ import {
 } from '@/lib/crm/send-email'
 import { emitEvent, type CrmEventKind } from '@/lib/crm/events'
 
-type ActionResult = { ok: boolean; error?: string }
+type ActionResult = { ok: boolean; error?: string; emailStatus?: string }
 
 type ActionName = PipelineActionInput['action']
 
@@ -164,15 +164,26 @@ export async function runPipelineAction(input: PipelineActionInput): Promise<Act
   })
 
   const plan = EMAIL_PLAN[action]
+  let emailStatus = 'no_plan'
   if (plan && application.parent_email) {
     try {
-      await dispatchPipelineEmail(supabase, tenantId, application, plan, notes ?? null)
+      emailStatus = await dispatchPipelineEmail(
+        supabase,
+        tenantId,
+        application,
+        plan,
+        notes ?? null,
+      )
     } catch (err) {
-      console.error('[Pipeline] email dispatch failed for', action, err)
+      const msg = err instanceof Error ? err.message : 'threw'
+      console.error('[Pipeline] email dispatch threw for', action, err)
+      emailStatus = `threw:${msg}`
     }
+  } else if (!application.parent_email) {
+    emailStatus = 'no_parent_email'
   }
 
-  return { ok: true }
+  return { ok: true, emailStatus }
 }
 
 async function dispatchPipelineEmail(
@@ -181,9 +192,9 @@ async function dispatchPipelineEmail(
   application: Record<string, unknown>,
   plan: EmailPlan,
   notes: string | null,
-): Promise<void> {
+): Promise<string> {
   const parentEmail = application.parent_email as string
-  if (!parentEmail) return
+  if (!parentEmail) return 'no_parent_email'
 
   const [{ data: tenant }, { data: template }, settingsLoad] = await Promise.all([
     supabase.from('tenants').select('slug, domain').eq('id', tenantId).single(),
@@ -202,18 +213,18 @@ async function dispatchPipelineEmail(
       hasTenant: !!tenant,
       hasTemplate: !!template,
     })
-    return
+    return `missing:${!tenant ? 'tenant' : ''}${!template ? `template:${plan.templateSlug}` : ''}`
   }
 
   const { settings, branding } = settingsLoad
   if (!settings || !settings.from_email) {
     console.error('[Pipeline] sender not configured (tenant_email_settings)')
-    return
+    return 'sender_unconfigured'
   }
   const mailingAddress = settings.mailing_address || composeMailingAddress(branding)
   if (!mailingAddress) {
     console.error('[Pipeline] mailing_address missing — refusing to send (CAN-SPAM)')
-    return
+    return 'no_mailing_address'
   }
 
   const { data: contactRpc, error: contactErr } = await supabase.rpc('ensure_contact_for_email', {
@@ -255,7 +266,7 @@ async function dispatchPipelineEmail(
       .maybeSingle()
     if (!tourType) {
       console.error('[Pipeline] no appointment_type with linked_pipeline_stage=interview_scheduled')
-      return
+      return 'no_appointment_type'
     }
     bookInterviewUrl =
       `https://${tenantDomain}/${tenant.slug}/book/${tourType.slug}` +
@@ -318,7 +329,7 @@ async function dispatchPipelineEmail(
       'suppressed:',
       result.suppressed,
     )
-    return
+    return `send_failed:${result.error ?? 'unknown'}`
   }
 
   console.log(
@@ -344,6 +355,7 @@ async function dispatchPipelineEmail(
       source: 'pipeline_action',
     })
   }
+  return `sent:${result.send_id ?? 'no_id'}`
 }
 
 export async function deleteApplication(applicationId: string): Promise<ActionResult> {
