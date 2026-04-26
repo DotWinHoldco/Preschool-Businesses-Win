@@ -33,6 +33,7 @@ export interface MergeContext {
   unsubscribeUrl: string
   preferencesUrl?: string
   resumeUrl?: string
+  bookInterviewUrl?: string
 }
 
 export const STANDARD_MERGE_TAGS: MergeTag[] = [
@@ -117,6 +118,13 @@ export const STANDARD_MERGE_TAGS: MergeTag[] = [
     label: 'Preferences link',
     sample: 'https://example.com/preferences',
     resolve: (c) => c.preferencesUrl ?? c.unsubscribeUrl,
+  },
+  {
+    key: 'links.book_interview',
+    label: 'Book interview link',
+    sample: 'https://example.com/book/interview',
+    description: 'Personalized booking URL — only resolves on the interview invitation send.',
+    resolve: (c) => c.bookInterviewUrl ?? '',
   },
 ]
 

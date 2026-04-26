@@ -1,0 +1,6 @@
+-- 0076_crm_seed_interview_invitation_template.sql — applied via execute_sql.
+-- Seeds the `interview_invitation` email template for CCA. Used by the
+-- enrollment pipeline "Accept & Invite Interview" action — sent through
+-- the CRM send pipeline so it inherits sender verification, suppression,
+-- tracking, logo, and contact timeline activity. Body uses the new
+-- {{links.book_interview}} merge tag (see merge-tags.ts).
